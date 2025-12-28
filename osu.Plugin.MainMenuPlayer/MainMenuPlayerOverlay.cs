@@ -6,6 +6,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
+using osu.Framework.Platform;
 using osu.Game;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics;
@@ -18,6 +19,9 @@ namespace osu.Plugin.MainMenuPlayer;
 
 public partial class MainMenuPlayerOverlay : CompositeDrawable
 {
+    [Resolved]
+    private GameHost host { get; set; } = null!;
+
     [Resolved]
     private OsuGame game { get; set; } = null!;
 
@@ -49,7 +53,6 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
                 Anchor = Anchor.BottomLeft,
                 Origin = Anchor.BottomLeft,
                 Margin = new MarginPadding(margin),
-                Alpha = 0,
             }
         };
 
@@ -61,11 +64,19 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
             {
                 Scheduler.Add(() => showPlayer(ActiveState.ActiveByIdle));
             }
-            else
-            {
-                Scheduler.Add(restoreMenu);
-            }
         });
+
+        host.Deactivated += () =>
+        {
+            if (buttonStateAllowsShowPlayer)
+            {
+                // this is like a temporary show player until we regain focus
+                Scheduler.Add(() => showPlayer(ActiveState.ActiveByMouseMoveOut));
+            }
+        };
+
+        hidePlayer();
+        finishTransformImmediately();
     }
 
     protected override void LoadComplete()
@@ -74,19 +85,38 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
 
         if (Parent is MainMenu mainMenu)
             buttonSystem = GetMainMenuButtonSystem(mainMenu);
+
+        if (buttonSystem is not null)
+        {
+            buttonSystem.StateChanged += s =>
+            {
+                switch (s)
+                {
+                    case ButtonSystemState.Initial:
+                    case ButtonSystemState.Exit:
+                        break;
+
+                    default:
+                        Scheduler.Add(restoreMenu);
+                        break;
+                }
+            };
+        }
+
+        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "Buttons")]
+        static extern ref ButtonSystem GetMainMenuButtonSystem(MainMenu mainMenu);
     }
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "Buttons")]
-    private static extern ref ButtonSystem GetMainMenuButtonSystem(MainMenu mainMenu);
+    private bool buttonStateAllowsShowPlayer => buttonSystem is null ||
+        buttonSystem.State is ButtonSystemState.Initial or ButtonSystemState.Exit;
 
-    public override bool HandlePositionalInput => true;
+    public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => true;
 
     protected override bool OnMouseMove(MouseMoveEvent e)
     {
         const float edge_threshold = 5f;
 
-        if (buttonSystem is null ||
-            buttonSystem.State is ButtonSystemState.Initial or ButtonSystemState.Exit)
+        if (buttonStateAllowsShowPlayer)
         {
             var parentBottomRight = Parent.ScreenSpaceDrawQuad.BottomRight;
             var parentTopLeft = Parent.ScreenSpaceDrawQuad.TopLeft;
@@ -103,16 +133,39 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
                 mousePos.X <= parentTopLeft.X + edge_threshold ||
                 mousePos.Y <= parentTopLeft.Y + edge_threshold)
             {
-                // FIXME: we should also update ButtonSystem's state to hide everything
                 showPlayer(ActiveState.ActiveByMouseMoveOut);
             }
             else if (activeState is ActiveState.ActiveByMouseMoveOut)
             {
-                restoreMenu();
+                // Don't restore if game is inactive
+                if (host.IsActive.Value)
+                    restoreMenu();
             }
         }
 
         return base.OnMouseMove(e);
+    }
+
+    private void tryRecoverFromInput()
+    {
+        // Don't restore if game is inactive. Can we receive input when inactive?
+        if (host.IsActive.Value &&
+            activeState is not ActiveState.Inactive)
+        {
+            restoreMenu();
+        }
+    }
+
+    protected override bool OnMouseDown(MouseDownEvent e)
+    {
+        tryRecoverFromInput();
+        return base.OnMouseDown(e);
+    }
+
+    protected override bool OnKeyDown(KeyDownEvent e)
+    {
+        tryRecoverFromInput();
+        return base.OnKeyDown(e);
     }
 
     private static string unicodeOrRomaji(string unicode, string romaji) => string.IsNullOrEmpty(unicode) ? romaji : unicode;
@@ -179,13 +232,15 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
     private enum ActiveState
     {
         Inactive = 0,
+        // Temporary active state due to mouse moving out of screen
+        // Mouse returning to screen will restore menu
         ActiveByMouseMoveOut = 1,
+        // Permanent active state due to idle, mouse down or key down to restore
         ActiveByIdle = 2,
     }
 
     private void showTrackInfo()
     {
-        // FIXME: zero size initially causes transition like no ops.
         trackMetadataPanel
             .MoveToX(0, transition_duration, Easing.OutCubic)
             .FadeIn(transition_duration, Easing.OutQuint);
@@ -214,6 +269,17 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
         showTrackInfo();
     }
 
+    private void hidePlayer()
+    {
+        hideTrackInfo();
+        activeState = ActiveState.Inactive;
+    }
+
+    private void finishTransformImmediately()
+    {
+        trackMetadataPanel.FinishTransforms(true);
+    }
+
     private void restoreMenu()
     {
         if (activeState is ActiveState.Inactive)
@@ -221,8 +287,7 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
 
         osuLogo.FadeIn(transition_duration, Easing.OutQuint);
         game.Toolbar.Show();
-        hideTrackInfo();
-        activeState = ActiveState.Inactive;
+        hidePlayer();
     }
 
     private partial class TrackMetadataPanel : CompositeDrawable
