@@ -29,7 +29,7 @@ public class MainMenuPlayerPlugin : OsuPlugin
             if (newScreen is not MainMenu mainMenu)
                 return;
 
-            addOverlayToMainMenu(mainMenu);
+            scheduler.Add(() => addOverlayToMainMenu(mainMenu));
 
             screenStack.ScreenPushed -= newScreenArrives;
             screenStack.ScreenExited -= newScreenArrives;
