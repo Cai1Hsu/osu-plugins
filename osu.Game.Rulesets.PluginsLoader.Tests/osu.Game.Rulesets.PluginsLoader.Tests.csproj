@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\osu.Game.Rulesets.PluginsLoader\osu.Game.Rulesets.PluginsLoader.csproj" />
+
+    <!-- TODO: remove these, test only -->
+    <ProjectReference Include="..\osu.Plugin.Template\osu.Plugin.Template.csproj" />
+    <ProjectReference Include="..\osu.Plugin.MainMenuPlayer\osu.Plugin.MainMenuPlayer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ppy.osu.Game" Version="2025.1209.0" />
+    <!-- for test purpose, can be commented if unnecessary -->
+    <PackageReference Include="ppy.osu.Game.Rulesets.Osu" Version="2025.1209.0" />
+  </ItemGroup>
+</Project>
