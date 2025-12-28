@@ -13,6 +13,7 @@
     <!-- TODO: remove these, test only -->
     <ProjectReference Include="..\osu.Plugin.Template\osu.Plugin.Template.csproj" />
     <ProjectReference Include="..\osu.Plugin.MainMenuPlayer\osu.Plugin.MainMenuPlayer.csproj" />
+    <ProjectReference Include="..\osu.Plugin.StableIntegration\osu.Plugin.StableIntegration.csproj" />
   </ItemGroup>
 
   <ItemGroup>
