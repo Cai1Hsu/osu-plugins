@@ -64,7 +64,9 @@ public class StableIntegrationPlugin : OsuPlugin
 
                 ScreenFooterButton button = new PlayInStableButton();
 
-                button.OnLoadComplete += d => makeButtonAppearFromBottom((ScreenFooterButton)d, footerContent.Count);
+                var index = footerContent.Count; // we expect all add operations to be sequential
+
+                button.OnLoadComplete += d => makeButtonAppearFromBottom((ScreenFooterButton)d, index);
                 footerContent.Add(button);
             }
 
