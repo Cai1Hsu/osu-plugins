@@ -14,6 +14,7 @@ using osu.Framework.Screens;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Plugins;
+using osu.Game.Screens;
 using osu.Game.Screens.Menu;
 
 namespace osu.Game.Rulesets.PluginsLoader;
@@ -86,11 +87,11 @@ public partial class PluginManager : Drawable
         if (game is null)
             return;
 
-        void postNotifications(Drawable screen)
+        void postNotifications(Drawable drawable)
         {
-            var mainMenu = (MainMenu)screen;
+            var screen = (IScreen)drawable;
 
-            if (!mainMenu.IsCurrentScreen())
+            if (!screen.IsCurrentScreen())
                 return;
 
             // Bypass for debug build since debug build may use mock storage and we rely on startup directory for plugin loading during development.
@@ -121,16 +122,16 @@ public partial class PluginManager : Drawable
             }
         }
 
-        game.PerformOnceFromScreen((_, newScreen) =>
+        game.PerformOnceExcludeScreen((_, newScreen) =>
         {
-            if (newScreen is not MainMenu mainMenu)
+            if (newScreen is not Drawable drawable)
                 return;
 
-            if (mainMenu.IsLoaded)
-                postNotifications(mainMenu);
+            if (drawable.IsLoaded)
+                postNotifications(drawable);
             else
-                mainMenu.OnLoadComplete += postNotifications;
-        }, new[] { typeof(MainMenu) });
+                drawable.OnLoadComplete += postNotifications;
+        }, new[] { typeof(Loader), typeof(IntroScreen) });
     }
 
     private void scheduleBackground(Action action)
