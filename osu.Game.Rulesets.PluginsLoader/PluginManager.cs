@@ -1,14 +1,20 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Humanizer;
 using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Framework.Screens;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Plugins;
+using osu.Game.Screens.Menu;
 
 namespace osu.Game.Rulesets.PluginsLoader;
 
@@ -26,13 +32,8 @@ public partial class PluginManager : Drawable
 
     private List<Task> loadingTasks = new();
 
-    private const double plugin_long_load_threshold = 100;
-
-    // TODO: hard coded for now, consider making configurable if needed.
-    private const double async_load_threshold = 3000;
-
     [BackgroundDependencyLoader]
-    private void load(Storage storage)
+    private void load(OsuGame? game, INotificationOverlay? notification, Storage storage)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -45,58 +46,28 @@ public partial class PluginManager : Drawable
         hasPluginsFromStartupDirectory |= loadPluginsFromDirectory(RuntimeInfo.StartupDirectory);
         hasPluginsFromStartupDirectory |= loadPluginsFromDirectory(AppContext.BaseDirectory);
 
+        performWhenMainMenuReady(game, notification, hasPluginsFromStartupDirectory);
+
         // Sometimes the load action still blocks update thread,
         // so we explicitly offload to thread pool here.
         Task.Run(() =>
         {
             try
             {
-                var loadTask = Task.WhenAll(loadingTasks);
-                var timeoutTask = Task.Delay((int)async_load_threshold);
+                Task.WhenAll(loadingTasks).Wait();
 
-                // we don't want to block the game to wait for plugins to load, so we only wait a short amount of time here.
-                var completed = Task.WhenAny(loadTask, timeoutTask).GetAwaiter().GetResult();
+                stopwatch.Stop();
 
-                void loadCompleted()
+                lock (loadedPlugins)
                 {
-                    // ensure any exceptions are observed.
-                    loadTask.Wait();
-                    stopwatch.Stop();
+                    string loadedMessage = loadedPlugins.Count > 0
+                        ? $"Successfully loaded {loadedPlugins.Count} plugins in {stopwatch.Elapsed.Humanize()}."
+                        : "No plugins were loaded.";
 
-                    lock (loadedPlugins)
+                    notification?.Post(new PluginNotification
                     {
-                        string loadedMessage = loadedPlugins.Count > 0
-                            ? $"Successfully loaded {loadedPlugins.Count} plugins in {stopwatch.ElapsedMilliseconds:F2}ms."
-                            : "No plugins were loaded.";
-
-                        var logLevel = stopwatch.ElapsedMilliseconds > plugin_long_load_threshold
-                            ? LogLevel.Important : LogLevel.Verbose;
-
-                        Logger.Log(loadedMessage, LoggingTarget.Runtime, logLevel);
-                    }
-                }
-
-                if (completed == loadTask)
-                {
-                    loadCompleted();
-                }
-                else
-                {
-                    lock (loadedPlugins)
-                    {
-                        Logger.Log($"Plugin loading is taking longer than expected (> {async_load_threshold}ms). "
-                            + "Some plugins may still be loading in the background. "
-                            + $"{loadedPlugins.Count} plugins have been loaded so far.", LoggingTarget.Runtime, LogLevel.Important);
-                    }
-
-                    loadTask.ContinueWith(_ => loadCompleted());
-                }
-
-                // Bypass for debug build since debug build may use mock storage and we rely on startup directory for plugin loading during development.
-                if (hasPluginsFromStartupDirectory && !DebugUtils.IsDebugBuild)
-                {
-                    Logger.Log("Plugins loaded from the startup directory are not supported and may be removed on game update. "
-                        + "Please move your plugins to the 'plugins' folder inside the osu! installation directory.", LoggingTarget.Runtime, LogLevel.Important);
+                        Text = loadedMessage,
+                    });
                 }
             }
             finally
@@ -108,6 +79,58 @@ public partial class PluginManager : Drawable
                 }
             }
         });
+    }
+
+    void performWhenMainMenuReady(OsuGame? game, INotificationOverlay? notification, bool hasPluginsFromStartupDirectory)
+    {
+        if (game is null)
+            return;
+
+        void postNotifications(Drawable screen)
+        {
+            var mainMenu = (MainMenu)screen;
+
+            if (!mainMenu.IsCurrentScreen())
+                return;
+
+            // Bypass for debug build since debug build may use mock storage and we rely on startup directory for plugin loading during development.
+            if (hasPluginsFromStartupDirectory && !DebugUtils.IsDebugBuild)
+            {
+                notification?.Post(new PluginNotification()
+                {
+                    Text = "Plugins loaded from the startup directory are discouraged because they are removed on game update. "
+                        + "Please move your plugins to the 'plugins' folder inside the osu! data directory."
+                });
+            }
+
+            bool hasPluginStillLoading = false;
+
+            lock (loadingTasks)
+            {
+                hasPluginStillLoading = loadingTasks.Any(t => !t.IsCompleted);
+            }
+
+            if (hasPluginStillLoading)
+            {
+                notification?.Post(new PluginNotification()
+                {
+                    Text = $"Plugin loading is taking longer than expected. "
+                        + "Some plugins may still be loading in the background. "
+                        + $"{loadedPlugins.Count} plugins have been loaded so far.",
+                });
+            }
+        }
+
+        game.PerformOnceFromScreen((_, newScreen) =>
+        {
+            if (newScreen is not MainMenu mainMenu)
+                return;
+
+            if (mainMenu.IsLoaded)
+                postNotifications(mainMenu);
+            else
+                mainMenu.OnLoadComplete += postNotifications;
+        }, new[] { typeof(MainMenu) });
     }
 
     private void scheduleBackground(Action action)
@@ -282,4 +305,12 @@ public partial class PluginManager : Drawable
     // intentially not use InternalVisibleTo so that loader can be decoupled from the plugin library.
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "enabled")]
     private static extern ref BindableBool GetPluginEnabled(OsuPlugin plugin);
+
+    private partial class PluginNotification : SimpleNotification
+    {
+        public PluginNotification()
+        {
+            Icon = FontAwesome.Solid.PuzzlePiece;
+        }
+    }
 }
