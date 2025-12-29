@@ -17,8 +17,6 @@ public partial class PluginManager : Drawable
     [Resolved]
     private OsuGame game { get; set; } = null!;
 
-    private bool hasPluginsFromStartupDirectory = false;
-
     private const string plugin_library_prefix = "osu.Plugin.";
 
     private readonly HashSet<Assembly> loadedAssemblies = new();
@@ -39,12 +37,13 @@ public partial class PluginManager : Drawable
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         loadPluginsFromAppDomain();
-        loadPluginsFromStorage(storage, false, "plugins");
+        loadPluginsFromStorage(storage, "plugins");
 
         // Place your plugins in the startup directory is a bad idea, they will be removed when the game updates.
         // This is generally for development purposes only.
-        loadPluginsFromDirectory(RuntimeInfo.StartupDirectory, true);
-        loadPluginsFromDirectory(AppContext.BaseDirectory, true);
+        bool hasPluginsFromStartupDirectory = false;
+        hasPluginsFromStartupDirectory |= loadPluginsFromDirectory(RuntimeInfo.StartupDirectory);
+        hasPluginsFromStartupDirectory |= loadPluginsFromDirectory(AppContext.BaseDirectory);
 
         // Sometimes the load action still blocks update thread,
         // so we explicitly offload to thread pool here.
@@ -119,8 +118,10 @@ public partial class PluginManager : Drawable
         }
     }
 
-    private void loadPluginsFromAppDomain()
+    private bool loadPluginsFromAppDomain()
     {
+        bool loadedAny = false;
+
         try
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -136,37 +137,43 @@ public partial class PluginManager : Drawable
                     || rulesetName.Contains(@"Tests"))
                     continue;
 
-                loadPluginAssembly(assembly, false);
+                loadedAny |= loadPluginAssembly(assembly);
             }
         }
         catch (Exception e)
         {
             Logger.Error(e, $"Unable to enumerate plugin assemblies from AppDomain");
         }
+
+        return loadedAny;
     }
 
-    private void loadPluginsFromDirectory(string directory, bool isFromStartupDirectory, string subPath = ".")
+    private bool loadPluginsFromDirectory(string directory, string subPath = ".")
     {
         try
         {
             if (!string.IsNullOrEmpty(directory) &&
                 Directory.Exists(directory))
             {
-                loadPluginsFromStorage(new NativeStorage(directory), isFromStartupDirectory, subPath);
+                return loadPluginsFromStorage(new NativeStorage(directory), subPath);
             }
         }
         catch (Exception e)
         {
             Logger.Error(e, $"Unable to enumerate plugin assemblies from startup path");
         }
+
+        return false;
     }
 
-    private void loadPluginsFromStorage(Storage storage, bool isFromStartupDirectory, string subPath = ".")
+    private bool loadPluginsFromStorage(Storage storage, string subPath = ".")
     {
+        bool loadedAny = false;
+
         try
         {
             if (subPath != "." && !storage.Exists(subPath))
-                return;
+                return false;
 
             var plugins = storage.GetFiles(subPath, "osu.Plugin.*.dll");
 
@@ -176,7 +183,7 @@ public partial class PluginManager : Drawable
 
                 if (assembly != null)
                 {
-                    loadPluginAssembly(assembly, isFromStartupDirectory);
+                    loadedAny |= loadPluginAssembly(assembly);
                 }
             }
         }
@@ -184,6 +191,8 @@ public partial class PluginManager : Drawable
         {
             Logger.Error(e, $"Unable to enumerate plugin assemblies.");
         }
+
+        return loadedAny;
     }
 
     private Assembly? loadAssemblyFromStorage(string path)
@@ -202,17 +211,19 @@ public partial class PluginManager : Drawable
         return null;
     }
 
-    private void loadPluginAssembly(Assembly assembly, bool isFromStartupDirectory)
+    private bool loadPluginAssembly(Assembly assembly)
     {
+        bool loadedAny = false;
+
         try
         {
             lock (loadedAssemblies)
             {
                 if (loadedAssemblies.Contains(assembly))
-                    return;
+                    return false;
 
                 if (loadedAssemblies.Any(a => a.FullName == assembly.FullName))
-                    return;
+                    return false;
 
                 loadedAssemblies.Add(assembly);
             }
@@ -225,13 +236,15 @@ public partial class PluginManager : Drawable
             foreach (var type in pluginTypes)
             {
                 scheduleBackground(() => instantiatePluginAndPerformLoad(type));
-                isFromStartupDirectory = true;
+                loadedAny = true;
             }
         }
         catch (Exception e)
         {
             Logger.Error(e, $"Failed to load plugin from assembly: {assembly.FullName}");
         }
+
+        return loadedAny;
     }
 
     private void instantiatePluginAndPerformLoad(Type pluginType)
