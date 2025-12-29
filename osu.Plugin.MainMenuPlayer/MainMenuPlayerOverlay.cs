@@ -59,6 +59,8 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
             }
         };
 
+        // technically this can be called from a non-update thread,
+        // but we want to skip update if we're not in main menu, so let's schedule it here for simplicity.
         beatmap.BindValueChanged(_ => schedule(updateBeatmapInfo));
 
         idleTracker?.IsIdle.BindValueChanged(v =>
