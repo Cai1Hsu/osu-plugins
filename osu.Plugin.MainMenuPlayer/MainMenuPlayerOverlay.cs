@@ -7,11 +7,14 @@ using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Platform;
+using osu.Framework.Screens;
 using osu.Game;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Input;
+using osu.Game.Plugins;
+using osu.Game.Screens;
 using osu.Game.Screens.Menu;
 using osuTK;
 
@@ -56,13 +59,13 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
             }
         };
 
-        beatmap.BindValueChanged(beatmapChanged, true);
+        beatmap.BindValueChanged(_ => schedule(updateBeatmapInfo));
 
         idleTracker?.IsIdle.BindValueChanged(v =>
         {
             if (v.NewValue)
             {
-                Scheduler.Add(() => showPlayer(ActiveState.ActiveByIdle));
+                schedule(() => showPlayer(ActiveState.ActiveByIdle));
             }
         });
 
@@ -71,19 +74,49 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
             if (buttonStateAllowsShowPlayer)
             {
                 // this is like a temporary show player until we regain focus
-                Scheduler.Add(() => showPlayer(ActiveState.ActiveByMouseMoveOut));
+                schedule(() => showPlayer(ActiveState.ActiveByMouseMoveOut));
             }
         };
+
+        osuScreenStack = game.GetScreenStack();
+    }
+
+    private OsuScreenStack osuScreenStack = null!;
+
+    private void newScreenArrives(IScreen _, IScreen screen)
+    {
+        if (screen is not MainMenu || !screen.IsCurrentScreen())
+            return;
+
+        prepare();
+    }
+
+    private void prepare()
+    {
+        // we have to update info first to make components' positions correct
+        updateBeatmapInfo();
 
         hidePlayer();
         finishTransformImmediately();
     }
 
+    private void schedule(Action action)
+    {
+        // if the menu is inactive, scheduler will not update, resulting actions queuing
+        // when returning to main menu, these actions will be performed all at once, making game unresponsive
+        if (!mainMenu.IsCurrentScreen())
+            return;
+
+        Scheduler.Add(action);
+    }
+
+    private MainMenu? mainMenu => Parent as MainMenu;
+
     protected override void LoadComplete()
     {
         base.LoadComplete();
 
-        if (Parent is MainMenu mainMenu)
+        if (mainMenu is not null)
             buttonSystem = GetMainMenuButtonSystem(mainMenu);
 
         if (buttonSystem is not null)
@@ -97,11 +130,23 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
                         break;
 
                     default:
-                        Scheduler.Add(restoreMenu);
+                        schedule(restoreMenu);
                         break;
                 }
             };
         }
+
+        // Setup initial state if we're already in main menu
+        if (mainMenu is not null && mainMenu.IsCurrentScreen())
+        {
+            if (mainMenu.IsLoaded)
+                prepare();
+            else
+                mainMenu.OnLoadComplete += _ => prepare();
+        }
+
+        osuScreenStack.ScreenPushed += newScreenArrives;
+        osuScreenStack.ScreenExited += newScreenArrives;
 
         [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "Buttons")]
         static extern ref ButtonSystem GetMainMenuButtonSystem(MainMenu mainMenu);
@@ -174,56 +219,53 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
     private static bool isBeatmapNonSelected(WorkingBeatmap beatmap)
         => beatmap is DummyWorkingBeatmap;
 
-    private void beatmapChanged(ValueChangedEvent<WorkingBeatmap> @event)
+    private void updateBeatmapInfo()
     {
-        var beatmap = @event.NewValue;
+        var beatmap = this.beatmap.Value;
 
-        Scheduler.Add(() =>
+        var metadata = beatmap.BeatmapInfo.Metadata;
+
+        bool isNonSelected = isBeatmapNonSelected(beatmap);
+        var cover = isNonSelected ? null : beatmap.GetBackground();
+
+        void updateInfo()
         {
-            var metadata = beatmap.BeatmapInfo.Metadata;
-
-            bool isNonSelected = isBeatmapNonSelected(beatmap);
-            var cover = isNonSelected ? null : beatmap.GetBackground();
-
-            void updateInfo()
+            if (isNonSelected)
             {
-                if (isNonSelected)
-                {
-                    trackMetadataPanel.Title.Text = "No Beatmap Selected";
-                    trackMetadataPanel.Artist.Text = "Unknown Artist";
-                    trackMetadataPanel.Source.Text = string.Empty;
-                }
-                else
-                {
-                    trackMetadataPanel.Title.Text = unicodeOrRomaji(metadata.TitleUnicode, metadata.Title);
-                    trackMetadataPanel.Artist.Text = unicodeOrRomaji(metadata.ArtistUnicode, metadata.Artist);
-                    trackMetadataPanel.Source.Text = metadata.Source;
-                }
-
-                if (cover is not null)
-                {
-                    trackMetadataPanel.Cover.CoverSprite.Texture = cover;
-                    trackMetadataPanel.Cover.FadeIn(transition_duration, Easing.OutQuint);
-                }
-                else
-                {
-                    trackMetadataPanel.Cover.FadeOut(transition_duration, Easing.OutQuint);
-                }
-            }
-
-            if (activeState is not ActiveState.Inactive)
-            {
-                trackMetadataPanel
-                    .FadeOut(transition_duration, Easing.InQuint)
-                    .Then()
-                    .Schedule(updateInfo)
-                    .FadeIn(transition_duration, Easing.OutQuint);
+                trackMetadataPanel.Title.Text = "No Beatmap Selected";
+                trackMetadataPanel.Artist.Text = "Unknown Artist";
+                trackMetadataPanel.Source.Text = string.Empty;
             }
             else
             {
-                updateInfo();
+                trackMetadataPanel.Title.Text = unicodeOrRomaji(metadata.TitleUnicode, metadata.Title);
+                trackMetadataPanel.Artist.Text = unicodeOrRomaji(metadata.ArtistUnicode, metadata.Artist);
+                trackMetadataPanel.Source.Text = metadata.Source;
             }
-        });
+
+            if (cover is not null)
+            {
+                trackMetadataPanel.Cover.CoverSprite.Texture = cover;
+                trackMetadataPanel.Cover.FadeIn(transition_duration, Easing.OutQuint);
+            }
+            else
+            {
+                trackMetadataPanel.Cover.FadeOut(transition_duration, Easing.OutQuint);
+            }
+        }
+
+        if (activeState is not ActiveState.Inactive)
+        {
+            trackMetadataPanel
+                .FadeOut(transition_duration, Easing.InQuint)
+                .Then()
+                .Schedule(updateInfo)
+                .FadeIn(transition_duration, Easing.OutQuint);
+        }
+        else
+        {
+            updateInfo();
+        }
     }
 
     private ActiveState activeState = ActiveState.Inactive;
@@ -287,6 +329,17 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
         osuLogo.FadeIn(transition_duration, Easing.OutQuint);
         game.Toolbar.Show();
         hidePlayer();
+    }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        if (isDisposing)
+        {
+            osuScreenStack.ScreenPushed -= newScreenArrives;
+            osuScreenStack.ScreenExited -= newScreenArrives;
+        }
     }
 
     private partial class TrackMetadataPanel : CompositeDrawable
