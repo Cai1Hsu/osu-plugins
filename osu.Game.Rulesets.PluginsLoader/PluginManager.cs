@@ -190,13 +190,13 @@ public partial class PluginManager : Drawable
         return false;
     }
 
-    private bool loadPluginsFromStorage(Storage storage, string subPath = ".")
+    private bool loadPluginsFromStorage(Storage storage, string subPath)
     {
         bool loadedAny = false;
 
         try
         {
-            if (subPath != "." && !storage.Exists(subPath))
+            if (!storage.ExistsDirectory(subPath))
                 return false;
 
             var plugins = storage.GetFiles(subPath, "osu.Plugin.*.dll");
