@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using osu.Framework.Allocation;
+using osu.Framework.Graphics;
 using osu.Framework.Logging;
 using osu.Framework.Screens;
 using osu.Framework.Threading;
@@ -17,37 +18,25 @@ public class MainMenuPlayerPlugin : OsuPlugin
         var game = (OsuGame)gameBase;
         var screenStack = GetScreenStack(game);
 
-        static void addOverlayToMainMenu(MainMenu mainMenu)
+        static void addOverlayToMainMenu(Drawable d)
         {
+            var mainMenu = (MainMenu)d;
+
             // TODO: Bind Enabled property
             mainMenu.AddInternal(new MainMenuPlayerOverlay());
             Logger.Log($"{nameof(MainMenuPlayerOverlay)} added to {nameof(MainMenu)}.");
         }
 
-        void newScreenArrives(IScreen _, IScreen newScreen)
+        game.PerformOnceFromScreen((_, screen) =>
         {
-            if (newScreen is not MainMenu mainMenu)
+            if (screen is not MainMenu mainMenu)
                 return;
 
-            scheduler.Add(() => addOverlayToMainMenu(mainMenu));
-
-            screenStack.ScreenPushed -= newScreenArrives;
-            screenStack.ScreenExited -= newScreenArrives;
-        }
-
-        // ensure we are on the update thread to keep events serialized.
-        scheduler.Add(() =>
-        {
-            if (screenStack.CurrentScreen is MainMenu mainMenu)
-            {
+            if (mainMenu.IsLoaded)
                 addOverlayToMainMenu(mainMenu);
-            }
             else
-            {
-                screenStack.ScreenPushed += newScreenArrives;
-                screenStack.ScreenExited += newScreenArrives;
-            }
-        });
+                mainMenu.OnLoadComplete += _ => addOverlayToMainMenu(mainMenu);
+        }, new[] { typeof(MainMenu) });
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "ScreenStack")]
