@@ -66,12 +66,34 @@ public partial class StableIntegrationManager : CompositeDrawable
 
     private void ensureStableMuted()
     {
-        if (!requestedMuteStable || inProgressMuteTask is not null)
+        if (!requestedMuteStable)
             return;
 
+        if (inProgressMuteTask is not null)
+        {
+            if (!inProgressMuteTask.IsCompleted)
+                return;
+
+            inProgressMuteTask = null;
+        }
+
         requestedMuteStable = false;
-        inProgressMuteTask = stableController?.MuteStable()
-            .ContinueWith(_ => inProgressMuteTask = null);
+
+        if (stableController is null)
+            return;
+
+        inProgressMuteTask = Task.Run(async () =>
+        {
+            try
+            {
+                await stableController.MuteStable()
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                inProgressMuteTask = null;
+            }
+        });
     }
 
     private static StableController? createStableController()

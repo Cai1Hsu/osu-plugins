@@ -247,8 +247,15 @@ public partial class WindowsStableController : StableController
         }
         else
         {
-            var task = p?.WaitForExitAsync() ?? Task.CompletedTask;
-            return task.ContinueWith(_ => focusStableWindow(existingStableProcess));
+            return p switch
+            {
+                null => Task.CompletedTask,
+                _ => Task.Run(async () =>
+                {
+                    await p.WaitForExitAsync().ConfigureAwait(false);
+                    focusStableWindow(existingStableProcess);
+                })
+            };
         }
     }
 
