@@ -68,6 +68,7 @@ public partial class PluginManager : Drawable
                     notification?.Post(new PluginNotification
                     {
                         Text = loadedMessage,
+                        Transient = true
                     });
                 }
             }
@@ -100,7 +101,8 @@ public partial class PluginManager : Drawable
                 notification?.Post(new PluginNotification()
                 {
                     Text = "Plugins loaded from the startup directory are discouraged because they are removed on game update. "
-                        + "Please move your plugins to the 'plugins' folder inside the osu! data directory."
+                        + "Please move your plugins to the 'plugins' folder inside the osu! data directory.",
+                    IconColour = Colour4.Orange,
                 });
             }
 
@@ -118,6 +120,7 @@ public partial class PluginManager : Drawable
                     Text = $"Plugin loading is taking longer than expected. "
                         + "Some plugins may still be loading in the background. "
                         + $"{loadedPlugins.Count} plugins have been loaded so far.",
+                    Transient = true,
                 });
             }
         }
