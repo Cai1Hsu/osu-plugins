@@ -39,7 +39,11 @@ public partial class StableIntegrationManager : CompositeDrawable
     {
         base.LoadComplete();
 
-        host.Activated += () => requestedMuteStable = true;
+        host.Activated += () =>
+        {
+            if (IsMusicPlaying?.Value is false)
+                requestedMuteStable = true;
+        };
 
         // TODO: an option?
         IsMusicPlaying?.BindValueChanged(v =>
