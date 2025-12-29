@@ -131,7 +131,8 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
                 mousePos.Y >= parentBottomRight.Y - edge_threshold ||
                 // this may seem weird, but it's possible if the game is scaled
                 mousePos.X <= parentTopLeft.X + edge_threshold ||
-                mousePos.Y <= parentTopLeft.Y + edge_threshold)
+                // Removed the threshold here to prevent conflict with Toolbar
+                mousePos.Y <= parentTopLeft.Y)
             {
                 showPlayer(ActiveState.ActiveByMouseMoveOut);
             }
