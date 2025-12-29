@@ -75,7 +75,7 @@ public partial class PluginManager : Drawable
                 lock (loadingTasks)
                 {
                     loadingTasks.Clear();
-                    loadingTasks = null!;
+                    // we have to keep the list reference around as some tasks may still be observing it.
                 }
             }
         });
