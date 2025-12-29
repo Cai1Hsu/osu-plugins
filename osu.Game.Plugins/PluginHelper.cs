@@ -1,9 +1,12 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using osu.Framework.Allocation;
+using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Screens;
 using osu.Framework.Threading;
+using osu.Game.Screens;
 
 namespace osu.Game.Plugins;
 
@@ -41,6 +44,57 @@ public static class PluginHelper
         dependencies.CacheAs(instance);
         return true;
     }
+
+    public static void PerformOnceFromScreen(this OsuGame game, Action<IScreen, IScreen> action, IEnumerable<Type>? screenTypes = null)
+    {
+        screenTypes ??= Array.Empty<Type>();
+
+        bool IsValidType(Type type)
+        {
+            bool hasAny = false;
+
+            foreach (var t in screenTypes)
+            {
+                hasAny = true;
+
+                if (t == type)
+                    return true;
+            }
+
+            // If no types were specified, consider all types as valid.
+            return !hasAny;
+        }
+
+        var screenStack = game.GetScreenStack();
+        var currentScreen = screenStack.CurrentScreen;
+
+        if (IsValidType(currentScreen.GetType()))
+        {
+            // TODO: Can we invoke immediately?
+            if (ThreadSafety.IsUpdateThread)
+                action(currentScreen, currentScreen);
+            else
+                game.GetScheduler().Add(() => action(currentScreen, currentScreen));
+            return;
+        }
+
+        void newScreenArrives(IScreen oldScreen, IScreen newScreen)
+        {
+            if (!IsValidType(newScreen.GetType()))
+                return;
+
+            screenStack.ScreenPushed -= newScreenArrives;
+            screenStack.ScreenExited -= newScreenArrives;
+
+            action(oldScreen, newScreen);
+        }
+
+        screenStack.ScreenPushed += newScreenArrives;
+        screenStack.ScreenExited += newScreenArrives;
+    }
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "ScreenStack")]
+    public static extern ref OsuScreenStack GetScreenStack(this OsuGame game);
 
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "AddInternal")]
     public static extern void AddInternal(this CompositeDrawable composite, Drawable drawable);
