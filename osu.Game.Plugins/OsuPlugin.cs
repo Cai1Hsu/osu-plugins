@@ -5,6 +5,10 @@ namespace osu.Game.Plugins;
 
 public abstract class OsuPlugin
 {
+    public OsuPlugin()
+    {
+    }
+
     /// <summary>
     /// The display name of the plugin.
     /// </summary>
