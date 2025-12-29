@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Game.Rulesets.PluginsLo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Plugin.MainMenuPlayer", "osu.Plugin.MainMenuPlayer\osu.Plugin.MainMenuPlayer.csproj", "{91C17E0F-0F72-4F7C-A29E-7AF93706EBF9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Plugin.StableIntegration", "osu.Plugin.StableIntegration\osu.Plugin.StableIntegration.csproj", "{1EC5CE00-1D11-4554-839D-AE20F1444707}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{91C17E0F-0F72-4F7C-A29E-7AF93706EBF9}.Release|x64.Build.0 = Release|Any CPU
 		{91C17E0F-0F72-4F7C-A29E-7AF93706EBF9}.Release|x86.ActiveCfg = Release|Any CPU
 		{91C17E0F-0F72-4F7C-A29E-7AF93706EBF9}.Release|x86.Build.0 = Release|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Debug|x64.Build.0 = Debug|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Debug|x86.Build.0 = Debug|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Release|x64.ActiveCfg = Release|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Release|x64.Build.0 = Release|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Release|x86.ActiveCfg = Release|Any CPU
+		{1EC5CE00-1D11-4554-839D-AE20F1444707}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
