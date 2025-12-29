@@ -172,9 +172,7 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
     private static string unicodeOrRomaji(string unicode, string romaji) => string.IsNullOrEmpty(unicode) ? romaji : unicode;
 
     private static bool isBeatmapNonSelected(WorkingBeatmap beatmap)
-        // FIXME: This may not cover all non-selected cases.
-        // But whatever, as long as osu ruleset is loaded, there will always be at least one beatmap.
-        => !beatmap.BeatmapSetInfo.IsManaged && beatmap.BeatmapSetInfo.Beatmaps.Count is 0;
+        => beatmap is DummyWorkingBeatmap;
 
     private void beatmapChanged(ValueChangedEvent<WorkingBeatmap> @event)
     {
@@ -185,7 +183,7 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
             var metadata = beatmap.BeatmapInfo.Metadata;
 
             bool isNonSelected = isBeatmapNonSelected(beatmap);
-            var cover = beatmap.GetBackground();
+            var cover = isNonSelected ? null : beatmap.GetBackground();
 
             void updateInfo()
             {
@@ -193,7 +191,7 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
                 {
                     trackMetadataPanel.Title.Text = "No Beatmap Selected";
                     trackMetadataPanel.Artist.Text = "Unknown Artist";
-                    trackMetadataPanel.Source.Text = "-";
+                    trackMetadataPanel.Source.Text = string.Empty;
                 }
                 else
                 {
