@@ -19,6 +19,8 @@ public class StableIntegrationPlugin : OsuPlugin
     {
         OsuGame game = (OsuGame)gameBase;
 
+        // SAFETY: The game instance is updated before songSelect,
+        // so we assume `StableIntegrationManager` is cached before resolution
         registerFooterButtonHook();
         scheduler.Add(() =>
         {
