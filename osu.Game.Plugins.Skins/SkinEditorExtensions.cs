@@ -35,6 +35,11 @@ public static class SkinEditorExtensions
             throw new ArgumentException($"The following types are not valid skin component: {string.Join(", ", invalidTypes.Select(t => t.Name))}", nameof(componentTypes));
         }
 
+        // editor instance sometimes gets recreated, but sometimes not
+        // so we keep a reference to the last seen instance to avoid redundant registrations
+        // use weak reference to avoid memory leak
+        WeakReference<SkinEditor>? lastSkinEditor = null;
+
         // simple event registration is safe to execute outside of update thread, same as below
         skinEditorOverlay.InvokeWhenReady(registerOverlayActiveEvent, false);
 
@@ -42,11 +47,6 @@ public static class SkinEditorExtensions
         {
             var skinEditorOverlay = (SkinEditorOverlay)d;
             var overlayScheduler = skinEditorOverlay.GetScheduler();
-
-            // editor instance sometimes gets recreated, but sometimes not
-            // so we keep a reference to the last seen instance to avoid redundant registrations
-            // use weak reference to avoid memory leak
-            WeakReference<SkinEditor>? lastSkinEditor = null;
 
             skinEditorOverlay.State.BindValueChanged(v =>
             {
@@ -56,100 +56,101 @@ public static class SkinEditorExtensions
                 // SAFETY: we expect we expect the overlay's `PopIn` is triggered by the value changed event,
                 // and we expect our code to be executed after the overlay's.
                 overlayScheduler.Add(handleNewSkinEditor);
+            });
+        }
 
-                // SkinEditor is recreated new each time the overlay is shown, so we need to re-register our event each time.
-                void handleNewSkinEditor()
+        // SkinEditor is recreated new each time the overlay is shown, so we need to re-register our event each time.
+        void handleNewSkinEditor()
+        {
+            var skinEditor = skinEditorOverlay.getInternalSkinEditor();
+
+            if (skinEditor is null)
+                return;
+
+            // We've already registered for this SkinEditor instance, skip.
+            if (lastSkinEditor is not null &&
+                lastSkinEditor.TryGetTarget(out var existing) &&
+                ReferenceEquals(existing, skinEditor))
+                return;
+
+            lastSkinEditor = new WeakReference<SkinEditor>(skinEditor);
+
+            // Wait until SkinEditor is loaded so that our event will be invoked after skinEditor's.
+            // We don't want modifications to `selectedTarget` during skin editor's loading phase.
+            skinEditor.InvokeWhenReady(registerSkinTargetEvent, false);
+
+        }
+
+        void registerTypeToSidebar(Container<EditorSidebarSection> componentsSidebar)
+        {
+            foreach (var child in componentsSidebar.Children)
+            {
+                if (child is not SkinComponentToolbox section)
+                    continue;
+
+                RulesetInfo? ruleset = section.getInternalRuleset();
+
+                if (ruleset is null != lookup.Ruleset is null)
+                    continue;
+
+                if (ruleset is not null && !ruleset.Equals(lookup.Ruleset))
+                    continue;
+
+                foreach (var componentType in componentTypes)
                 {
-                    var skinEditor = skinEditorOverlay.getInternalSkinEditor();
-
-                    if (skinEditor is null)
-                        return;
-
-                    // We've already registered for this SkinEditor instance, skip.
-                    if (lastSkinEditor is not null &&
-                        lastSkinEditor.TryGetTarget(out var existing) &&
-                        ReferenceEquals(existing, skinEditor))
-                        return;
-
-                    lastSkinEditor = new WeakReference<SkinEditor>(skinEditor);
-
-                    // Wait until SkinEditor is loaded so that our event will be invoked after skinEditor's.
-                    // We don't want modifications to `selectedTarget` during skin editor's loading phase.
-                    skinEditor.InvokeWhenReady(registerSkinTargetEvent, false);
-
-                    void registerTypeToSidebar(Container<EditorSidebarSection> componentsSidebar)
+                    // Exceptions are caught inside `attemptAddComponent` so our try seems redundant.
+                    // Keep it anyway in case the internal implementation changes in the future.
+                    try
                     {
-                        foreach (var child in componentsSidebar.Children)
-                        {
-                            if (child is not SkinComponentToolbox section)
-                                continue;
-
-                            RulesetInfo? ruleset = section.getInternalRuleset();
-
-                            if (ruleset is null != lookup.Ruleset is null)
-                                continue;
-
-                            if (ruleset is not null && !ruleset.Equals(lookup.Ruleset))
-                                continue;
-
-                            foreach (var componentType in componentTypes)
-                            {
-                                // Exceptions are caught inside `attemptAddComponent` so our try seems redundant.
-                                // Keep it anyway in case the internal implementation changes in the future.
-                                try
-                                {
-                                    section.attemptAddComponentToolbox(componentType);
-                                }
-                                catch
-                                {
-                                    // ignore, as the developer/user can see their types are not added in the toolbox.
-                                }
-                            }
-                        }
+                        section.attemptAddComponentToolbox(componentType);
                     }
-
-                    void registerSkinTargetEvent(Drawable d)
+                    catch
                     {
-                        var skinEditor = (SkinEditor)d;
-                        var componentsSidebar = skinEditor.getInternalComponentsSidebar();
-
-                        if (componentsSidebar is null)
-                            return;
-
-                        var selectedTarget = skinEditor.getInternalSelectedTarget();
-                        var skinEditorScheduler = skinEditor.GetScheduler();
-
-                        // The initial bind to UI triggers our event,
-                        // this does not help as the toolbox is not yet ready at this point.
-                        // so we keep track of the last lookup to avoid redundant registrations
-                        // and also ensure our registration actually works.
-                        GlobalSkinnableContainers? lastLookup = null;
-
-                        selectedTarget.BindValueChanged(v =>
-                        {
-                            // Ruleset is not considered in target selection, so we only need to check Lookup equality.
-                            // Ruleset is later compared inside `registerTypeToSidebar`.
-                            // same as below
-                            if (v.NewValue?.Lookup == lastLookup)
-                                return;
-
-                            lastLookup = v.NewValue?.Lookup;
-
-                            if (v.NewValue is not null && v.NewValue.Lookup == lookup.Lookup)
-                            {
-                                // SAFETY: This hack relies on our code being excuted after the skinEditor's
-                                // and we expect toolboxes are recreated the next frame after target change.
-                                // Also, schedule allows our code to be executed on the update thread,
-                                // which is required for modifying the sidebar.
-                                skinEditorScheduler.Add(() =>
-                                {
-                                    registerTypeToSidebar(componentsSidebar);
-                                });
-                            }
-                        }, true);
+                        // ignore, as the developer/user can see their types are not added in the toolbox.
                     }
                 }
-            });
+            }
+        }
+
+        void registerSkinTargetEvent(Drawable d)
+        {
+            var skinEditor = (SkinEditor)d;
+            var componentsSidebar = skinEditor.getInternalComponentsSidebar();
+
+            if (componentsSidebar is null)
+                return;
+
+            var selectedTarget = skinEditor.getInternalSelectedTarget();
+            var skinEditorScheduler = skinEditor.GetScheduler();
+
+            // The initial bind to UI triggers our event,
+            // this does not help as the toolbox is not yet ready at this point.
+            // so we keep track of the last lookup to avoid redundant registrations
+            // and also ensure our registration actually works.
+            GlobalSkinnableContainers? lastLookup = null;
+
+            selectedTarget.BindValueChanged(v =>
+            {
+                // Ruleset is not considered in target selection, so we only need to check Lookup equality.
+                // Ruleset is later compared inside `registerTypeToSidebar`.
+                // same as below
+                if (v.NewValue?.Lookup == lastLookup)
+                    return;
+
+                lastLookup = v.NewValue?.Lookup;
+
+                if (v.NewValue is not null && v.NewValue.Lookup == lookup.Lookup)
+                {
+                    // SAFETY: This hack relies on our code being excuted after the skinEditor's
+                    // and we expect toolboxes are recreated the next frame after target change.
+                    // Also, schedule allows our code to be executed on the update thread,
+                    // which is required for modifying the sidebar.
+                    skinEditorScheduler.Add(() =>
+                    {
+                        registerTypeToSidebar(componentsSidebar);
+                    });
+                }
+            }, true);
         }
     }
 
