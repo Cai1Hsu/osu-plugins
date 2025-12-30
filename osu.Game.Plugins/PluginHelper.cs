@@ -164,6 +164,28 @@ public static class PluginHelper
         PerformOnceInternal(game.GetScreenStack(), action, shouldInvoke);
     }
 
+    public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, bool requiresUpdateThread = true)
+    {
+        switch (drawable.IsLoaded)
+        {
+            case true when !requiresUpdateThread || ThreadSafety.IsUpdateThread:
+                action(drawable);
+                break;
+
+            case true:
+                // if the subtree the drawable is in is inactive,
+                // this could result in action queuing.
+                // We assume the caller is aware of this.
+                var scheduler = drawable.GetScheduler();
+                scheduler.Add(() => action(drawable));
+                break;
+
+            default:
+                drawable.OnLoadComplete += d => action(d);
+                break;
+        }
+    }
+
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "ScreenStack")]
     public static extern ref OsuScreenStack GetScreenStack(this OsuGame game);
 
