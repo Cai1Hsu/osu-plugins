@@ -7,12 +7,10 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Sprites;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
 using osu.Game.Overlays;
-using osu.Game.Overlays.Notifications;
 using osu.Game.Plugins;
 using osu.Game.Screens;
 using osu.Game.Screens.Menu;
@@ -306,12 +304,4 @@ public partial class PluginManager : Drawable
     // intentially not use InternalVisibleTo so that loader can be decoupled from the plugin library.
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "enabled")]
     private static extern ref BindableBool GetPluginEnabled(OsuPlugin plugin);
-
-    private partial class PluginNotification : SimpleNotification
-    {
-        public PluginNotification()
-        {
-            Icon = FontAwesome.Solid.PuzzlePiece;
-        }
-    }
 }
