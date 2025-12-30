@@ -166,15 +166,17 @@ public static class PluginHelper
                 break;
 
             case true:
+                void scheduleAction() => action(drawable);
+
                 // if the subtree the drawable is in is inactive,
                 // this could result in action queuing.
                 // We assume the caller is aware of this.
                 var scheduler = drawable.GetScheduler();
-                scheduler.Add(() => action(drawable));
+                scheduler.Add(scheduleAction);
                 break;
 
             default:
-                drawable.OnLoadComplete += d => action(d);
+                drawable.OnLoadComplete += action;
                 break;
         }
     }
