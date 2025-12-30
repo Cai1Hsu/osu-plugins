@@ -45,17 +45,83 @@ public static class PluginHelper
         return true;
     }
 
+    public delegate void ScreenSwitchedDelegate(IScreen oldScreen, IScreen newScreen);
+
+    static void PerformOnceInternal(ScreenStack screenStack, ScreenSwitchedDelegate action, Func<Type, bool> shouldInvoke)
+    {
+        var currentScreen = screenStack.CurrentScreen;
+
+        if (currentScreen is not null && shouldInvoke(currentScreen.GetType()))
+        {
+            switch (currentScreen)
+            {
+                case Drawable d when !d.IsLoaded:
+                    d.OnLoadComplete += _ => action(currentScreen, currentScreen);
+                    break;
+
+                // TODO: Can we invoke immediately?
+                case { } when ThreadSafety.IsUpdateThread:
+                    action(currentScreen, currentScreen);
+                    break;
+
+                default:
+                    var scheduler = currentScreen is Drawable drawable
+                        ? drawable.GetScheduler()
+                        : screenStack.GetScheduler();
+                    // SAFETY: currentScreen is non-null guarded by the outer if condition.
+                    scheduler.Add(() => action(currentScreen!, currentScreen!));
+                    break;
+            }
+        }
+        else
+        {
+            screenStack.ScreenPushed += newScreenArrives;
+            screenStack.ScreenExited += newScreenArrives;
+        }
+
+        void newScreenArrives(IScreen oldScreen, IScreen newScreen)
+        {
+            if (newScreen is null)
+                return;
+
+            if (!shouldInvoke(newScreen.GetType()))
+                return;
+
+            if (newScreen != screenStack.CurrentScreen)
+                return;
+
+            // Unregister immediately to ensure single invocation.
+            // events are fired on the update thread, so sequential invocations are safe.
+            screenStack.ScreenPushed -= newScreenArrives;
+            screenStack.ScreenExited -= newScreenArrives;
+
+            if (newScreen is Drawable drawable)
+            {
+                if (drawable.IsLoaded)
+                    action(oldScreen, newScreen);
+                else
+                    drawable.OnLoadComplete += _ => action(oldScreen, newScreen);
+            }
+            else
+            {
+                // invoke immediately, this event is invoked on the update thread
+                // we assume the screen is ready to use at this point
+                action(oldScreen, newScreen);
+            }
+        }
+    }
+
     /// <summary>
     /// Performs an action once when the current screen or the next pushed/exited screen is of a specified type.
     /// </summary>
     /// <param name="game">The game instance.</param>
     /// <param name="action">The action to perform. The parameters are the old screen and the new screen.</param>
     /// <param name="screenTypes">The types of screens to listen for. If null or empty, all screen types are considered valid. Types are compared by exact type match.</param>
-    public static void PerformOnceFromScreen(this OsuGame game, Action<IScreen, IScreen> action, IEnumerable<Type>? screenTypes = null)
+    public static void PerformOnceFromScreen(this OsuGame game, ScreenSwitchedDelegate action, IEnumerable<Type>? screenTypes = null)
     {
-        screenTypes ??= Array.Empty<Type>();
+        screenTypes ??= Type.EmptyTypes;
 
-        bool IsValidType(Type type)
+        bool shouldInvoke(Type type)
         {
             bool hasAny = false;
 
@@ -71,32 +137,7 @@ public static class PluginHelper
             return !hasAny;
         }
 
-        var screenStack = game.GetScreenStack();
-        var currentScreen = screenStack.CurrentScreen;
-
-        if (IsValidType(currentScreen.GetType()))
-        {
-            // TODO: Can we invoke immediately?
-            if (ThreadSafety.IsUpdateThread)
-                action(currentScreen, currentScreen);
-            else
-                game.GetScheduler().Add(() => action(currentScreen, currentScreen));
-            return;
-        }
-
-        void newScreenArrives(IScreen oldScreen, IScreen newScreen)
-        {
-            if (!IsValidType(newScreen.GetType()))
-                return;
-
-            screenStack.ScreenPushed -= newScreenArrives;
-            screenStack.ScreenExited -= newScreenArrives;
-
-            action(oldScreen, newScreen);
-        }
-
-        screenStack.ScreenPushed += newScreenArrives;
-        screenStack.ScreenExited += newScreenArrives;
+        PerformOnceInternal(game.GetScreenStack(), action, shouldInvoke);
     }
 
     /// <summary>
@@ -105,47 +146,22 @@ public static class PluginHelper
     /// <param name="game">The game instance.</param>
     /// <param name="action">The action to perform. The parameters are the old screen and the new screen.</param>
     /// <param name="banTypes">The types of screens to exclude. If null or empty, no screen types are excluded. Types are compared by assignability.</param>
-    public static void PerformOnceExcludeScreen(this OsuGame game, Action<IScreen, IScreen> action, IEnumerable<Type>? banTypes = null)
+    public static void PerformOnceExcludeScreen(this OsuGame game, ScreenSwitchedDelegate action, IEnumerable<Type>? banTypes = null)
     {
-        banTypes ??= Array.Empty<Type>();
+        banTypes ??= Type.EmptyTypes;
 
-        bool IsExcludedType(Type type)
+        bool shouldInvoke(Type type)
         {
             foreach (var t in banTypes)
             {
                 if (t.IsAssignableFrom(type))
-                    return true;
+                    return false;
             }
 
-            return false;
+            return true;
         }
 
-        var screenStack = game.GetScreenStack();
-        var currentScreen = screenStack.CurrentScreen;
-
-        if (!IsExcludedType(currentScreen.GetType()))
-        {
-            // TODO: Can we invoke immediately?
-            if (ThreadSafety.IsUpdateThread)
-                action(currentScreen, currentScreen);
-            else
-                game.GetScheduler().Add(() => action(currentScreen, currentScreen));
-            return;
-        }
-
-        void newScreenArrives(IScreen oldScreen, IScreen newScreen)
-        {
-            if (IsExcludedType(newScreen.GetType()))
-                return;
-
-            screenStack.ScreenPushed -= newScreenArrives;
-            screenStack.ScreenExited -= newScreenArrives;
-
-            action(oldScreen, newScreen);
-        }
-
-        screenStack.ScreenPushed += newScreenArrives;
-        screenStack.ScreenExited += newScreenArrives;
+        PerformOnceInternal(game.GetScreenStack(), action, shouldInvoke);
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "ScreenStack")]
