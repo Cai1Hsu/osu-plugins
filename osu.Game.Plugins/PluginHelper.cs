@@ -96,18 +96,11 @@ public static class PluginHelper
             screenStack.ScreenExited -= newScreenArrives;
 
             if (newScreen is Drawable drawable)
-            {
-                if (drawable.IsLoaded)
-                    action(oldScreen, newScreen);
-                else
-                    drawable.OnLoadComplete += _ => action(oldScreen, newScreen);
-            }
+                drawable.InvokeWhenReady(_ => action(oldScreen, newScreen));
             else
-            {
                 // invoke immediately, this event is invoked on the update thread
                 // we assume the screen is ready to use at this point
                 action(oldScreen, newScreen);
-            }
         }
     }
 

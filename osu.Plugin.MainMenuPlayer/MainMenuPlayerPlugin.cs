@@ -32,10 +32,7 @@ public class MainMenuPlayerPlugin : OsuPlugin
             if (screen is not MainMenu mainMenu)
                 return;
 
-            if (mainMenu.IsLoaded)
-                addOverlayToMainMenu(mainMenu);
-            else
-                mainMenu.OnLoadComplete += _ => addOverlayToMainMenu(mainMenu);
+            mainMenu.InvokeWhenReady(addOverlayToMainMenu);
         }, new[] { typeof(MainMenu) });
     }
 

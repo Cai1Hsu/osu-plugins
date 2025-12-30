@@ -141,10 +141,7 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
         // Setup initial state if we're already in main menu
         if (mainMenu is not null && mainMenu.IsCurrentScreen())
         {
-            if (mainMenu.IsLoaded)
-                prepare();
-            else
-                mainMenu.OnLoadComplete += _ => prepare();
+            mainMenu.InvokeWhenReady(_ => prepare());
         }
 
         osuScreenStack.ScreenPushed += newScreenArrives;

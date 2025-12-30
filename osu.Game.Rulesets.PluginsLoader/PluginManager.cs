@@ -130,10 +130,7 @@ public partial class PluginManager : Drawable
             if (newScreen is not Drawable drawable)
                 return;
 
-            if (drawable.IsLoaded)
-                postNotifications(drawable);
-            else
-                drawable.OnLoadComplete += postNotifications;
+            drawable.InvokeWhenReady(postNotifications);
         }, new[] { typeof(Loader), typeof(IntroScreen) });
     }
 

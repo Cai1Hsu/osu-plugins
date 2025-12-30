@@ -21,18 +21,11 @@ partial class OsuHook : CompositeDrawable
         if (rulesetConfig == null || ruleset == null)
             return;
 
-        if (game.IsLoaded)
-        {
-            var gameScheduler = game.GetScheduler();
-            gameScheduler.Add(performHook);
-        }
-        else
-        {
-            game.OnLoadComplete += _ => performHook();
-        }
+        game.InvokeWhenReady(performHook);
 
-        void performHook()
+        void performHook(Drawable d)
         {
+            var game = (OsuGame)d;
             bool injected = game.InjectDependencies(out PluginManager _, () => new());
 
             if (injected)

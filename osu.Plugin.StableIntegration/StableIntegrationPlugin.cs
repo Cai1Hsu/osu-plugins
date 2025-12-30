@@ -77,10 +77,7 @@ public class StableIntegrationPlugin : OsuPlugin
                 if (screen is not SongSelectV2 songSelect)
                     return;
 
-                if (songSelect.IsLoaded)
-                    addButtonToScreenFooter(songSelect);
-                else
-                    songSelect.OnLoadComplete += addButtonToScreenFooter;
+                songSelect.InvokeWhenReady(addButtonToScreenFooter);
             }
 
             ScreenStack screenStack = GetScreenStack(game);
