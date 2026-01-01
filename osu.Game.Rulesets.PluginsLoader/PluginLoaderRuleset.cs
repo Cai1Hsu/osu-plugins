@@ -160,7 +160,9 @@ public class PluginLoaderRuleset : Ruleset
         }
     }
 
-    private static FieldInfo? logger_new_entry_field = null;
+    private static FieldInfo? logger_new_entry_field = typeof(Logger)
+        .GetField("NewEntry", BindingFlags.Static | BindingFlags.Public);
+
     private static OsuGame? RetrieveCurrentOsuGame()
     {
         [UnsafeAccessor(UnsafeAccessorKind.StaticField, Name = "NewEntry")]
@@ -183,14 +185,10 @@ public class PluginLoaderRuleset : Ruleset
         // it has some unsafe assumptions about the game & launcher's implementation.
         // Like, the invocation order only reflects the creation order of OsuGame instances.
         return (tryRetrieveLoggerHandler(() => GetLoggerNewEntryEventHandler(null!)) ??
-               tryRetrieveLoggerHandler(() =>
-               {
-                   // Reflection is slow, but at least faster than scanning fields.
-                   // we still want to fallback to reflection as unsafe accessor is known to be unsupported on android/iOS.
-                   // See type initialzer for more details.
-                   return (logger_new_entry_field ??= typeof(Logger).GetField("NewEntry", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))?
-                       .GetValue(null) is Action<LogEntry> del ? del : null;
-               }))?
+               // Reflection is slow, but at least faster than scanning fields.
+               // we still want to fallback to reflection as unsafe accessor is known to be unsupported on android/iOS.
+               // See type initialzer for more details.
+               tryRetrieveLoggerHandler(() => logger_new_entry_field?.GetValue(null) as Action<LogEntry>))?
                .GetInvocationList()
                .Select(d => d.Target)
                .OfType<OsuGame>()
