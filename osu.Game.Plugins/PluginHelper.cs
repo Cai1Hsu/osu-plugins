@@ -207,7 +207,7 @@ public static class PluginHelper
             .SelectMany(d => d?.GetInvocationList() ?? Array.Empty<Delegate>())
             .Select(d => d.Target)
             // Note that although usually only one game instance exists, testing environments may have multiple.
-            // We leave the deduplication to the caller.
+            // We leave the choice to the caller to decide how to handle multiple instances.
             .OfType<Framework.Game>()
             .Distinct() // distinct at last to avoid unnecessary overhead in earlier steps
             .ToArray();
