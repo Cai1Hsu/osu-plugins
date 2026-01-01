@@ -14,11 +14,18 @@
     <ProjectReference Include="..\osu.Plugin.Template\osu.Plugin.Template.csproj" />
     <ProjectReference Include="..\osu.Plugin.MainMenuPlayer\osu.Plugin.MainMenuPlayer.csproj" />
     <ProjectReference Include="..\osu.Plugin.StableIntegration\osu.Plugin.StableIntegration.csproj" />
+    <ProjectReference Include="..\osu.Plugin.SpriteErrorMeter\osu.Plugin.SpriteErrorMeter.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ppy.osu.Game" Version="2025.1209.0" />
     <!-- for test purpose, can be commented if unnecessary -->
     <PackageReference Include="ppy.osu.Game.Rulesets.Osu" Version="2025.1209.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Package References">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
   </ItemGroup>
 </Project>
