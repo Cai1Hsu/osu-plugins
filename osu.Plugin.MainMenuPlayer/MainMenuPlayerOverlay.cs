@@ -207,9 +207,21 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
         return base.OnMouseDown(e);
     }
 
-    protected override bool OnKeyDown(KeyDownEvent e)
+    protected override bool OnTouchDown(TouchDownEvent e)
     {
         tryRecoverFromInput();
+        return base.OnTouchDown(e);
+    }
+
+    protected override bool OnKeyDown(KeyDownEvent e)
+    {
+        // Ignore modifier key presses
+        if (!(e.AltPressed ||
+            e.ControlPressed ||
+            e.SuperPressed ||
+            e.SuperPressed))
+            tryRecoverFromInput();
+
         return base.OnKeyDown(e);
     }
 
