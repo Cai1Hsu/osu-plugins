@@ -218,21 +218,6 @@ public partial class PluginLoaderRuleset : Ruleset
 
     private OsuGame? RetrieveCurrentOsuGame()
     {
-        [UnsafeAccessor(UnsafeAccessorKind.StaticField, Name = "NewEntry")]
-        static extern ref Action<LogEntry> GetLoggerNewEntryEventHandler(Logger _);
-
-        static Action<LogEntry>? tryRetrieveLoggerHandler(Func<Action<LogEntry>?> retrievalMethod)
-        {
-            try
-            {
-                return retrievalMethod();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
         var ourAssembly = Assembly.GetExecutingAssembly();
 
         bool IsUnprocessedGame(OsuGame game)
@@ -260,17 +245,11 @@ public partial class PluginLoaderRuleset : Ruleset
         }
 
         Debug.Assert(game_ruleset_store_prop is not null);
+        Debug.Assert(loadedAssemblies_field is not null);
+        Debug.Assert(availableRulesets_field is not null);
 
-        // SAFETY:
-        // This is our primary way of initially getting the current OsuGame instance,
-        return (tryRetrieveLoggerHandler(() => GetLoggerNewEntryEventHandler(null!)) ??
-               // Reflection is slow, but at least faster than scanning fields.
-               // we still want to fallback to reflection as unsafe accessor is known to be unsupported on android/iOS.
-               // See type initialzer for more details.
-               tryRetrieveLoggerHandler(() => logger_new_entry_field?.GetValue(null) as Action<LogEntry>))?
-               .GetInvocationList()
-               .Select(d => d.Target)
-               .OfType<OsuGame>()
+        return PluginHelper.GetGameStatically()
+                .OfType<OsuGame>()
                // We are on the update thread, so the first one is the calling one.               
                .FirstOrDefault(IsUnprocessedGame);
     }
