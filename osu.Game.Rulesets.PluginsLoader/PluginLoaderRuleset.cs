@@ -183,8 +183,6 @@ public partial class PluginLoaderRuleset : Ruleset
 
             Debug.Assert(!processed_games.Contains(game));
 
-            processed_games.Add(game);
-
             drawable_disposed_event.Invoke(game, new[] { () =>
             {
                 lock (processed_games)
@@ -192,6 +190,8 @@ public partial class PluginLoaderRuleset : Ruleset
                     processed_games.Remove(game);
                 }
             } });
+
+            processed_games.Add(game);
         }
 
         return true;
