@@ -123,29 +123,13 @@ public partial class PluginLoaderRuleset : Ruleset
 
     private static void PerformStaticGameInjection(OsuGame game)
     {
-        static void logFailure(Exception ex)
-        {
-            Logger.Log($"Failed to perform static game injection: {ex.Message}. Plugins manager will not function.", LoggingTarget.Runtime, LogLevel.Error);
-        }
-
         try
         {
-            game.InvokeWhenReady(d =>
-            {
-                try
-                {
-                    var game = (OsuGame)d;
-                    game.InjectDependencies<PluginManager>(out var _, () => new());
-                }
-                catch (Exception ex)
-                {
-                    logFailure(ex);
-                }
-            }, true);
+            game.PerformPluginsLoad();
         }
         catch (Exception ex)
         {
-            logFailure(ex);
+            Logger.Log($"Failed to perform static game injection: {ex.Message}. Plugins manager will not function.", LoggingTarget.Runtime, LogLevel.Error);
         }
     }
 
@@ -263,16 +247,12 @@ public partial class PluginLoaderRuleset : Ruleset
 
     public override IEnumerable<Mod> GetModsFor(ModType type) => Array.Empty<Mod>();
 
-    public override Drawable CreateIcon() => new OsuHook()
+    public override Drawable CreateIcon() => new SpriteIcon
     {
         RelativeSizeAxes = Axes.Both,
-        Content = new SpriteIcon
-        {
-            RelativeSizeAxes = Axes.Both,
-            Anchor = Anchor.Centre,
-            Origin = Anchor.Centre,
-            Icon = FontAwesome.Solid.PuzzlePiece
-        }
+        Anchor = Anchor.Centre,
+        Origin = Anchor.Centre,
+        Icon = FontAwesome.Solid.PuzzlePiece
     };
 
     private class DummyDifficultyCalculator : DifficultyCalculator
