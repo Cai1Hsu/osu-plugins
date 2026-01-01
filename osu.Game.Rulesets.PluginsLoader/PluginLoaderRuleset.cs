@@ -107,8 +107,8 @@ public class PluginLoaderRuleset : Ruleset
             // avoid double-processing the same game instance.
             lock (processed_games)
             {
-                if (!IsGameProcessed(game))
-                    processed_games.Add(new WeakReference<OsuGame>(game));
+                if (processed_games.Contains(game) || !RegisterProcessedGame(game))
+                    return;
             }
 
             Task.Run(() => PerformStaticGameInjection(game));
@@ -148,14 +148,55 @@ public class PluginLoaderRuleset : Ruleset
         }
     }
 
-    private readonly static List<WeakReference<OsuGame>> processed_games = new();
-    private static bool IsGameProcessed(OsuGame game)
+    private readonly static HashSet<OsuGame> processed_games = new();
+
+    private const BindingFlags internal_binding_flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
+    private static readonly MethodInfo drawable_disposed_event = typeof(Drawable)
+        .GetEvent("OnDisposed", internal_binding_flags)?
+        .AddMethod!;
+
+    private static readonly FieldInfo drawable_lock_field = typeof(Drawable)
+        .GetField("LoadLock", internal_binding_flags)!;
+
+    private static readonly PropertyInfo drawable_is_disposed_prop = typeof(Drawable)
+        .GetProperty("IsDisposed", internal_binding_flags)!;
+
+    private static bool RegisterProcessedGame(OsuGame game)
     {
-        lock (processed_games)
+        Debug.Assert(drawable_disposed_event is not null);
+        Debug.Assert(drawable_lock_field is not null);
+        Debug.Assert(drawable_is_disposed_prop is not null);
+
+        var gameLock = drawable_lock_field.GetValue(game);
+
+        if (gameLock is null)
+            return false;
+
+        lock (gameLock)
         {
-            processed_games.RemoveAll(wr => !wr.TryGetTarget(out var _));
-            return processed_games.Any(wr => wr.TryGetTarget(out var target) && target == game);
+            bool disposed = (bool)(drawable_is_disposed_prop.GetValue(game) ?? true);
+
+            if (disposed)
+                return false;
+
+            lock (processed_games)
+            {
+                Debug.Assert(!processed_games.Contains(game));
+
+                processed_games.Add(game);
+            }
+
+            drawable_disposed_event.Invoke(game, new[] { () =>
+            {
+                lock (processed_games)
+                {
+                    processed_games.Remove(game);
+                }
+            } });
         }
+
+        return true;
     }
 
     private static FieldInfo? logger_new_entry_field = typeof(Logger)
