@@ -109,11 +109,8 @@ public partial class PluginLoaderRuleset : Ruleset
                 return;
 
             // avoid double-processing the same game instance.
-            lock (processed_games)
-            {
-                if (processed_games.Contains(game) || !RegisterProcessedGame(game))
-                    return;
-            }
+            if (processed_games.Contains(game) || !RegisterProcessedGame(game))
+                return;
 
             Task.Run(() => PerformStaticGameInjection(game));
         }
@@ -184,12 +181,9 @@ public partial class PluginLoaderRuleset : Ruleset
             if (disposed)
                 return false;
 
-            lock (processed_games)
-            {
-                Debug.Assert(!processed_games.Contains(game));
+            Debug.Assert(!processed_games.Contains(game));
 
-                processed_games.Add(game);
-            }
+            processed_games.Add(game);
 
             drawable_disposed_event.Invoke(game, new[] { () =>
             {
