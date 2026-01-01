@@ -108,7 +108,10 @@ public class PluginLoaderRuleset : Ruleset
                 return;
 
             lock (processed_games)
-                processed_games.Add(new WeakReference<OsuGame>(game));
+            {
+                if (!IsGameProcessed(game))
+                    processed_games.Add(new WeakReference<OsuGame>(game));
+            }
 
             Task.Run(() => PerformStaticGameInjection(game));
         }
@@ -152,6 +155,7 @@ public class PluginLoaderRuleset : Ruleset
     {
         lock (processed_games)
         {
+            processed_games.RemoveAll(wr => !wr.TryGetTarget(out var _));
             return processed_games.Any(wr => wr.TryGetTarget(out var target) && target == game);
         }
     }
