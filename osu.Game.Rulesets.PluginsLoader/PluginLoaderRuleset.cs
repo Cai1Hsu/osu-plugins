@@ -84,6 +84,8 @@ public class PluginLoaderRuleset : Ruleset
         // Dummy constructor to differentiate instantiation from RulesetStore
     }
 
+    private static readonly Assembly osu_game_assembly = typeof(OsuGame).Assembly;
+
     /// <summary>
     /// This constructor is intended to be called by <see cref="RulesetStore"/> via reflection only.
     /// It is very slow (usually sub-millisecond, and up to a few milliseconds when injecting into the game),
@@ -94,6 +96,9 @@ public class PluginLoaderRuleset : Ruleset
     {
         try
         {
+            if (Assembly.GetCallingAssembly() != osu_game_assembly)
+                return;
+
             var game = RetrieveCurrentOsuGame();
 
             if (game is null)
