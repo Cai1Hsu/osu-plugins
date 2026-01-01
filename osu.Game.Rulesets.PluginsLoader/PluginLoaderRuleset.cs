@@ -105,13 +105,6 @@ public class PluginLoaderRuleset : Ruleset
                 return;
 
             // avoid double-processing the same game instance.
-            if (IsGameProcessed(game))
-                return;
-
-            // This method is REALLY SLOW, so we run it later, after we ensured the ruleset is fully constructed.
-            if (!IsInstantiatedFromRulesetStore())
-                return;
-
             lock (processed_games)
             {
                 if (!IsGameProcessed(game))
@@ -198,34 +191,6 @@ public class PluginLoaderRuleset : Ruleset
                .Select(d => d.Target)
                .OfType<OsuGame>()
                .LastOrDefault();
-    }
-
-    private static bool IsInstantiatedFromRulesetStore()
-    {
-        try
-        {
-            var stackTrace = new StackTrace(2, false); // skip this frame and constructor frame
-            var directCaller = stackTrace.GetFrame(0)?.GetMethod();
-
-            // Exclude non-reflection creation.
-            if (directCaller?.DeclaringType?.FullName?.StartsWith("System.") is not true)
-                return false;
-
-            var indirectCaller = stackTrace.GetFrame(1)?.GetMethod();
-
-            // Check if any caller in the stack is from RulesetStore.
-            return IsNestedTypeFromRulesetStore(indirectCaller?.DeclaringType);
-        }
-        catch
-        {
-            return false;
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        static bool IsNestedTypeFromRulesetStore(Type? type)
-            => type != null &&
-                (typeof(RulesetStore).IsAssignableFrom(type) ||
-                (type.IsNested && IsNestedTypeFromRulesetStore(type.DeclaringType)));
     }
 
     public override string ShortName => "Plugins";
