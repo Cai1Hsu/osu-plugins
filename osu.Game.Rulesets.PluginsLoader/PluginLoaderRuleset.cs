@@ -216,7 +216,7 @@ public class PluginLoaderRuleset : Ruleset
             return false;
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.AggressiveOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         static bool IsNestedTypeFromRulesetStore(Type? type)
             => type != null &&
                 (typeof(RulesetStore).IsAssignableFrom(type) ||
