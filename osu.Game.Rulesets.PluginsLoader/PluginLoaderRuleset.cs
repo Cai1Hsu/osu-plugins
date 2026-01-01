@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using osu.Framework;
+using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Logging;
@@ -16,7 +17,7 @@ using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.PluginsLoader;
 
-public class PluginLoaderRuleset : Ruleset
+public partial class PluginLoaderRuleset : Ruleset
 {
     static PluginLoaderRuleset()
     {
@@ -205,7 +206,17 @@ public class PluginLoaderRuleset : Ruleset
     private static FieldInfo? logger_new_entry_field = typeof(Logger)
         .GetField("NewEntry", BindingFlags.Static | BindingFlags.Public);
 
-    private static OsuGame? RetrieveCurrentOsuGame()
+    private static MethodInfo game_ruleset_store_prop = typeof(OsuGame)
+        .GetProperty("RulesetStore", BindingFlags.Instance | BindingFlags.NonPublic)?
+        .GetMethod!;
+
+    private static FieldInfo loadedAssemblies_field = typeof(RulesetStore)
+        .GetField("LoadedAssemblies", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+    private static FieldInfo availableRulesets_field = typeof(RealmRulesetStore)
+        .GetField("availableRulesets", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+    private OsuGame? RetrieveCurrentOsuGame()
     {
         [UnsafeAccessor(UnsafeAccessorKind.StaticField, Name = "NewEntry")]
         static extern ref Action<LogEntry> GetLoggerNewEntryEventHandler(Logger _);
@@ -222,10 +233,36 @@ public class PluginLoaderRuleset : Ruleset
             }
         }
 
+        var ourAssembly = Assembly.GetExecutingAssembly();
+
+        bool IsUnprocessedGame(OsuGame game)
+        {
+            // RulesetStore access must be done on the update thread.
+            // We've ensured we're on the update thread before calling this method.
+            Debug.Assert(ThreadSafety.IsUpdateThread);
+
+            if (game_ruleset_store_prop?.Invoke(game, null) is not RealmRulesetStore store)
+                return false;
+
+            if (loadedAssemblies_field.GetValue(store) is not IReadOnlyDictionary<Assembly, Type> assemblies)
+                return false;
+
+            if (!assemblies.TryGetValue(ourAssembly, out var type) || type != typeof(PluginLoaderRuleset))
+                return false;
+
+            if (availableRulesets_field.GetValue(store) is not IReadOnlyList<IRulesetInfo> rulesets)
+                return false;
+
+            if (rulesets.Count == 0)
+                return true;
+
+            return !rulesets.Any(r => r == RulesetInfo);
+        }
+
+        Debug.Assert(game_ruleset_store_prop is not null);
+
         // SAFETY:
         // This is our primary way of initially getting the current OsuGame instance,
-        // it has some unsafe assumptions about the game & launcher's implementation.
-        // Like, the invocation order only reflects the creation order of OsuGame instances.
         return (tryRetrieveLoggerHandler(() => GetLoggerNewEntryEventHandler(null!)) ??
                // Reflection is slow, but at least faster than scanning fields.
                // we still want to fallback to reflection as unsafe accessor is known to be unsupported on android/iOS.
@@ -234,7 +271,8 @@ public class PluginLoaderRuleset : Ruleset
                .GetInvocationList()
                .Select(d => d.Target)
                .OfType<OsuGame>()
-               .LastOrDefault();
+               // We are on the update thread, so the first one is the calling one.               
+               .FirstOrDefault(IsUnprocessedGame);
     }
 
     public override string ShortName => "Plugins";
