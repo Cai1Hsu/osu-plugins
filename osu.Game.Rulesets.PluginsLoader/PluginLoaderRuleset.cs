@@ -244,7 +244,8 @@ public partial class PluginLoaderRuleset : Ruleset
 
         return PluginHelper.GetGameStatically()
                 .OfType<OsuGame>()
-               // We are on the update thread, so the first one is the calling one.               
+               // We are on the update thread, so the first one is the calling one.
+               // At least, even though multiple games created at the same time, each one will get processed in order.
                .FirstOrDefault(IsUnprocessedGame);
     }
 
