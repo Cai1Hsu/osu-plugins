@@ -1,10 +1,14 @@
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Logging;
 using osu.Game.Overlays;
 using osu.Game.Plugins;
+using osu.Game.Utils;
 
 namespace osu.Game.Rulesets.PluginsLoader;
 
@@ -50,6 +54,37 @@ partial class OsuHook : CompositeDrawable
             {
                 hookRulesetSelector(ruleset as Bindable<RulesetInfo>);
             }
+
+            // ensure the instance actually created before we try to access it.
+            game.InvokeWhenReady(disableSentryLogging);
+        }
+    }
+
+    // Plugins may throw unhandled exceptions which get logged to Sentry.
+    // So we disable logging to avoid spamming Sentry with errors.
+    private static void disableSentryLogging(Drawable d)
+    {
+        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "SentryLogger")]
+        static extern ref SentryLogger GetSentryLogger(OsuGame game);
+
+        if (d is not OsuGame game)
+            return;
+
+        var sentryLogger = GetSentryLogger(game);
+
+        var sentryLoggingMethod = typeof(SentryLogger).GetMethod("processLogEntry", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        if (sentryLoggingMethod is null)
+            return;
+
+        try
+        {
+            // delegates are compared by method info + target instance
+            Logger.NewEntry -= sentryLoggingMethod.CreateDelegate<Action<LogEntry>>(sentryLogger);
+        }
+        catch (Exception e)
+        {
+            Logger.Log($"Failed to disable Sentry logging: {e.Message}", level: LogLevel.Important);
         }
     }
 
