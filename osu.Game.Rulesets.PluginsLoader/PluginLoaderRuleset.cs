@@ -153,7 +153,7 @@ public class PluginLoaderRuleset : Ruleset
     private const BindingFlags internal_binding_flags = BindingFlags.Instance | BindingFlags.NonPublic;
 
     private static readonly MethodInfo drawable_disposed_event = typeof(Drawable)
-        .GetEvent("OnDisposed", internal_binding_flags)?
+        .GetEvent("OnDispose", internal_binding_flags)?
         .AddMethod!;
 
     private static readonly FieldInfo drawable_lock_field = typeof(Drawable)
