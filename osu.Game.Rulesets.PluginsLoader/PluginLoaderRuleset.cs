@@ -96,6 +96,9 @@ public class PluginLoaderRuleset : Ruleset
     {
         try
         {
+            if (!ThreadSafety.IsUpdateThread)
+                return;
+
             if (Assembly.GetCallingAssembly() != osu_game_assembly)
                 return;
 
