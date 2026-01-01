@@ -194,7 +194,7 @@ public static class PluginHelper
 
     /// <summary>
     /// Finds all game instances in the current process via static analysis.
-    /// This allows you inject into games even if you don't have direct access to the instance.
+    /// This allows you to inject into games even if you don't have direct access to the instance.
     /// This method could be quite time-consuming, use with caution.
     /// </summary>
     /// <returns>All possible game instances found. In most cases, you can assume only one instance exists.</returns>
