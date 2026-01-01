@@ -93,7 +93,7 @@ partial class OsuHook : CompositeDrawable
         if (ruleset is not Bindable<RulesetInfo> bindableRuleset)
             return;
 
-        var pluginRulesetInfo = new PluginLoaderRuleset().RulesetInfo;
+        var pluginRulesetInfo = new PluginLoaderRuleset(null).RulesetInfo;
 
         // ensure only single subscription
         // unsubscribe when not subscribed yet is safe
