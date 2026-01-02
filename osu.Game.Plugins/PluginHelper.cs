@@ -192,6 +192,11 @@ public static class PluginHelper
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_Scheduler")]
     public static extern Scheduler GetScheduler(this Drawable drawable);
 
+    private static readonly FieldInfo[] logger_static_delegates = typeof(Logger)
+        .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+        .Where(f => typeof(Delegate).IsAssignableFrom(f.FieldType))
+        .ToArray();
+
     /// <summary>
     /// Finds all game instances in the current process via static analysis.
     /// This allows you to inject into games even if you don't have direct access to the instance.
@@ -200,8 +205,7 @@ public static class PluginHelper
     /// <returns>All possible game instances found. In most cases, you can assume only one instance exists.</returns>
     public static Framework.Game[] GetGameStatically()
         // Logger is probably the closest and easiest way for us to find active game instances.
-        => typeof(Logger).GetRuntimeFields()
-            .Where(f => f.IsStatic && typeof(Delegate).IsAssignableFrom(f.FieldType))
+        => logger_static_delegates
             .Select(f => f.GetValue(null) as Delegate)
             .Where(d => d is not null)
             .SelectMany(d => d?.GetInvocationList() ?? Array.Empty<Delegate>())
