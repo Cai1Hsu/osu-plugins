@@ -159,7 +159,11 @@ public static class PluginHelper
         PerformOnceInternal(game.GetScreenStack(), action, shouldInvoke);
     }
 
-    public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, bool requiresUpdateThread = true, Func<Drawable, Scheduler>? schedulerGetter = null)
+    // This method exists to prevent compiled binaries from breaking when the original method signature changes.
+    public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, bool requiresUpdateThread = true)
+       => drawable.InvokeWhenReady(action, null, requiresUpdateThread);
+
+    public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, Func<Drawable, Scheduler>? schedulerGetter, bool requiresUpdateThread = true)
     {
         switch (drawable.IsLoaded)
         {
