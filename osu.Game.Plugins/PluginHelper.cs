@@ -159,7 +159,7 @@ public static class PluginHelper
         PerformOnceInternal(game.GetScreenStack(), action, shouldInvoke);
     }
 
-    public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, bool requiresUpdateThread = true)
+    public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, bool requiresUpdateThread = true, Func<Drawable, Scheduler>? schedulerGetter = null)
     {
         switch (drawable.IsLoaded)
         {
@@ -173,7 +173,9 @@ public static class PluginHelper
                 // if the subtree the drawable is in is inactive,
                 // this could result in action queuing.
                 // We assume the caller is aware of this.
-                var scheduler = drawable.GetScheduler();
+                var scheduler = schedulerGetter is null
+                    ? drawable.GetScheduler()
+                    : schedulerGetter(drawable);
                 scheduler.Add(scheduleAction);
                 break;
 
