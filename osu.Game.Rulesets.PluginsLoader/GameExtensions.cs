@@ -27,7 +27,6 @@ public static class GameExtensions
             {
                 if (PluginLoaderRuleset.IsUnsupportedPlatforms)
                 {
-                    // FIXME: this will spam multiple notifications as the ruleset selector is created multiple times when the game launches.
                     notification?.Post(new PluginNotification
                     {
                         Text = "Your platform is not supported due to some technical limitations. "
@@ -90,12 +89,7 @@ public static class GameExtensions
 
         var pluginRulesetInfo = new PluginLoaderRuleset(null).RulesetInfo;
 
-        // ensure only single subscription
-        // unsubscribe when not subscribed yet is safe
-        bindableRuleset.ValueChanged -= onRulesetChanged;
-        bindableRuleset.ValueChanged += onRulesetChanged;
-
-        void onRulesetChanged(ValueChangedEvent<RulesetInfo> v)
+        bindableRuleset.BindValueChanged(v =>
         {
             if (v.NewValue.Equals(pluginRulesetInfo))
             {
@@ -106,6 +100,6 @@ public static class GameExtensions
 
                 // TODO: Fire an event, this means our ruleset is *clicked*.
             }
-        }
+        });
     }
 }
