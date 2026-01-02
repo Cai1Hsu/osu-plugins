@@ -47,7 +47,7 @@ public partial class PluginHelperTests
     {
         var foundGames = PluginHelper.GetGameStatically();
 
-        Assert.That(foundGames.Length == 0);
+        Assert.That(foundGames.Count() == 0);
     }
 
     private partial class MockedOsuGame : OsuGame

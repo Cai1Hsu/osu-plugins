@@ -203,16 +203,14 @@ public static class PluginHelper
     /// This method could be quite time-consuming, use with caution.
     /// </summary>
     /// <returns>All possible game instances found. In most cases, you can assume only one instance exists.</returns>
-    public static Framework.Game[] GetGameStatically()
+    public static IEnumerable<Framework.Game> GetGameStatically()
         // Logger is probably the closest and easiest way for us to find active game instances.
         => logger_static_delegates
             .Select(f => f.GetValue(null) as Delegate)
             .Where(d => d is not null)
-            .SelectMany(d => d?.GetInvocationList() ?? Array.Empty<Delegate>())
+            .SelectMany(d => d!.GetInvocationList())
             .Select(d => d.Target)
             // Note that although usually only one game instance exists, testing environments may have multiple.
             // We leave the choice to the caller to decide how to handle multiple instances.
-            .OfType<Framework.Game>()
-            .Distinct() // distinct at last to avoid unnecessary overhead in earlier steps
-            .ToArray();
+            .OfType<Framework.Game>();
 }
