@@ -97,9 +97,6 @@ public partial class PluginLoaderRuleset : Ruleset
     {
         try
         {
-            if (Assembly.GetCallingAssembly() != osu_game_assembly)
-                return;
-
             var game = RetrieveCurrentOsuGame();
 
             if (game is null)
