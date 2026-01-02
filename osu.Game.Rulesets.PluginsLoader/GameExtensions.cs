@@ -15,6 +15,10 @@ public static class GameExtensions
 {
     public static void PerformPluginsLoad(this OsuGame game)
     {
+        // ensure the instance actually created before we try to access it.
+        // Run this at first to avoid exceptions thrown during plugin loading being logged to Sentry.
+        game.InvokeWhenReady(disableSentryLogging);
+
         // The new hook method runs so early that the game instance is still loading.
         // We need to delay here because the dependencies are not yet available.
         game.InvokeWhenReady(d =>
@@ -44,9 +48,6 @@ public static class GameExtensions
                 hookRulesetSelector(ruleset);
             }
         });
-
-        // ensure the instance actually created before we try to access it.
-        game.InvokeWhenReady(disableSentryLogging);
     }
 
     private static readonly FieldInfo newEntry_event_field = typeof(Logger)
