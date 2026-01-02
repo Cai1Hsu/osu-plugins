@@ -78,6 +78,7 @@ public class PluginLoaderRuleset : Ruleset
 
     public override string ShortName => "Plugins";
     public override string Description => "Provide plugin functionality";
+    public override string RulesetAPIVersionSupported => CURRENT_RULESET_API_VERSION;
 
     public override IBeatmapConverter CreateBeatmapConverter(IBeatmap beatmap)
         => new DummyBeatmapConverter(beatmap, this);
