@@ -97,9 +97,6 @@ public partial class PluginLoaderRuleset : Ruleset
     {
         try
         {
-            if (!ThreadSafety.IsUpdateThread)
-                return;
-
             if (Assembly.GetCallingAssembly() != osu_game_assembly)
                 return;
 
@@ -108,9 +105,14 @@ public partial class PluginLoaderRuleset : Ruleset
             if (game is null)
                 return;
 
-            // avoid double-processing the same game instance.
-            if (processed_games.Contains(game) || !RegisterProcessedGame(game))
-                return;
+            lock (processed_games)
+            {
+                // avoid double-processing the same game instance.
+                if (!processed_games.Contains(game) && RegisterProcessedGame(game))
+                    processed_games.Add(game);
+                else
+                    return;
+            }
 
             Task.Run(() => PerformStaticGameInjection(game));
         }
@@ -141,96 +143,55 @@ public partial class PluginLoaderRuleset : Ruleset
         .GetEvent("OnDispose", internal_binding_flags)?
         .AddMethod!;
 
-    private static readonly FieldInfo drawable_lock_field = typeof(Drawable)
-        .GetField("LoadLock", internal_binding_flags)!;
-
-    private static readonly PropertyInfo drawable_is_disposed_prop = typeof(Drawable)
-        .GetProperty("IsDisposed", internal_binding_flags)!;
-
     private static bool RegisterProcessedGame(OsuGame game)
     {
+        Debug.Assert(!processed_games.Contains(game));
         Debug.Assert(drawable_disposed_event is not null);
-        Debug.Assert(drawable_lock_field is not null);
-        Debug.Assert(drawable_is_disposed_prop is not null);
 
-        var gameLock = drawable_lock_field.GetValue(game);
-
-        if (gameLock is null)
-            return false;
-
-        lock (gameLock)
+        drawable_disposed_event.Invoke(game, new[] { () =>
         {
-            bool disposed = (bool)(drawable_is_disposed_prop.GetValue(game) ?? true);
-
-            if (disposed)
-                return false;
-
-            Debug.Assert(!processed_games.Contains(game));
-
-            drawable_disposed_event.Invoke(game, new[] { () =>
+            lock (processed_games)
             {
-                lock (processed_games)
-                {
-                    processed_games.Remove(game);
-                }
-            } });
-
-            processed_games.Add(game);
-        }
+                processed_games.Remove(game);
+            }
+        } });
 
         return true;
     }
 
-    private static FieldInfo? logger_new_entry_field = typeof(Logger)
-        .GetField("NewEntry", BindingFlags.Static | BindingFlags.Public);
-
-    private static MethodInfo game_ruleset_store_prop = typeof(OsuGame)
-        .GetProperty("RulesetStore", BindingFlags.Instance | BindingFlags.NonPublic)?
+    private static MethodInfo load_thread_getter = typeof(Drawable)
+        .GetProperty("LoadThread", internal_binding_flags)?
         .GetMethod!;
 
-    private static FieldInfo loadedAssemblies_field = typeof(RulesetStore)
-        .GetField("LoadedAssemblies", BindingFlags.Instance | BindingFlags.NonPublic)!;
-
-    private static FieldInfo availableRulesets_field = typeof(RealmRulesetStore)
-        .GetField("availableRulesets", BindingFlags.Instance | BindingFlags.NonPublic)!;
+    [UnsafeAccessor(UnsafeAccessorKind.StaticField, Name = "NewEntry")]
+    private extern static ref Action<LogEntry> get_log_entry_delegate(Logger _);
 
     private OsuGame? RetrieveCurrentOsuGame()
     {
-        var ourAssembly = Assembly.GetExecutingAssembly();
+        Debug.Assert(load_thread_getter is not null);
+        Thread? current_thread = null;
 
         bool IsUnprocessedGame(OsuGame game)
         {
-            // RulesetStore access must be done on the update thread.
-            // We've ensured we're on the update thread before calling this method.
-            Debug.Assert(ThreadSafety.IsUpdateThread);
-
-            if (game_ruleset_store_prop?.Invoke(game, null) is not RealmRulesetStore store)
+            if (game.LoadState is not LoadState.Loading)
                 return false;
 
-            if (loadedAssemblies_field.GetValue(store) is not IReadOnlyDictionary<Assembly, Type> assemblies)
+            if (load_thread_getter.Invoke(game, null) is not Thread loadThread ||
+                loadThread != (current_thread ??= Thread.CurrentThread))
                 return false;
 
-            if (!assemblies.TryGetValue(ourAssembly, out var type) || type != typeof(PluginLoaderRuleset))
-                return false;
-
-            if (availableRulesets_field.GetValue(store) is not IReadOnlyList<IRulesetInfo> rulesets)
-                return false;
-
-            if (rulesets.Count == 0)
-                return true;
-
-            return !rulesets.Any(r => r == RulesetInfo);
+            return true;
         }
-
-        Debug.Assert(game_ruleset_store_prop is not null);
-        Debug.Assert(loadedAssemblies_field is not null);
-        Debug.Assert(availableRulesets_field is not null);
 
         return PluginHelper.GetGameStatically()
                 .OfType<OsuGame>()
-               // We are on the update thread, so the first one is the calling one.
-               // At least, even though multiple games created at the same time, each one will get processed in order.
-               .FirstOrDefault(IsUnprocessedGame);
+                // I don't think the race condition matters here, as those are not our candidates.
+                // The candidates must be executing on the current thread, so real candidates won't be missed.
+                // Same as above when we access load thread.
+                .Where(g => !processed_games.Contains(g))
+                .Distinct()
+                // We've now ensured only one candidate can match, so we can safely use SingleOrDefault.
+                .SingleOrDefault(IsUnprocessedGame);
     }
 
     public override string ShortName => "Plugins";
