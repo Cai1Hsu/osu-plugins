@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -31,7 +30,7 @@ public static class GameExtensions
                     {
                         Text = "Your platform is not supported due to some technical limitations. "
                             + "We don't have plan to provide support on this platform in the near future. "
-                            + "Plugins will not functional.",
+                            + "Plugins will not function.",
                         Icon = FontAwesome.Solid.ExclamationTriangle,
                         IconColour = Colour4.Red,
                     });
