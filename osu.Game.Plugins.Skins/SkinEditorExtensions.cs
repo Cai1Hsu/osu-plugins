@@ -157,14 +157,12 @@ public static class SkinEditorExtensions
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "attemptAddComponent")]
     static extern void attemptAddComponentToolbox(this SkinComponentToolbox toolbox, Type componentType);
 
-    static FieldInfo? componentsSidebarFieldInfo;
+    // unsafe accessor is not applicable here as the concrete type of the sidebar is internal.
+    // In iOS or Android's AOT compilation, dynamic method generation is not supported, so we resort to reflection here.
+    // Reflection is not a big performance concern as this is only once for every SkinEditor instance in every registration.
+    static readonly FieldInfo componentsSidebarFieldInfo = typeof(SkinEditor).GetField("componentsSidebar", BindingFlags.NonPublic | BindingFlags.Instance)!;
     static Container<EditorSidebarSection>? getInternalComponentsSidebar(this SkinEditor skinEditor)
     {
-        // unsafe accessor is not applicable here as the concrete type of the sidebar is internal.
-        // In iOS or Android's AOT compilation, dynamic method generation is not supported, so we resort to reflection here.
-        // Reflection is not a big performance concern as this is only once for every SkinEditor instance in every registration.
-        componentsSidebarFieldInfo ??= typeof(SkinEditor).GetField("componentsSidebar", BindingFlags.NonPublic | BindingFlags.Instance);
-
         Debug.Assert(componentsSidebarFieldInfo is not null);
 
         // I kinda hate the Container<T> not being covariant...
