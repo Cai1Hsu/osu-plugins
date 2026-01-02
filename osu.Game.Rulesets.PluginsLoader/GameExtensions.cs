@@ -5,6 +5,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Logging;
+using osu.Framework.Threading;
 using osu.Game.Overlays;
 using osu.Game.Plugins;
 using osu.Game.Utils;
@@ -13,15 +14,24 @@ namespace osu.Game.Rulesets.PluginsLoader;
 
 public static class GameExtensions
 {
+    private static readonly MethodInfo drawable_scheduler_getter = typeof(Drawable)
+        .GetProperty("Scheduler", BindingFlags.Public | BindingFlags.Instance)?
+        .GetMethod!;
+
+    // On platforms like iOS/Android where UnsafeAccessor is not avaliable,
+    // InvokeWhenReady extension method failed to run platform warning and selector hook.
+    private static void InvokeWhenReadyFallback(this Drawable d, Action<Drawable> action, bool requiresUpdateThread = true)
+        => d.InvokeWhenReady(action, d => (Scheduler)drawable_scheduler_getter.Invoke(d, null)!, requiresUpdateThread);
+
     public static void PerformPluginsLoad(this OsuGame game)
     {
         // ensure the instance actually created before we try to access it.
         // Run this at first to avoid exceptions thrown during plugin loading being logged to Sentry.
-        game.InvokeWhenReady(disableSentryLogging);
+        game.InvokeWhenReadyFallback(disableSentryLogging);
 
         // The new hook method runs so early that the game instance is still loading.
         // We need to delay here because the dependencies are not yet available.
-        game.InvokeWhenReady(d =>
+        game.InvokeWhenReadyFallback(d =>
         {
             var notification = game.Dependencies.Get<INotificationOverlay>();
             var ruleset = game.Dependencies.Get<IBindable<RulesetInfo>?>();
