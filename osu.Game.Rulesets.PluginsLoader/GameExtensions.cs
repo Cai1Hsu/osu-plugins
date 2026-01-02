@@ -15,16 +15,18 @@ namespace osu.Game.Rulesets.PluginsLoader;
 public static class GameExtensions
 {
     private static readonly MethodInfo drawable_scheduler_getter = typeof(Drawable)
-        .GetProperty("Scheduler", BindingFlags.Public | BindingFlags.Instance)?
+        .GetProperty("Scheduler", BindingFlags.NonPublic | BindingFlags.Instance)?
         .GetMethod!;
 
-    // On platforms like iOS/Android where UnsafeAccessor is not avaliable,
+    // On platforms like iOS/Android where UnsafeAccessor is not available,
     // InvokeWhenReady extension method failed to run platform warning and selector hook.
     private static void InvokeWhenReadyFallback(this Drawable d, Action<Drawable> action, bool requiresUpdateThread = true)
         => d.InvokeWhenReady(action, d => (Scheduler)drawable_scheduler_getter.Invoke(d, null)!, requiresUpdateThread);
 
     public static void PerformPluginsLoad(this OsuGame game)
     {
+        Debug.Assert(drawable_scheduler_getter is not null);
+
         // ensure the instance actually created before we try to access it.
         // Run this at first to avoid exceptions thrown during plugin loading being logged to Sentry.
         game.InvokeWhenReadyFallback(disableSentryLogging);
