@@ -6,6 +6,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Timing;
+using osu.Framework.Utils;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Timing;
@@ -212,6 +213,20 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
         return scoreProcessor.Accuracy.Value > 0.9;
     }
 
+    private int getPeriodIndex(Period period)
+    {
+        var breaks = beatmap.Value.Beatmap.Breaks;
+
+        for (int i = 0; i < breaks.Count; i++)
+        {
+            if (Precision.AlmostEquals(period.Start, breaks[i].StartTime) &&
+                Precision.AlmostEquals(period.End, breaks[i].EndTime - BreakOverlay.BREAK_FADE_DURATION))
+                return i;
+        }
+
+        return -1;
+    }
+
     private void playBreakAnimations()
     {
         Debug.Assert(breakTracker is not null);
@@ -221,7 +236,12 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
         if (breakTracker.CurrentPeriod.Value is not Period currentBreak)
             return;
 
-        double preemptTime = preemptTimesForBreaks.FirstOrDefault(b => b >= currentBreak.Start);
+        int breakIndex = getPeriodIndex(currentBreak);
+
+        if (breakIndex == -1)
+            return;
+
+        double preemptTime = preemptTimesForBreaks[breakIndex];
 
         if (double.IsNaN(preemptTime))
             return;
