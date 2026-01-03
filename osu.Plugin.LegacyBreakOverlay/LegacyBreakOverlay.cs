@@ -5,6 +5,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Threading;
 using osu.Framework.Timing;
 using osu.Framework.Utils;
 using osu.Game.Audio;
@@ -229,28 +230,51 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
     {
         Debug.Assert(breakTracker is not null);
 
-        PlayBreakRankingAnimation(isSectionPassing());
+        playSectionRanking();
+        playResumeWarningArrows();
 
-        if (breakTracker.CurrentPeriod.Value is not Period currentBreak)
-            return;
+        void playSectionRanking()
+        {
+            var maybePeriod = breakTracker.CurrentPeriod.Value;
 
-        int breakIndex = getPeriodIndex(currentBreak);
+            Debug.Assert(maybePeriod.HasValue);
 
-        if (breakIndex == -1)
-            return;
+            var period = maybePeriod.Value;
 
-        double preemptTime = preemptTimesForBreaks[breakIndex];
+            double halfDuration = period.Duration / 2.0;
 
-        if (double.IsNaN(preemptTime))
-            return;
+            double gameStartTime = drawableRuleset?.GameplayStartTime ?? 0;
+            double playTime = (halfDuration > 2880) ? (period.Start + halfDuration) : (period.End - 2880);
 
-        // stable uses int for these timings, we keep consistent.
-        int preemptCount = Math.Min(2, (int)(preemptTime / 200));
-        int flashCount = Math.Min(5, (int)((currentBreak.Duration + 200) / 200)) + preemptCount;
-        int loopStartTime = (int)(currentBreak.End - 200 * (flashCount - preemptCount));
+            double beginTime = Math.Max(0, playTime - gameStartTime);
 
-        using (BeginAbsoluteSequence(loopStartTime))
-            PlayWarningAnimation(flashCount);
+            using (BeginAbsoluteSequence(beginTime))
+                PlayBreakRankingAnimation(isSectionPassing());
+        }
+
+        void playResumeWarningArrows()
+        {
+            if (breakTracker.CurrentPeriod.Value is not Period currentBreak)
+                return;
+
+            int breakIndex = getPeriodIndex(currentBreak);
+
+            if (breakIndex == -1)
+                return;
+
+            double preemptTime = preemptTimesForBreaks[breakIndex];
+
+            if (double.IsNaN(preemptTime))
+                return;
+
+            // stable uses int for these timings, we keep consistent.
+            int preemptCount = Math.Min(2, (int)(preemptTime / 200));
+            int flashCount = Math.Min(5, (int)((currentBreak.Duration + 200) / 200)) + preemptCount;
+            int loopStartTime = (int)(currentBreak.End - 200 * (flashCount - preemptCount));
+
+            using (BeginAbsoluteSequence(loopStartTime))
+                PlayWarningAnimation(flashCount);
+        }
     }
 
     public void PlayWarningAnimation(int loopCount)
@@ -274,40 +298,22 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
 
     public void PlayBreakRankingAnimation(bool passing)
     {
-        double? beginTime = null;
+        ClearBreakRankingAnimation();
 
-        if (breakTracker?.CurrentPeriod.Value is Period period)
+        scheduledSamplePlay = Schedule(() =>
         {
-            double halfDuration = period.Duration / 2.0;
-
-            double gameStartTime = drawableRuleset?.GameplayStartTime ?? 0;
-            double playTime = (halfDuration > 2880) ? (period.Start + halfDuration) : (period.End - 2880);
-
-            beginTime = Math.Max(0, playTime - gameStartTime);
-        }
+            playSample();
+            scheduledSamplePlay = null;
+        });
 
         Texture? texture = skin?.GetTexture(passing ? "section-pass" : "section-fail");
 
         if (texture is null)
             return;
 
-        ClearBreakRankingAnimation();
-
         sectionResultSprite.Texture = texture;
 
-        if (beginTime.HasValue)
-        {
-            using (BeginAbsoluteSequence(beginTime.Value))
-                playAnimation();
-
-            // FIXME: when rewinding in replay, animations are cleared, but scheduled tasks are not.
-            Scheduler.AddDelayed(playSample, beginTime.Value - Clock.CurrentTime);
-        }
-        else
-        {
-            playAnimation();
-            playSample();
-        }
+        playAnimation();
 
         void playSample()
         {
@@ -326,10 +332,15 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
         }
     }
 
+    private ScheduledDelegate? scheduledSamplePlay;
+
     public void ClearAllAnimations()
     {
         ClearWarningAnimation();
         ClearBreakRankingAnimation();
+
+        scheduledSamplePlay?.Cancel();
+        scheduledSamplePlay = null;
     }
 
     public void ClearBreakRankingAnimation()
