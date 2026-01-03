@@ -27,6 +27,18 @@ public static class GameExtensions
     {
         Debug.Assert(drawable_scheduler_getter is not null);
 
+        var pluginsManager = new PluginManager();
+
+        try
+        {
+            // Get assemblies loaded to app domain so type resolution can occur correctly.
+            pluginsManager.LoadEarlyAssemblies();
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"Failed to load early assemblies: {ex.Message}.", LoggingTarget.Runtime, LogLevel.Error);
+        }
+
         // ensure the instance actually created before we try to access it.
         // Run this at first to avoid exceptions thrown during plugin loading being logged to Sentry.
         game.InvokeWhenReadyFallback(disableSentryLogging);
@@ -53,7 +65,7 @@ public static class GameExtensions
                     return;
                 }
 
-                game.InjectDependencies(out PluginManager _, () => new());
+                game.InjectDependencies(out PluginManager _, () => pluginsManager);
             }
             finally
             {

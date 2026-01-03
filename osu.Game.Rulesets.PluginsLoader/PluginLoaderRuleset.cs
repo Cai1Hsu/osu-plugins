@@ -111,7 +111,9 @@ public partial class PluginLoaderRuleset : Ruleset
                     return;
             }
 
-            Task.Run(() => PerformStaticGameInjection(game));
+            // Skin plugins requires their types loaded at a quite early stage.
+            // We have to ensure the injection is performed as soon as possible, and thus we have to block the constructor.
+            PerformStaticGameInjection(game);
         }
         // We have to be very defensive here, as the game has no protection against ruleset constructor failures.
         // Any exception thrown here would crash the entire game.
