@@ -181,7 +181,9 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
     {
         var maybePeriod = breakTracker.CurrentPeriod.Value;
 
-        Debug.Assert(maybePeriod.HasValue);
+        // Bindables may fire events via TriggerChange, so we add a check here.
+        if (!maybePeriod.HasValue)
+            return;
 
         var period = maybePeriod.Value;
 
