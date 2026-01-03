@@ -123,7 +123,7 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
     [BackgroundDependencyLoader]
     private void load()
     {
-        // FIXME: investigate this, samples from custom skins are not applying correctly.
+        // FIXME: in tests, samples from skin were not used. but in normal play, they were used.
         AddInternal(sectionPassSample = new PoolableSkinnableSample(new SampleInfo("Gameplay/sectionpass")));
         AddInternal(sectionFailSample = new PoolableSkinnableSample(new SampleInfo("Gameplay/sectionfail")));
 
