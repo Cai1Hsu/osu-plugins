@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\osu.Game.Plugins\osu.Game.Plugins.csproj" />
+    <ProjectReference Include="..\osu.Game.Plugins.Skins\osu.Game.Plugins.Skins.csproj" />
   </ItemGroup>
 
   <ItemGroup>

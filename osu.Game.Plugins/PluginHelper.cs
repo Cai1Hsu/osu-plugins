@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using osu.Framework.Allocation;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Logging;
 using osu.Framework.Screens;
 using osu.Framework.Threading;
 using osu.Game.Screens;
@@ -157,7 +159,11 @@ public static class PluginHelper
         PerformOnceInternal(game.GetScreenStack(), action, shouldInvoke);
     }
 
+    // This method exists to prevent compiled binaries from breaking when the original method signature changes.
     public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, bool requiresUpdateThread = true)
+       => drawable.InvokeWhenReady(action, null, requiresUpdateThread);
+
+    public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, Func<Drawable, Scheduler>? schedulerGetter, bool requiresUpdateThread = true)
     {
         switch (drawable.IsLoaded)
         {
@@ -171,7 +177,9 @@ public static class PluginHelper
                 // if the subtree the drawable is in is inactive,
                 // this could result in action queuing.
                 // We assume the caller is aware of this.
-                var scheduler = drawable.GetScheduler();
+                var scheduler = schedulerGetter is null
+                    ? drawable.GetScheduler()
+                    : schedulerGetter(drawable);
                 scheduler.Add(scheduleAction);
                 break;
 
@@ -189,4 +197,26 @@ public static class PluginHelper
 
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_Scheduler")]
     public static extern Scheduler GetScheduler(this Drawable drawable);
+
+    private static readonly FieldInfo[] logger_static_delegates = typeof(Logger)
+        .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+        .Where(f => typeof(Delegate).IsAssignableFrom(f.FieldType))
+        .ToArray();
+
+    /// <summary>
+    /// Finds all game instances in the current process via static analysis.
+    /// This allows you to inject into games even if you don't have direct access to the instance.
+    /// This method could be quite time-consuming, use with caution.
+    /// </summary>
+    /// <returns>All possible game instances found. In most cases, you can assume only one instance exists.</returns>
+    public static IEnumerable<Framework.Game> GetGameStatically()
+        // Logger is probably the closest and easiest way for us to find active game instances.
+        => logger_static_delegates
+            .Select(f => f.GetValue(null) as Delegate)
+            .Where(d => d is not null)
+            .SelectMany(d => d!.GetInvocationList())
+            .Select(d => d.Target)
+            // Note that although usually only one game instance exists, testing environments may have multiple.
+            // We leave the choice to the caller to decide how to handle multiple instances.
+            .OfType<Framework.Game>();
 }

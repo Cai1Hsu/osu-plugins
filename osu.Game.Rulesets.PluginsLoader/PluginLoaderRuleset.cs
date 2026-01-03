@@ -1,9 +1,12 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using osu.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
+using osu.Game.Plugins;
 using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Difficulty.Skills;
@@ -13,14 +16,14 @@ using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.PluginsLoader;
 
-public class PluginLoaderRuleset : Ruleset
+public partial class PluginLoaderRuleset : Ruleset
 {
     static PluginLoaderRuleset()
     {
         // In certain platforms (notably iOS and Android), referenced assemblies are not automatically loaded.
         // As such, we manually load any assemblies matching our plugin pattern to ensure they are available
         // This action has to be performed before any attempt to access types from those assemblies or our code crashes.
-        if (requiresDynamicAssemblyLoading())
+        // if (requiresDynamicAssemblyLoading()) // enabling as skin extensions are shared between plugins
             loadPluginAssembly();
     }
 
@@ -76,6 +79,119 @@ public class PluginLoaderRuleset : Ruleset
             loadSingle(file);
     }
 
+    public PluginLoaderRuleset(object? _)
+    {
+        // Dummy constructor to differentiate instantiation from RulesetStore
+    }
+
+    private static readonly Assembly osu_game_assembly = typeof(OsuGame).Assembly;
+
+    /// <summary>
+    /// This constructor is intended to be called by <see cref="RulesetStore"/> via reflection only.
+    /// It is very slow (usually sub-millisecond, and up to a few milliseconds when injecting into the game),
+    /// Use <see cref="PluginLoaderRuleset(object?)"/> if possible.
+    /// </summary>
+    [Obsolete("This constructor is intended to be called by RulesetStore via reflection only.", true)]
+    public PluginLoaderRuleset()
+    {
+        try
+        {
+            var game = RetrieveCurrentOsuGame();
+
+            if (game is null)
+                return;
+
+            lock (processed_games)
+            {
+                // avoid double-processing the same game instance.
+                if (!processed_games.Contains(game) && RegisterProcessedGame(game))
+                    processed_games.Add(game);
+                else
+                    return;
+            }
+
+            // Skin plugins requires their types loaded at a quite early stage.
+            // We have to ensure the injection is performed as soon as possible, and thus we have to block the constructor.
+            PerformStaticGameInjection(game);
+        }
+        // We have to be very defensive here, as the game has no protection against ruleset constructor failures.
+        // Any exception thrown here would crash the entire game.
+        catch
+        {
+        }
+    }
+
+    private static void PerformStaticGameInjection(OsuGame game)
+    {
+        try
+        {
+            game.PerformPluginsLoad();
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"Failed to perform static game injection: {ex.Message}. Plugins manager will not function.", LoggingTarget.Runtime, LogLevel.Error);
+        }
+    }
+
+    private readonly static HashSet<OsuGame> processed_games = new();
+
+    private const BindingFlags internal_binding_flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
+    private static readonly MethodInfo drawable_disposed_event = typeof(Drawable)
+        .GetEvent("OnDispose", internal_binding_flags)?
+        .AddMethod!;
+
+    private static bool RegisterProcessedGame(OsuGame game)
+    {
+        Debug.Assert(!processed_games.Contains(game));
+        Debug.Assert(drawable_disposed_event is not null);
+
+        drawable_disposed_event.Invoke(game, new[] { () =>
+        {
+            lock (processed_games)
+            {
+                processed_games.Remove(game);
+            }
+        } });
+
+        return true;
+    }
+
+    private static MethodInfo load_thread_getter = typeof(Drawable)
+        .GetProperty("LoadThread", internal_binding_flags)?
+        .GetMethod!;
+
+    [UnsafeAccessor(UnsafeAccessorKind.StaticField, Name = "NewEntry")]
+    private extern static ref Action<LogEntry> get_log_entry_delegate(Logger _);
+
+    private OsuGame? RetrieveCurrentOsuGame()
+    {
+        Debug.Assert(load_thread_getter is not null);
+        Thread? current_thread = null;
+
+        bool IsUnprocessedGame(OsuGame game)
+        {
+            if (game.LoadState is not LoadState.Loading)
+                return false;
+
+            if (load_thread_getter.Invoke(game, null) is not Thread loadThread ||
+                loadThread != (current_thread ??= Thread.CurrentThread))
+                return false;
+
+            return true;
+        }
+
+        return PluginHelper.GetGameStatically()
+                .OfType<OsuGame>()
+                // I don't think the race condition matters here, as those are not our candidates.
+                // The candidates must be executing on the current thread, so real candidates won't be missed.
+                // Same as above when we access load thread.
+                .Where(g => !processed_games.Contains(g))
+                .Distinct()
+                // We've now ensured only one candidate can match, so we can safely use SingleOrDefault.
+                .SingleOrDefault(IsUnprocessedGame);
+    }
+
     public override string ShortName => "Plugins";
     public override string Description => "Provide plugin functionality";
     public override string RulesetAPIVersionSupported => CURRENT_RULESET_API_VERSION;
@@ -91,16 +207,12 @@ public class PluginLoaderRuleset : Ruleset
 
     public override IEnumerable<Mod> GetModsFor(ModType type) => Array.Empty<Mod>();
 
-    public override Drawable CreateIcon() => new OsuHook()
+    public override Drawable CreateIcon() => new SpriteIcon
     {
         RelativeSizeAxes = Axes.Both,
-        Content = new SpriteIcon
-        {
-            RelativeSizeAxes = Axes.Both,
-            Anchor = Anchor.Centre,
-            Origin = Anchor.Centre,
-            Icon = FontAwesome.Solid.PuzzlePiece
-        }
+        Anchor = Anchor.Centre,
+        Origin = Anchor.Centre,
+        Icon = FontAwesome.Solid.PuzzlePiece
     };
 
     private class DummyDifficultyCalculator : DifficultyCalculator

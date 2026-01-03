@@ -30,20 +30,62 @@ public partial class PluginManager : Drawable
     public IReadOnlyList<OsuPlugin> LoadedPlugins => loadedPlugins;
 
     private List<Task> loadingTasks = new();
+    private List<Action> earlyLoadActions = new();
+
+    private Stopwatch loadStopwatch = new Stopwatch();
+
+    private bool hasPluginsFromStartupDirectory = false;
+
+    public void LoadEarlyAssemblies()
+    {
+        Debug.Assert(!loadStopwatch.IsRunning);
+        loadStopwatch.Start();
+
+        try
+        {
+            loadPluginsFromAppDomain();
+            tryLoadLocalEarlyAssemblies();
+
+            // Place your plugins in the startup directory is a bad idea, they will be removed when the game updates.
+            // This is generally for development purposes only.
+            hasPluginsFromStartupDirectory |= loadPluginsFromDirectory(RuntimeInfo.StartupDirectory);
+            hasPluginsFromStartupDirectory |= loadPluginsFromDirectory(AppContext.BaseDirectory);
+        }
+        finally
+        {
+            // do we have to stop here?
+            loadStopwatch.Stop();
+        }
+    }
+
+    private void tryLoadLocalEarlyAssemblies()
+    {
+        var ourLocation = typeof(PluginManager).Assembly.Location;
+        var ourDirectory = Path.GetDirectoryName(ourLocation);
+
+        if (string.IsNullOrEmpty(ourDirectory))
+            return;
+
+        loadPluginsFromDirectory(ourDirectory, "plugins");
+
+        var parentDirectory = Path.GetDirectoryName(ourDirectory);
+
+        if (string.IsNullOrEmpty(parentDirectory))
+            return;
+
+        loadPluginsFromDirectory(parentDirectory, "plugins");
+    }
 
     [BackgroundDependencyLoader]
     private void load(OsuGame? game, INotificationOverlay? notification, Storage storage)
     {
-        Stopwatch stopwatch = Stopwatch.StartNew();
+        Debug.Assert(!loadStopwatch.IsRunning);
 
-        loadPluginsFromAppDomain();
+        loadStopwatch.Start();
+
+        startEarlyLoadActionProcessing();
+
         loadPluginsFromStorage(storage, "plugins");
-
-        // Place your plugins in the startup directory is a bad idea, they will be removed when the game updates.
-        // This is generally for development purposes only.
-        bool hasPluginsFromStartupDirectory = false;
-        hasPluginsFromStartupDirectory |= loadPluginsFromDirectory(RuntimeInfo.StartupDirectory);
-        hasPluginsFromStartupDirectory |= loadPluginsFromDirectory(AppContext.BaseDirectory);
 
         performWhenMainMenuReady(game, notification, hasPluginsFromStartupDirectory);
 
@@ -55,12 +97,12 @@ public partial class PluginManager : Drawable
             {
                 Task.WhenAll(loadingTasks).Wait();
 
-                stopwatch.Stop();
+                loadStopwatch.Stop();
 
                 lock (loadedPlugins)
                 {
                     string loadedMessage = loadedPlugins.Count > 0
-                        ? $"Successfully loaded {loadedPlugins.Count} plugins in {stopwatch.Elapsed.Humanize()}."
+                        ? $"Successfully loaded {loadedPlugins.Count} plugins in {loadStopwatch.Elapsed.Humanize()}."
                         : "No plugins were loaded.";
 
                     notification?.Post(new PluginNotification
@@ -132,11 +174,28 @@ public partial class PluginManager : Drawable
         }, new[] { typeof(Loader), typeof(IntroScreen) });
     }
 
+    private void startEarlyLoadActionProcessing()
+    {
+        Debug.Assert(LoadState is LoadState.Loading);
+
+        foreach (var action in earlyLoadActions)
+            scheduleBackground(action);
+
+        earlyLoadActions.Clear();
+    }
+
     private void scheduleBackground(Action action)
     {
-        lock (loadingTasks)
+        if (LoadState < LoadState.Loading)
+            earlyLoadActions.Add(action);
+        else
         {
-            loadingTasks.Add(Task.Run(action));
+            Debug.Assert(LoadState is LoadState.Loading or LoadState.Ready);
+
+            lock (loadingTasks)
+            {
+                loadingTasks.Add(Task.Run(action));
+            }
         }
     }
 
