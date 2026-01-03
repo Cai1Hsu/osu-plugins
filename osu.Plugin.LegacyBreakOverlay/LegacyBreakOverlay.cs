@@ -282,6 +282,7 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
             using (BeginAbsoluteSequence(beginTime.Value))
                 playAnimation();
 
+            // FIXME: when rewinding in replay, animations are cleared, but scheduled tasks are not.
             Scheduler.AddDelayed(playSample, beginTime.Value - Clock.CurrentTime);
         }
         else
