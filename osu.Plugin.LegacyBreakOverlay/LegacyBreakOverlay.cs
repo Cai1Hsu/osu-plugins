@@ -23,7 +23,7 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
     bool ISerialisableDrawable.UsesFixedAnchor { get; set; } = true;
 
     [SettingSource("lazer break overlay transparency", "Set the transparency of the lazer's built-in break overlay.")]
-    public BindableFloat LazerBreakOverlayTransparency { get; } = new BindableFloat(1)
+    public Bindable<float> LazerBreakOverlayTransparency { get; } = new BindableFloat(1)
     {
         MinValue = 0,
         MaxValue = 1,
