@@ -15,9 +15,9 @@ using osuTK.Graphics;
 
 namespace osu.Plugin.LegacyBreakOverlay.Tests;
 
-public partial class TestSceneLegacyBreakOverlay : OsuTestScene, IStorageResourceProvider
+public partial class TestSceneLegacyBreakOverlayBase : OsuTestScene, IStorageResourceProvider
 {
-    private LegacyBreakOverlay legacyBreakOverlay = null!;
+    private LegacyBreakOverlayBase legacyBreakOverlay = null!;
     private int animationLoopCount = 1;
 
     public string LocalSkinPath
@@ -29,8 +29,8 @@ public partial class TestSceneLegacyBreakOverlay : OsuTestScene, IStorageResourc
     {
         AddStep("Setup components", SetupComponents);
 
-        AddStep("Clear all animations", () => legacyBreakOverlay.ClearAllAnimations());
-        AddStep("Clear warning animation", () => legacyBreakOverlay.ClearWarningAnimation());
+        AddStep("Clear all animations", () => legacyBreakOverlay.ClearAnimations());
+        AddStep("Clear warning animation", () => legacyBreakOverlay.ClearWarningArrowsAnimation());
 
         AddStep("Play passing animation", () => legacyBreakOverlay.PlayBreakRankingAnimation(true));
         AddStep("Play failing animation", () => legacyBreakOverlay.PlayBreakRankingAnimation(false));
