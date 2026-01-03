@@ -14,6 +14,7 @@
     <ProjectReference Include="..\osu.Plugin.Template\osu.Plugin.Template.csproj" />
     <ProjectReference Include="..\osu.Plugin.MainMenuPlayer\osu.Plugin.MainMenuPlayer.csproj" />
     <ProjectReference Include="..\osu.Plugin.StableIntegration\osu.Plugin.StableIntegration.csproj" />
+    <ProjectReference Include="..\osu.Plugin.LegacyBreakOverlay\osu.Plugin.LegacyBreakOverlay.csproj" />
   </ItemGroup>
 
   <ItemGroup>

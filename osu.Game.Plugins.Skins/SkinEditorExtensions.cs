@@ -123,22 +123,15 @@ public static class SkinEditorExtensions
             var selectedTarget = skinEditor.getInternalSelectedTarget();
             var skinEditorScheduler = skinEditor.GetScheduler();
 
-            // The initial bind to UI triggers our event,
-            // this does not help as the toolbox is not yet ready at this point.
-            // so we keep track of the last lookup to avoid redundant registrations
-            // and also ensure our registration actually works.
-            GlobalSkinnableContainers? lastLookup = null;
-
             selectedTarget.BindValueChanged(v =>
             {
+                // There's a manual trigger to load the selected target during skin editor loading.
+                if (v.OldValue is null)
+                    return;
+
                 // Ruleset is not considered in target selection, so we only need to check Lookup equality.
                 // Ruleset is later compared inside `registerTypeToSidebar`.
                 // same as below
-                if (v.NewValue?.Lookup == lastLookup)
-                    return;
-
-                lastLookup = v.NewValue?.Lookup;
-
                 if (v.NewValue is not null && v.NewValue.Lookup == lookup.Lookup)
                 {
                     // SAFETY: This hack relies on our code being excuted after the skinEditor's
