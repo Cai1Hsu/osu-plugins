@@ -53,8 +53,8 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
     private BreakTracker? breakTracker;
     private readonly IBindable<bool> isBreakTime = new BindableBool();
 
-    private Container warningContainer = null!;
-    private Sprite sectionResultSprite;
+    private readonly Container warningContainer;
+    private readonly Sprite sectionResultSprite;
 
     private static readonly Vector2 warning_arrow_position = new Vector2(80, 100);
     private const float warning_arrow_duration = 100;
