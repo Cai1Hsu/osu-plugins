@@ -11,7 +11,7 @@ using osuTK;
 namespace osu.Plugin.LegacyBreakOverlay;
 
 /// <summary>
-/// The base skin component of legacy break overlay, ususally used for testing purposes.
+/// The base skin component of legacy break overlay, usually used for testing purposes.
 /// </summary>
 public partial class LegacyBreakOverlayBase : CompositeDrawable
 {

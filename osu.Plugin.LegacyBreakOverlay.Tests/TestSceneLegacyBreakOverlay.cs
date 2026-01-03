@@ -21,7 +21,7 @@ public partial class TestSceneLegacyBreakOverlayBase : OsuTestScene, IStorageRes
     private int animationLoopCount = 1;
 
     public string LocalSkinPath
-        // the built-in legacy skin doesn't contiain required assets for this skin component
+        // the built-in legacy skin doesn't contain required assets for this skin component
         => throw new Exception("Set this to a valid local skin path to test with a specific skin.");
 
     [SetUpSteps]
