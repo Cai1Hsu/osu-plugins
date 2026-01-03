@@ -37,8 +37,6 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
     [Resolved]
     private ScoreProcessor? scoreProcessor { get; set; }
 
-    private Playfield? playfield => drawableRuleset?.Playfield;
-
     [Resolved]
     private ISkinSource? skin { get; set; } = null;
 
