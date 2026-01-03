@@ -2,7 +2,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using osu.Framework;
-using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Logging;
@@ -24,7 +23,7 @@ public partial class PluginLoaderRuleset : Ruleset
         // In certain platforms (notably iOS and Android), referenced assemblies are not automatically loaded.
         // As such, we manually load any assemblies matching our plugin pattern to ensure they are available
         // This action has to be performed before any attempt to access types from those assemblies or our code crashes.
-        if (requiresDynamicAssemblyLoading())
+        // if (requiresDynamicAssemblyLoading()) // enabling as skin extensions are shared between plugins
             loadPluginAssembly();
     }
 
