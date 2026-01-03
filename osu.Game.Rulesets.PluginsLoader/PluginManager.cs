@@ -39,6 +39,7 @@ public partial class PluginManager : Drawable
     public void LoadEarlyAssemblies()
     {
         Debug.Assert(!loadStopwatch.IsRunning);
+        loadStopwatch.Start();
 
         try
         {
@@ -52,6 +53,7 @@ public partial class PluginManager : Drawable
         }
         finally
         {
+            // do we have to stop here?
             loadStopwatch.Stop();
         }
     }
