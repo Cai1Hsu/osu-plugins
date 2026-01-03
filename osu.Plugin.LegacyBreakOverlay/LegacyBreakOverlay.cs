@@ -26,8 +26,14 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
 {
     bool ISerialisableDrawable.UsesFixedAnchor { get; set; } = true;
 
-    [SettingSource("Disable lazer break overlay", "Disables the built-in lazer break overlay.")]
-    public BindableBool DisableLazerBreakOverlay { get; } = new BindableBool(false);
+    [SettingSource("lazer break overlay transparency", "Set the transparency of the lazer's built-in break overlay.")]
+    public BindableFloat LazerBreakOverlayTransparency { get; } = new BindableFloat(1)
+    {
+        MinValue = 0,
+        MaxValue = 1,
+        Default = 1,
+        Precision = 0.01f,
+    };
 
     [Resolved]
     private Player? player { get; set; }
@@ -172,17 +178,14 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
     {
         base.LoadComplete();
 
-        DisableLazerBreakOverlay.BindValueChanged(v =>
+        LazerBreakOverlayTransparency.BindValueChanged(v =>
         {
             var defaultBreakOverlay = player?.BreakOverlay;
 
             if (defaultBreakOverlay == null)
                 return;
 
-            if (v.NewValue)
-                defaultBreakOverlay.Hide();
-            else
-                defaultBreakOverlay.Show();
+            defaultBreakOverlay.Alpha = v.NewValue;
         }, true);
 
         breakTracker = createBreakTracker();
