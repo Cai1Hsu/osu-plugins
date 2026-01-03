@@ -302,7 +302,7 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
         void playAnimation()
         {
             if (passing)
-                palyPassingAnimation();
+                playPassingAnimation();
             else
                 playFailingAnimation();
         }
@@ -320,7 +320,7 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
         sectionResultSprite.FadeOut();
     }
 
-    private void palyPassingAnimation()
+    private void playPassingAnimation()
     {
         sectionResultSprite
             .Delay(20)
