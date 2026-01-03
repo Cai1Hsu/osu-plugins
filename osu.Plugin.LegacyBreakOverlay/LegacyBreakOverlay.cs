@@ -45,6 +45,7 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
     private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
 
     private BreakTracker? breakTracker;
+    private readonly IBindable<bool> isBreakTime = new BindableBool();
 
     private Container warningContainer = null!;
     private Sprite sectionResultSprite;
@@ -190,16 +191,40 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
         {
             AddInternal(breakTracker);
 
-            breakTracker.IsBreakTime.BindValueChanged(v =>
+            isBreakTime.BindTo(breakTracker.IsBreakTime);
+        }
+
+        isBreakTime.BindValueChanged(v =>
+        {
+            if (v.NewValue)
+                playBreakAnimations();
+            else
+                ClearAllAnimations();
+        });
+
+        ClearAllAnimations();
+    }
+
+    private double lastFrameTime = double.MinValue;
+    protected override void Update()
+    {
+        base.Update();
+
+        double currentTime = Clock.CurrentTime;
+
+        // When rewinding, we need to re-play the break animations if we're currently in a break.
+        if (currentTime < lastFrameTime)
+        {
+            if (breakTracker is not null)
             {
-                if (v.NewValue)
+                if (isBreakTime.Value)
                     playBreakAnimations();
                 else
                     ClearAllAnimations();
-            });
+            }
         }
 
-        ClearAllAnimations();
+        lastFrameTime = currentTime;
     }
 
     private bool isSectionPassing()
@@ -230,17 +255,18 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
     {
         Debug.Assert(breakTracker is not null);
 
+        var maybePeriod = breakTracker.CurrentPeriod.Value;
+
+        if (maybePeriod is null)
+            return;
+
+        var period = maybePeriod.Value;
+
         playSectionRanking();
         playResumeWarningArrows();
 
         void playSectionRanking()
         {
-            var maybePeriod = breakTracker.CurrentPeriod.Value;
-
-            Debug.Assert(maybePeriod.HasValue);
-
-            var period = maybePeriod.Value;
-
             double halfDuration = period.Duration / 2.0;
 
             double gameStartTime = drawableRuleset?.GameplayStartTime ?? 0;
@@ -254,10 +280,7 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
 
         void playResumeWarningArrows()
         {
-            if (breakTracker.CurrentPeriod.Value is not Period currentBreak)
-                return;
-
-            int breakIndex = getPeriodIndex(currentBreak);
+            int breakIndex = getPeriodIndex(period);
 
             if (breakIndex == -1)
                 return;
@@ -269,8 +292,8 @@ public partial class LegacyBreakOverlay : CompositeDrawable, ISerialisableDrawab
 
             // stable uses int for these timings, we keep consistent.
             int preemptCount = Math.Min(2, (int)(preemptTime / 200));
-            int flashCount = Math.Min(5, (int)((currentBreak.Duration + 200) / 200)) + preemptCount;
-            int loopStartTime = (int)(currentBreak.End - 200 * (flashCount - preemptCount));
+            int flashCount = Math.Min(5, (int)((period.Duration + 200) / 200)) + preemptCount;
+            int loopStartTime = (int)(period.End - 200 * (flashCount - preemptCount));
 
             using (BeginAbsoluteSequence(loopStartTime))
                 PlayWarningAnimation(flashCount);
