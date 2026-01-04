@@ -1,7 +1,9 @@
 ﻿using osu.Framework;
 using osu.Game.Tests;
 
-using (var host = Host.GetSuitableDesktopHost(@"osu", new HostOptions()))
+const string GameName = @"osu-development";
+
+using (var host = Host.GetSuitableDesktopHost(GameName, new HostOptions()))
 {
     host.Run(new OsuTestBrowser());
 }
