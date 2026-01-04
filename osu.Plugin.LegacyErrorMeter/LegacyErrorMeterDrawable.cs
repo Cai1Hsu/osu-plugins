@@ -36,7 +36,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
     private float meterWidth = min_meter_width;
     private double errorRange = 1;
-    private double floatingAverage;
+    private double? floatingAverage;
 
     [Resolved]
     private OsuColour osuColour { get; set; } = null!;
@@ -147,18 +147,21 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         double clamped = Math.Clamp(timeOffset, -errorRange, errorRange);
         float offsetPixels = (float)(clamped / errorRange) * (meterWidth / 2f);
 
-        floatingAverage = floatingAverage * 0.8 + offsetPixels * 0.2;
+        if (floatingAverage == null)
+            floatingAverage = offsetPixels;
+        else
+            floatingAverage = floatingAverage * 0.8 + offsetPixels * 0.2;
 
-        arrow
-            .FadeIn(250, Easing.OutQuint)
-            .MoveToX((float)floatingAverage, arrow_move_duration, Easing.Out);
+        arrow.FadeIn(250, Easing.OutQuint);
+
+        arrow.MoveToX((float)floatingAverage, arrow_move_duration, Easing.Out);
 
         spawnSpark(Math.Abs(clamped), offsetPixels);
     }
 
     public void ClearJudgements()
     {
-        floatingAverage = 0;
+        floatingAverage = null;
 
         arrow
             .FadeOut(200, Easing.OutQuint)
