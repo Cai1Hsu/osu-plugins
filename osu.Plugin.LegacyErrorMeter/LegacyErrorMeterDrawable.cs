@@ -28,9 +28,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     private Container flashContainer = null!;
     private Box background = null!;
     private Box centreLine = null!;
-    private Container arrowContainer = null!;
-    private SpriteIcon arrow = null!; // FIXME: draw one ourselves
-
+    private ArrowAverageIndicator arrow = null!;
     private (HitResult result, double length)[] availableWindows = Array.Empty<(HitResult, double)>();
     private HitWindows? sourceHitWindows;
 
@@ -92,25 +90,13 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                     }
                 }
             },
-            arrowContainer = new Container
+            arrow = new ArrowAverageIndicator()
             {
                 Name = "average arrow",
-                Anchor = Anchor.Centre,
-                Origin = Anchor.BottomCentre,
-                AutoSizeAxes = Axes.Both,
-                Scale = new Vector2(1, -1),
-                Y = -(background_height / 2f + 6f),
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.TopCentre,
                 Alpha = 0,
-                Child = arrow = new SpriteIcon
-                {
-                    Anchor = Anchor.Centre,
-                    Origin = Anchor.Centre,
-                    Icon = FontAwesome.Solid.ChevronRight,
-                    Rotation = -90,
-                    Size = new Vector2(14),
-                    Colour = Colour4.White
-                }
-            }
+            },
         };
     }
 
@@ -143,7 +129,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         for (int i = availableWindows.Length; i < segments.Count; i++)
             segments[i].Alpha = 0;
 
-        arrowContainer.Position = new Vector2(0, -(background_height / 2f + 6f));
+        arrow.Position = Vector2.Zero;
         floatingAverage = 0;
         updateSegmentColours();
     }
@@ -161,7 +147,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
         floatingAverage = floatingAverage * 0.8 + offsetPixels * 0.2;
 
-        arrowContainer
+        arrow
             .FadeIn(250, Easing.OutQuint)
             .MoveToX((float)floatingAverage, arrow_move_duration, Easing.Out);
 
@@ -172,9 +158,9 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     {
         floatingAverage = 0;
 
-        arrowContainer
+        arrow
             .FadeOut(200, Easing.OutQuint)
-            .MoveToX(0, 200, Easing.OutQuint);
+            .MoveToX(0, 200, Easing.Out);
 
         foreach (var drawable in flashContainer.Children.ToArray())
         {
@@ -187,7 +173,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     {
         base.LoadComplete();
 
-        arrowContainer.Alpha = 0;
+        arrow.Alpha = 0;
     }
 
     private void spawnSpark(double absoluteOffset, float offsetPixels)
@@ -244,6 +230,27 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         HitResult.Miss => Colour4.Red,
         _ => osuColour.ForHitResult(result)
     };
+
+    private partial class ArrowAverageIndicator : CompositeDrawable
+    {
+        public static readonly Vector2 arrow_size = new Vector2(14, 14);
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            Masking = true;
+            Size = arrow_size * MathF.Sqrt(2);
+
+            // clip a 45 degree cube to make a diamond shape
+            InternalChild = new Box
+            {
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.Centre,
+                Size = arrow_size,
+                Rotation = 45,
+                Colour = Colour4.White
+            };
+        }
+    }
 
     private partial class LegacyJudgementSpark : PoolableDrawable
     {
