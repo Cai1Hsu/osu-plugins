@@ -106,6 +106,7 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
     {
         ClearBreakRankingAnimation();
 
+        scheduledSamplePlay?.Cancel();
         scheduledSamplePlay = Schedule(() =>
         {
             playSample();
