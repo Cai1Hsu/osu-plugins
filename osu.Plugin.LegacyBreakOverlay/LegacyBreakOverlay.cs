@@ -255,12 +255,9 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
 
             double halfDuration = breakDuration / 2.0;
 
-            double gameStartTime = drawableRuleset?.GameplayStartTime ?? 0;
-            double playTime = (halfDuration > min_break_duration_for_section_ranking)
+            double beginTime = (halfDuration > min_break_duration_for_section_ranking)
                 ? (breakStartTime + halfDuration)
                 : (breakEndTime - min_break_duration_for_section_ranking);
-
-            double beginTime = Math.Max(0, playTime - gameStartTime);
 
             using (BeginAbsoluteSequence(beginTime))
                 PlayBreakRankingAnimation(IsSectionPassing());
