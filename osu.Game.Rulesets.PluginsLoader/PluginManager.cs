@@ -36,7 +36,7 @@ public partial class PluginManager : Drawable
 
     private bool hasPluginsFromStartupDirectory = false;
 
-    public void LoadEarlyAssemblies()
+    public void LoadEarlyAssemblies(Storage? gameStorage)
     {
         Debug.Assert(!loadStopwatch.IsRunning);
         loadStopwatch.Start();
@@ -44,7 +44,12 @@ public partial class PluginManager : Drawable
         try
         {
             loadPluginsFromAppDomain();
-            tryLoadLocalEarlyAssemblies();
+
+            if (gameStorage is not null)
+                loadPluginsFromStorage(gameStorage, "plugins");
+            else
+                // This serves as a fallback to load plugins from storage
+                tryLoadLocalEarlyAssemblies();
 
             // Place your plugins in the startup directory is a bad idea, they will be removed when the game updates.
             // This is generally for development purposes only.

@@ -5,6 +5,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Logging;
+using osu.Framework.Platform;
 using osu.Framework.Threading;
 using osu.Game.Overlays;
 using osu.Game.Plugins;
@@ -17,6 +18,10 @@ public static class GameExtensions
     private static readonly MethodInfo drawable_scheduler_getter = typeof(Drawable)
         .GetProperty("Scheduler", BindingFlags.NonPublic | BindingFlags.Instance)?
         .GetMethod!;
+
+    private static readonly MethodInfo? game_storage_getter = typeof(OsuGameBase)
+        .GetProperty("Storage", BindingFlags.NonPublic | BindingFlags.Instance)?
+        .GetMethod;
 
     // On platforms like iOS/Android where UnsafeAccessor is not available,
     // InvokeWhenReady extension method failed to run platform warning and selector hook.
@@ -31,8 +36,10 @@ public static class GameExtensions
 
         try
         {
+            var gameStorage = game_storage_getter?.Invoke(game, null) as Storage;
+
             // Get assemblies loaded to app domain so type resolution can occur correctly.
-            pluginsManager.LoadEarlyAssemblies();
+            pluginsManager.LoadEarlyAssemblies(gameStorage);
         }
         catch (Exception ex)
         {
