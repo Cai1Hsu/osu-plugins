@@ -117,12 +117,7 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
 
         LazerBreakOverlayTransparency.BindValueChanged(v =>
         {
-            var defaultBreakOverlay = player?.BreakOverlay;
-
-            if (defaultBreakOverlay == null)
-                return;
-
-            defaultBreakOverlay.Alpha = v.NewValue;
+            updateLazerBreakOverlayTransparency();
         }, true);
 
         isBreakTime.BindValueChanged(v =>
@@ -132,6 +127,14 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
             else
                 ClearAnimations();
         });
+    }
+
+    private void updateLazerBreakOverlayTransparency()
+    {
+        if (player?.BreakOverlay is null)
+            return;
+
+        player.BreakOverlay.Alpha = LazerBreakOverlayTransparency.Value;
     }
 
     private double lastFrameTime = double.MinValue;
@@ -179,6 +182,9 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
 
     private void playBreakAnimations()
     {
+        // Sometimes transparency get modified by other components, so we update it again here.
+        updateLazerBreakOverlayTransparency();
+
         var maybePeriod = breakTracker.CurrentPeriod.Value;
 
         Debug.Assert(maybePeriod.HasValue, "Current break period should have value when in break time.");
