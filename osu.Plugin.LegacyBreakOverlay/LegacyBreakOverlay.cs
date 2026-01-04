@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -7,6 +8,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Timing;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Objects.Types;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Play;
@@ -49,21 +51,28 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
     // use the player's clock for timing accuracy during gameplay
     public override IFrameBasedClock Clock => drawableRuleset is null ? base.Clock : drawableRuleset.FrameStableClock;
 
-    private BreakTracker? createBreakTracker() => drawableRuleset is null || scoreProcessor is null ? null : new BreakTracker(drawableRuleset.GameplayStartTime, scoreProcessor)
-    {
-        Breaks = beatmap.Value.Beatmap.Breaks
-    };
+    private BreakPeriod[] breakPeriods = null!;
 
     [BackgroundDependencyLoader]
     private void load()
     {
+        breakPeriods = beatmap.Value.Beatmap.Breaks
+            // TODO investigate this. 
+            // but in BreakTracker, only breaks with effects are considered.
+            // So those without effects would never trigger our events.
+            .Where(b => b.HasEffect)
+            .OrderBy(b => b.StartTime)
+            .ToArray();
+
         preemptTimesForBreaks = calculatePreemptTimeForBreaks();
 
-        breakTracker = createBreakTracker()!;
+        Debug.Assert(drawableRuleset is not null, "DrawableRuleset should be resolved when LegacyBreakOverlay is used in gameplay.");
+        Debug.Assert(scoreProcessor is not null, "ScoreProcessor should be resolved when LegacyBreakOverlay is used in gameplay.");
 
-        Debug.Assert(breakTracker is not null, "BreakTracker should not be null when created here.");
-
-        AddInternal(breakTracker);
+        AddInternal(breakTracker = new BreakTracker(drawableRuleset.GameplayStartTime, scoreProcessor)
+        {
+            Breaks = breakPeriods
+        });
         isBreakTime.BindTo(breakTracker.IsBreakTime);
     }
 
@@ -72,43 +81,67 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
     private double[] calculatePreemptTimeForBreaks()
     {
         var beatmap = this.beatmap.Value.Beatmap;
-        var breaks = beatmap.Breaks;
+        var breaks = breakPeriods;
 
-        if (breaks.Count == 0)
+        if (breaks.Length == 0)
             return Array.Empty<double>();
 
-        var hitObjects = beatmap.HitObjects;
-        double[] preemptTimes = new double[breaks.Count];
+        // osu didn't gurantee that hitobjects are sorted, so we sort them first.
+        // I don't know if this would be a performance concern or not.
+        var hitObjects = beatmap.HitObjects.OrderBy(h => h.StartTime).ToArray();
+        double[] preemptTimes = new double[breaks.Length];
 
         for (int i = 0; i < preemptTimes.Length; i++)
             preemptTimes[i] = double.NaN;
 
-        var currentBreak = 0;
-
-        for (int i = 0; i < hitObjects.Count; i++)
+        for (int breakIndex = 0; breakIndex < breaks.Length; breakIndex++)
         {
-            var hitObject = hitObjects[i];
+            var breakPeriod = breaks[breakIndex];
+            var nextHitObject = binarySearchFirstHitObjectAfter(hitObjects, breakPeriod.EndTime);
 
-            if (hitObject.StartTime < breaks[currentBreak].StartTime)
+            if (nextHitObject is null)
                 continue;
 
             double preemptTime;
-            if (hitObject is IHasTimePreempt hasTimePreempt)
+            if (nextHitObject is IHasTimePreempt hasTimePreempt)
                 preemptTime = hasTimePreempt.TimePreempt;
             else
                 // FIXME
                 // I don't know what does this mean
                 // This line was from: https://github.com/ppy/osu/blob/e0c4592dc74a69aff1453a8e19e3ec0f5e8f2ca9/osu.Game/Screens/Edit/EditorBeatmapProcessor.cs#L88-L91
                 // i see this value is used when the next object is not IHasTimePreempt, so i guess it's a fallback value.
-                preemptTime = Math.Max(BreakPeriod.GAP_AFTER_BREAK, beatmap.ControlPointInfo.TimingPointAt(hitObject.StartTime).BeatLength * 2);
+                preemptTime = Math.Max(BreakPeriod.GAP_AFTER_BREAK, beatmap.ControlPointInfo.TimingPointAt(nextHitObject.StartTime).BeatLength * 2);
 
-            preemptTimes[currentBreak] = preemptTime;
-
-            if (++currentBreak >= breaks.Count)
-                break;
+            preemptTimes[breakIndex] = preemptTime;
         }
 
         return preemptTimes;
+    }
+
+    private static HitObject? binarySearchFirstHitObjectAfter(IReadOnlyList<HitObject> hitObjects, double time)
+    {
+        if (hitObjects.Count == 0)
+            return null;
+
+        int low = 0;
+        int high = hitObjects.Count - 1;
+        HitObject? candidate = null;
+
+        while (low <= high)
+        {
+            int mid = (low + high) >> 1;
+            var hitObject = hitObjects[mid];
+
+            if (hitObject.StartTime >= time)
+            {
+                candidate = hitObject;
+                high = mid - 1;
+            }
+            else
+                low = mid + 1;
+        }
+
+        return candidate;
     }
 
     protected override void LoadComplete()
@@ -168,11 +201,12 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
 
     private int getPeriodIndex(Period period)
     {
-        var breaks = beatmap.Value.Beatmap.Breaks;
+        var breaks = breakPeriods;
 
-        for (int i = 0; i < breaks.Count; i++)
+        for (int i = 0; i < breaks.Length; i++)
         {
             if (Precision.AlmostEquals(period.Start, breaks[i].StartTime) &&
+                // BreakTracker adjusts the end time by subtracting BreakOverlay.BREAK_FADE_DURATION
                 Precision.AlmostEquals(period.End, breaks[i].EndTime - BreakOverlay.BREAK_FADE_DURATION))
                 return i;
         }
@@ -202,6 +236,12 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
             double playTime = (halfDuration > 2880) ? (period.Start + halfDuration) : (period.End - 2880);
 
             double beginTime = Math.Max(0, playTime - gameStartTime);
+
+            // I see sections ranking animation won't play if the break time is too short.
+            // But this hack also skips animation when rewinding past the animation time.
+            // though this is not quite common and the effect is minor.
+            if (beginTime < Clock.CurrentTime)
+                return;
 
             using (BeginAbsoluteSequence(beginTime))
                 PlayBreakRankingAnimation(IsSectionPassing());
