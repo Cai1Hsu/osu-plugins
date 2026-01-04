@@ -112,7 +112,7 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
         };
     }
 
-    private double firstHitObjectStartTime = double.MinValue;
+    private double firstHitObjectStartTime;
 
     private CountDownAnimationInfo? countDownAnimationInfo = null;
 
@@ -223,6 +223,8 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
         return -1;
     }
 
+    private const double min_break_duration_for_section_ranking = 2880;
+
     private void playBreakAnimations()
     {
         var maybePeriod = breakTracker.CurrentPeriod.Value;
@@ -248,13 +250,15 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
         void playSectionRanking()
         {
             // match stable's behavior: only play section ranking animation for breaks longer than 2.88s
-            if (breakDuration <= 2880)
+            if (breakDuration <= min_break_duration_for_section_ranking)
                 return;
 
             double halfDuration = breakDuration / 2.0;
 
             double gameStartTime = drawableRuleset?.GameplayStartTime ?? 0;
-            double playTime = (halfDuration > 2880) ? (breakStartTime + halfDuration) : (breakEndTime - 2880);
+            double playTime = (halfDuration > min_break_duration_for_section_ranking)
+                ? (breakStartTime + halfDuration)
+                : (breakEndTime - min_break_duration_for_section_ranking);
 
             double beginTime = Math.Max(0, playTime - gameStartTime);
 
