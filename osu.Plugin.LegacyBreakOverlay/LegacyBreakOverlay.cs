@@ -227,15 +227,21 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
 
         var period = maybePeriod.Value;
 
+        // BreakTracker subtracts BreakOverlay.BREAK_FADE_DURATION from the end time to trigger the end of break earlier.
+        // Using original value is confirmed to match osu!stable's behavior.
+        double breakDuration = period.Duration + BreakOverlay.BREAK_FADE_DURATION;
+        double breakStartTime = period.Start;
+        double breakEndTime = period.End + BreakOverlay.BREAK_FADE_DURATION;
+
         playSectionRanking();
         playResumeWarningArrows();
 
         void playSectionRanking()
         {
-            double halfDuration = period.Duration / 2.0;
+            double halfDuration = breakDuration / 2.0;
 
             double gameStartTime = drawableRuleset?.GameplayStartTime ?? 0;
-            double playTime = (halfDuration > 2880) ? (period.Start + halfDuration) : (period.End - 2880);
+            double playTime = (halfDuration > 2880) ? (breakStartTime + halfDuration) : (breakEndTime - 2880);
 
             double beginTime = Math.Max(0, playTime - gameStartTime);
 
@@ -263,8 +269,8 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
 
             // stable uses integer for these timings, we keep consistent.
             int preemptCount = Math.Min(2, (int)(preemptTime / 200));
-            int flashCount = Math.Min(5, (int)((period.Duration + 200) / 200)) + preemptCount;
-            int loopStartTime = (int)(period.End - 200 * (flashCount - preemptCount));
+            int flashCount = Math.Min(5, (int)((breakDuration + 200) / 200)) + preemptCount;
+            int loopStartTime = (int)(breakEndTime - 200 * (flashCount - preemptCount));
 
             using (BeginAbsoluteSequence(loopStartTime))
                 PlayWarningAnimation(flashCount);
