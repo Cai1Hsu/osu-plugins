@@ -88,6 +88,8 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
 
         // osu didn't gurantee that hitobjects are sorted, so we sort them first.
         // I don't know if this would be a performance concern or not.
+        // In my tests, a beatmap(b/349685) with 10k hitobjects takes about 1ms to sort on my machine.
+        // This is the beatmap with most hitobjects on my machine, so I guess it's acceptable.
         var hitObjects = beatmap.HitObjects.OrderBy(h => h.StartTime).ToArray();
         double[] preemptTimes = new double[breaks.Length];
 
