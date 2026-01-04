@@ -88,6 +88,8 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
         // FIXME: in tests, samples from skin were not used. but in normal play, they were used.
         AddInternal(sectionPassSample = new PoolableSkinnableSample(new SampleInfo("Gameplay/sectionpass")));
         AddInternal(sectionFailSample = new PoolableSkinnableSample(new SampleInfo("Gameplay/sectionfail")));
+
+        ClearAnimations(); // ensure starting from a clean state
     }
 
     public void PlayWarningAnimation(int loopCount)
