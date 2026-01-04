@@ -238,18 +238,16 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
 
         void playSectionRanking()
         {
+            // match stable's behavior: only play section ranking animation for breaks longer than 2.88s
+            if (breakDuration <= 2880)
+                return;
+
             double halfDuration = breakDuration / 2.0;
 
             double gameStartTime = drawableRuleset?.GameplayStartTime ?? 0;
             double playTime = (halfDuration > 2880) ? (breakStartTime + halfDuration) : (breakEndTime - 2880);
 
             double beginTime = Math.Max(0, playTime - gameStartTime);
-
-            // I see sections ranking animation won't play if the break time is too short.
-            // But this hack also skips animation when rewinding past the animation time.
-            // though this is not quite common and the effect is minor.
-            if (beginTime < Clock.CurrentTime)
-                return;
 
             using (BeginAbsoluteSequence(beginTime))
                 PlayBreakRankingAnimation(IsSectionPassing());
