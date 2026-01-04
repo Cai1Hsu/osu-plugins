@@ -14,7 +14,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 {
     private const float bar_height = 12f;
     private const float background_height = bar_height * 4f;
-    private const float centre_line_width = 1.5f; // TODO: this looks in correct
+    private const float centre_line_width = 4.5f;
     private const float min_meter_width = 220f;
     private const float max_meter_width = 420f;
     private const float pixels_per_millisecond = 2.2f;
@@ -253,8 +253,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         {
             Anchor = Anchor.Centre;
             Origin = Anchor.Centre;
-            Width = 1.5f;
-            Scale = new Vector2(3, 1);
+            Width = centre_line_width;
             Height = background_height;
 
             Blending = BlendingParameters.Additive;
@@ -271,13 +270,12 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         {
             ClearTransforms();
 
-            Alpha = 1;
+            Alpha = 0.4f;
             Position = new Vector2(offset, 0);
             Height = height;
             box.Colour = colour;
 
-            this
-                .FadeOut(10000, Easing.OutCubic)
+            this.FadeOut(10000)
                 .Expire();
         }
     }
