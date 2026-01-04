@@ -131,7 +131,7 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
                 playBreakAnimations();
             else
                 ClearAnimations();
-        }, true);
+        });
     }
 
     private double lastFrameTime = double.MinValue;
@@ -181,9 +181,7 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
     {
         var maybePeriod = breakTracker.CurrentPeriod.Value;
 
-        // Bindables may fire events via TriggerChange, so we add a check here.
-        if (!maybePeriod.HasValue)
-            return;
+        Debug.Assert(maybePeriod.HasValue, "Current break period should have value when in break time.");
 
         var period = maybePeriod.Value;
 
