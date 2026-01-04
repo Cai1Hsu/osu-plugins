@@ -52,7 +52,7 @@ public partial class TestSceneLegacyBreakOverlayBase : OsuTestScene, IStorageRes
             },
             new SkinProvidingContainer(skin)
             {
-                Child = legacyBreakOverlay = new LegacyBreakOverlay(),
+                Child = legacyBreakOverlay = new LegacyBreakOverlayBase(),
             }
         };
     }
