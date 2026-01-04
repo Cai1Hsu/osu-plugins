@@ -87,7 +87,8 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
         });
         isBreakTime.BindTo(breakTracker.IsBreakTime);
 
-        calculateCountDownArrowAnimations(firstHitObject);
+        if (firstHitObject is not null && firstHitObject.StartTime > 6000)
+            countDownAnimationInfo = calculateCountDownArrowAnimations();
     }
 
     private double calculateGlobalPreemptTime(IReadOnlyList<Mod> mods, RulesetInfo rulesetInfo)
@@ -138,16 +139,13 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
             PlayWarningAnimation(info.LoopCount);
     }
 
-    private void calculateCountDownArrowAnimations(HitObject? firstHitObject)
+    private CountDownAnimationInfo calculateCountDownArrowAnimations()
     {
-        if (firstHitObject is null || firstHitObject.StartTime <= 6000)
-            return;
-
         // use integer to match stable's behavior
         int startTime = (int)firstHitObjectStartTime - (int)globalPreemptTime - 900;
         int loopCount = 5 + Math.Min(2, (int)(globalPreemptTime / 200));
 
-        countDownAnimationInfo = new CountDownAnimationInfo(startTime, loopCount);
+        return new CountDownAnimationInfo(startTime, loopCount);
     }
 
     protected override void LoadComplete()
