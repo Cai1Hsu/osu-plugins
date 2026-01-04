@@ -34,6 +34,8 @@ public partial class TestSceneLegacyErrorMeter : OsuTestScene
 
     private int overallDifficulty = 5;
 
+    private double randomOffsetRange = 150;
+
     [Test]
     public void TestOsuWindows()
     {
@@ -44,9 +46,11 @@ public partial class TestSceneLegacyErrorMeter : OsuTestScene
 
         AddStep("apply", () => newJudgement(manualOffset));
 
+        AddSliderStep("random offset range", 0, 150, 150, v => randomOffsetRange = v);
+
         AddRepeatStep("random burst", () =>
         {
-            newJudgement(RNG.NextDouble(-150, 150));
+            newJudgement(RNG.NextDouble(-randomOffsetRange, randomOffsetRange));
         }, 20);
         AddStep("clear meter", () => meter.Clear());
     }
