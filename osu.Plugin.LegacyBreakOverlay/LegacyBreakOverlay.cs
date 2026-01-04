@@ -186,10 +186,10 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
         // When rewinding, we need to re-play the break animations if we're currently in a break.
         if (currentTime < lastFrameTime)
         {
+            ClearAnimations();
+
             if (isBreakTime.Value)
                 playBreakAnimations();
-            else
-                ClearAnimations();
 
             if (currentTime < firstHitObjectStartTime)
                 scheduleCountDownAnimation();
