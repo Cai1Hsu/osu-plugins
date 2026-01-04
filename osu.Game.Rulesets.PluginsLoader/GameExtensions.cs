@@ -64,10 +64,9 @@ public static class GameExtensions
                     notification?.Post(new PluginNotification
                     {
                         Text = "Your platform is not supported due to some technical limitations. "
-                            + "We don't have plan to provide support on this platform in the near future. "
-                            + "Plugins will not function.",
+                            + "Some plugins will not function.",
                         Icon = FontAwesome.Solid.ExclamationTriangle,
-                        IconColour = Colour4.Red,
+                        IconColour = Colour4.Yellow,
                     });
                     return;
                 }

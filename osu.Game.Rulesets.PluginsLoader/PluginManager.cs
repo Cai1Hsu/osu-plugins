@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Humanizer;
 using osu.Framework;
 using osu.Framework.Allocation;
@@ -347,7 +346,10 @@ public partial class PluginManager : Drawable
                 loadedPlugins.Add(pluginInstance);
             }
 
-            Scheduler.Add(() => GetPluginEnabled(pluginInstance).Value = true);
+            var enabled = plugin_enabled_field.GetValue(pluginInstance) as Bindable<bool>;
+
+            if (enabled is not null)
+                Scheduler.Add(() => enabled.Value = true);
 
             Logger.Log($"Successfully loaded plugin: {pluginType.FullName} from {pluginType.Assembly.Location}", LoggingTarget.Runtime, LogLevel.Verbose);
         }
@@ -366,6 +368,6 @@ public partial class PluginManager : Drawable
     }
 
     // intentially not use InternalVisibleTo so that loader can be decoupled from the plugin library.
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "enabled")]
-    private static extern ref BindableBool GetPluginEnabled(OsuPlugin plugin);
+    private static readonly FieldInfo plugin_enabled_field = typeof(OsuPlugin)
+        .GetField("enabled", BindingFlags.NonPublic | BindingFlags.Instance)!;
 }
