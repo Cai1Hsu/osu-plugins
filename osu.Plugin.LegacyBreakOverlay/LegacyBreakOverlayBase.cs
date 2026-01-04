@@ -21,7 +21,10 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
     protected readonly Container WarningArrowContainer;
     protected readonly Sprite SectionRankingSprite;
 
-    private static readonly Vector2 warning_arrow_position = new Vector2(80, 100);
+    // skin conponents size are correctly scaled, but here we also scale positions to match stable's coordinates
+    // see https://github.com/ppy/osu/blob/b6dc64668e9a7b9468fc1d54002a0b9a57a0c56a/osu.Game.Rulesets.Osu/UI/OsuPlayfieldAdjustmentContainer.cs#L57
+    private const float stable_magic_ratio = 1.6f;
+    private static readonly Vector2 warning_arrow_position = new Vector2(80, 100) * stable_magic_ratio;
     private const float warning_arrow_duration = 100;
 
     public LegacyBreakOverlayBase()
