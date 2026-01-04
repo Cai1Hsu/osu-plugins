@@ -218,12 +218,14 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
 
     private void playBreakAnimations()
     {
-        // Sometimes transparency get modified by other components, so we update it again here.
-        updateLazerBreakOverlayTransparency();
-
         var maybePeriod = breakTracker.CurrentPeriod.Value;
 
-        Debug.Assert(maybePeriod.HasValue, "Current break period should have value when in break time.");
+        // if the intro is quite long, it's possible that we are in a break but no current period is set.
+        if (maybePeriod is null)
+            return;
+
+        // Sometimes transparency get modified by other components, so we update it again here.
+        updateLazerBreakOverlayTransparency();
 
         var period = maybePeriod.Value;
 
