@@ -12,9 +12,11 @@ namespace osu.Plugin.LegacyErrorMeter;
 
 public partial class LegacyErrorMeterDrawable : CompositeDrawable
 {
-    private const float bar_height = 12f;
+    private const float stable_ratio = 1.6f;
+
+    private const float bar_height = 3f * stable_ratio;
     private const float background_height = bar_height * 4f;
-    private const float centre_line_width = 4.5f;
+    private const float centre_line_width = 1.5f * stable_ratio;
     private const float min_meter_width = 220f;
     private const float max_meter_width = 420f;
     private const float pixels_per_millisecond = 2.2f;
@@ -233,7 +235,8 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
     private partial class ArrowAverageIndicator : CompositeDrawable
     {
-        public static readonly Vector2 arrow_size = new Vector2(14, 14);
+        public static readonly Vector2 arrow_size = new Vector2(8, 8);
+
         [BackgroundDependencyLoader]
         private void load()
         {
