@@ -98,7 +98,6 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                 // The arrow is scaled upside down
                 // so bottom center is the visual top center.
                 Origin = Anchor.BottomCentre,
-                Alpha = 0,
             },
         };
     }
@@ -153,8 +152,6 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         else
             floatingAverage = floatingAverage * 0.8 + offsetPixels * 0.2;
 
-        arrow.FadeIn(250, Easing.OutQuint);
-
         arrow.MoveToX((float)floatingAverage, arrow_move_duration, Easing.Out);
 
         spawnSpark(Math.Abs(clamped), offsetPixels);
@@ -164,22 +161,13 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     {
         floatingAverage = null;
 
-        arrow
-            .FadeOut(200, Easing.OutQuint)
-            .MoveToX(0, 200, Easing.Out);
+        arrow.MoveToX(0, 200, Easing.Out);
 
         foreach (var drawable in flashContainer.Children.ToArray())
         {
             drawable.ClearTransforms();
             drawable.Expire();
         }
-    }
-
-    protected override void LoadComplete()
-    {
-        base.LoadComplete();
-
-        arrow.Alpha = 0;
     }
 
     private void spawnSpark(double absoluteOffset, float offsetPixels)
