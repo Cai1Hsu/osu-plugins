@@ -27,7 +27,10 @@ public partial class LegacyErrorMeter : HitErrorMeter
 
     protected override void OnNewJudgement(JudgementResult judgement)
     {
-        if (!judgement.IsHit || !judgement.Type.IsScorable() || judgement.Type.IsBonus())
+        if (!judgement.IsHit || 
+            !judgement.Type.IsScorable() || 
+            judgement.Type.IsBonus() || 
+            judgement.HitObject.HitWindows?.WindowFor(HitResult.Miss) == 0)
             return;
 
         MeterDrawable.ProcessJudgement(judgement.Type, judgement.TimeOffset);
