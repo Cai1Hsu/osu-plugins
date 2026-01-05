@@ -3,7 +3,6 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Graphics.Sprites;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.Scoring;
 using osuTK;
@@ -96,7 +95,9 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
             {
                 Name = "average arrow",
                 Anchor = Anchor.TopCentre,
-                Origin = Anchor.TopCentre,
+                // The arrow is scaled upside down
+                // so bottom center is the visual top center.
+                Origin = Anchor.BottomCentre,
                 Alpha = 0,
             },
         };
@@ -236,25 +237,14 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         _ => osuColour.ForHitResult(result)
     };
 
-    private partial class ArrowAverageIndicator : CompositeDrawable
+    private partial class ArrowAverageIndicator : Triangle
     {
-        public static readonly Vector2 arrow_size = new Vector2(8, 8);
-
         [BackgroundDependencyLoader]
         private void load()
         {
-            Masking = true;
-            Size = arrow_size * MathF.Sqrt(2);
-
-            // clip a 45 degree cube to make a diamond shape
-            InternalChild = new Box
-            {
-                Anchor = Anchor.TopCentre,
-                Origin = Anchor.Centre,
-                Size = arrow_size,
-                Rotation = 45,
-                Colour = Colour4.White
-            };
+            Size = new Vector2(10.625f, 5f);
+            Scale = new Vector2(1, -1); // make it upside down
+            Colour = Colour4.White;
         }
     }
 
