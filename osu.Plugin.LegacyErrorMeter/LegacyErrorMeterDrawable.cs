@@ -155,7 +155,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
         arrow.MoveToX(0, 200, Easing.Out);
 
-        flashContainer.Clear();
+        flashContainer.Clear(false); // don't dispose, sparks are pooled
     }
 
     private void spawnSpark(Colour4 colour, float offsetPixels)
