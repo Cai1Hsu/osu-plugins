@@ -86,7 +86,7 @@ public partial class TestSceneLegacyErrorMeter : OsuTestScene
             }
         });
 
-        meter.OnLoadComplete += _ => meter.UpdateHitWindows(hitWindows);
+        meter.OnLoadComplete += _ => meter.MeterDrawable.SetHitWindows(hitWindows);
     }
 
     private void newJudgement(double offset = 0)
