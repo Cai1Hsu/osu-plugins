@@ -22,13 +22,10 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     private const double arrow_move_duration = 800;
 
     private readonly DrawablePool<LegacyJudgementSpark> sparkPool = new DrawablePool<LegacyJudgementSpark>(64);
-    private readonly List<Box> segments = new List<Box>();
 
     private Container segmentsContainer = null!;
     private Container flashContainer = null!;
     private ArrowAverageIndicator arrow = null!;
-    private (HitResult result, double length)[] availableWindows = Array.Empty<(HitResult, double)>();
-    private HitWindows? sourceHitWindows;
 
     private float meterWidth = min_meter_width;
     private double errorRange = 1;
@@ -69,7 +66,8 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                         Name = "segments",
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
-                        RelativeSizeAxes = Axes.Both
+                        RelativeSizeAxes = Axes.Both,
+                        Height = 0.25f, // quarter height of the background
                     },
                     flashContainer = new Container
                     {
@@ -105,38 +103,38 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         if (hitWindows == null)
             return;
 
-        sourceHitWindows = hitWindows;
-        availableWindows = hitWindows.GetAllAvailableWindows().Where(w => w.result.IsHit()).OrderByDescending(w => w.length).ToArray();
+        var availableWindows = hitWindows.GetAllAvailableWindows()
+            .Where(w => w.result.IsHit())
+            .OrderByDescending(w => w.length)
+            .ToArray();
 
         errorRange = Math.Max(1, availableWindows.Length > 0 ? availableWindows.First().length : 1);
         meterWidth = (float)Math.Clamp(errorRange * pixels_per_millisecond, min_meter_width, max_meter_width);
 
         Width = meterWidth;
 
-        ensureSegments(availableWindows.Length);
+        segmentsContainer.Clear();
 
-        for (int i = 0; i < availableWindows.Length; i++)
+        foreach (var window in availableWindows)
         {
-            var window = availableWindows[i];
             var width = (float)(Math.Clamp(window.length, 0, errorRange) / errorRange) * meterWidth;
-            segments[i].Width = width;
-            segments[i].Alpha = 1;
+
+            segmentsContainer.Add(new Box
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                RelativeSizeAxes = Axes.Y,
+                Width = width,
+                Colour = getColour(window.result)
+            });
         }
 
-        for (int i = availableWindows.Length; i < segments.Count; i++)
-            segments[i].Alpha = 0;
-
-        arrow.Position = Vector2.Zero;
-        floatingAverage = null;
-        updateSegmentColours();
+        ClearJudgements();
     }
 
     public void ProcessJudgement(HitResult result, double timeOffset)
     {
         if (!result.IsHit() || result.IsBonus())
-            return;
-
-        if (availableWindows.Length == 0)
             return;
 
         double clamped = Math.Clamp(timeOffset, -errorRange, errorRange);
@@ -170,29 +168,6 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         var spark = sparkPool.Get();
         spark.Apply(colour, offsetPixels);
         flashContainer.Add(spark);
-    }
-
-    private void ensureSegments(int count)
-    {
-        while (segments.Count < count)
-        {
-            var box = new Box
-            {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-                Height = bar_height,
-                Alpha = 0
-            };
-
-            segments.Add(box);
-            segmentsContainer.Add(box);
-        }
-    }
-
-    private void updateSegmentColours()
-    {
-        for (int i = 0; i < availableWindows.Length && i < segments.Count; i++)
-            segments[i].Colour = getColour(availableWindows[i].result);
     }
 
     private Colour4 getColour(HitResult result) => result switch
