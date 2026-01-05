@@ -50,8 +50,6 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
     // use the player's clock for timing accuracy during gameplay
     public override IFrameBasedClock Clock => drawableRuleset is null ? base.Clock : drawableRuleset.FrameStableClock;
 
-    private IBeatmap beatmap = null!;
-
     private BreakPeriod[] breakPeriods = null!;
 
     private double globalPreemptTime = 0;
