@@ -24,11 +24,8 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     private readonly DrawablePool<LegacyJudgementSpark> sparkPool = new DrawablePool<LegacyJudgementSpark>(64);
     private readonly List<Box> segments = new List<Box>();
 
-    private Container surface = null!;
     private Container segmentsContainer = null!;
     private Container flashContainer = null!;
-    private Box background = null!;
-    private Box centreLine = null!;
     private ArrowAverageIndicator arrow = null!;
     private (HitResult result, double length)[] availableWindows = Array.Empty<(HitResult, double)>();
     private HitWindows? sourceHitWindows;
@@ -52,14 +49,14 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         InternalChildren = new Drawable[]
         {
             sparkPool,
-            surface = new Container
+            new Container
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
-                    background = new Box
+                    new Box
                     {
                         Name = "background",
                         Anchor = Anchor.Centre,
@@ -81,7 +78,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                         Origin = Anchor.Centre,
                         RelativeSizeAxes = Axes.Both
                     },
-                    centreLine = new Box
+                    new Box
                     {
                         Name = "centre line",
                         Anchor = Anchor.Centre,
