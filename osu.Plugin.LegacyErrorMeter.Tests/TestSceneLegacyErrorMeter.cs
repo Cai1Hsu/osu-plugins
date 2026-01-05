@@ -83,7 +83,7 @@ public partial class TestSceneLegacyErrorMeter : OsuTestScene
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
                 Scale = new Vector2(1.1f)
-            }
+            }.With(m => m.HideBeforeFirstHit.Value = false) // for testing purposes
         });
 
         meter.OnLoadComplete += _ => meter.MeterDrawable.SetHitWindows(hitWindows);
