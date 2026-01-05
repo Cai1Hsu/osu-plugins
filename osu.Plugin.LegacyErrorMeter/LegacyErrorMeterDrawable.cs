@@ -42,12 +42,13 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
     public LegacyErrorMeterDrawable()
     {
-        AutoSizeAxes = Axes.Both;
     }
 
     [BackgroundDependencyLoader]
     private void load()
     {
+        Height = background_height;
+
         InternalChildren = new Drawable[]
         {
             sparkPool,
@@ -55,7 +56,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
-                AutoSizeAxes = Axes.Both,
+                RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
                     background = new Box
@@ -64,7 +65,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
                         Colour = Colour4.Black.Opacity(0.6f),
-                        Size = new Vector2(meterWidth, background_height)
+                        RelativeSizeAxes = Axes.Both
                     },
                     segmentsContainer = new Container
                     {
@@ -87,7 +88,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                         Origin = Anchor.Centre,
                         Colour = Colour4.White,
                         Width = centre_line_width,
-                        Height = background_height
+                        RelativeSizeAxes = Axes.Y
                     }
                 }
             },
@@ -104,7 +105,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
     public void SetHitWindows(HitWindows? hitWindows)
     {
-        if (hitWindows == null || ReferenceEquals(sourceHitWindows, hitWindows))
+        if (hitWindows == null)
             return;
 
         sourceHitWindows = hitWindows;
@@ -113,8 +114,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         errorRange = Math.Max(1, availableWindows.Length > 0 ? availableWindows.First().length : 1);
         meterWidth = (float)Math.Clamp(errorRange * pixels_per_millisecond, min_meter_width, max_meter_width);
 
-        background.Size = new Vector2(meterWidth, background_height);
-        centreLine.Height = background_height;
+        Width = meterWidth;
 
         ensureSegments(availableWindows.Length);
 
@@ -123,16 +123,14 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
             var window = availableWindows[i];
             var width = (float)(Math.Clamp(window.length, 0, errorRange) / errorRange) * meterWidth;
             segments[i].Width = width;
-            segments[i].Height = bar_height;
             segments[i].Alpha = 1;
-            segmentsContainer.ChangeChildDepth(segments[i], 1 - i / (float)availableWindows.Length);
         }
 
         for (int i = availableWindows.Length; i < segments.Count; i++)
             segments[i].Alpha = 0;
 
         arrow.Position = Vector2.Zero;
-        floatingAverage = 0;
+        floatingAverage = null;
         updateSegmentColours();
     }
 
@@ -154,7 +152,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
         arrow.MoveToX((float)floatingAverage, arrow_move_duration, Easing.Out);
 
-        spawnSpark(Math.Abs(clamped), offsetPixels);
+        spawnSpark(getColour(result), offsetPixels);
     }
 
     public void ClearJudgements()
@@ -170,10 +168,10 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         }
     }
 
-    private void spawnSpark(double absoluteOffset, float offsetPixels)
+    private void spawnSpark(Colour4 colour, float offsetPixels)
     {
         var spark = sparkPool.Get();
-        spark.Apply(determineColourForOffset(absoluteOffset), offsetPixels, background_height);
+        spark.Apply(colour, offsetPixels);
         flashContainer.Add(spark);
     }
 
@@ -198,20 +196,6 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     {
         for (int i = 0; i < availableWindows.Length && i < segments.Count; i++)
             segments[i].Colour = getColour(availableWindows[i].result);
-    }
-
-    private Colour4 determineColourForOffset(double absoluteOffset)
-    {
-        if (availableWindows.Length == 0)
-            return getColour(HitResult.Great);
-
-        foreach (var window in availableWindows.OrderBy(w => w.length))
-        {
-            if (absoluteOffset <= window.length + 0.01)
-                return getColour(window.result);
-        }
-
-        return getColour(availableWindows.Last().result);
     }
 
     private Colour4 getColour(HitResult result) => result switch
@@ -245,7 +229,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
             Anchor = Anchor.Centre;
             Origin = Anchor.Centre;
             Width = centre_line_width;
-            Height = background_height;
+            RelativeSizeAxes = Axes.Y;
 
             Blending = BlendingParameters.Additive;
 
@@ -257,13 +241,12 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
             });
         }
 
-        public void Apply(Colour4 colour, float offset, float height)
+        public void Apply(Colour4 colour, float offset)
         {
             ClearTransforms();
 
             Alpha = 0.4f;
             Position = new Vector2(offset, 0);
-            Height = height;
             box.Colour = colour;
 
             this.FadeOut(10000)
