@@ -62,9 +62,9 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
         Debug.Assert(drawableRuleset is not null, "DrawableRuleset should be resolved when LegacyBreakOverlay is used in gameplay.");
         Debug.Assert(scoreProcessor is not null, "ScoreProcessor should be resolved when LegacyBreakOverlay is used in gameplay.");
 
-        beatmap = workingBeatmap.Value.Beatmap;
+        var beatmap = workingBeatmap.Value.Beatmap;
 
-        globalPreemptTime = calculateGlobalPreemptTime(mods.Value, rulesetInfo.Value);
+        globalPreemptTime = calculateGlobalPreemptTime(beatmap.BeatmapInfo, mods.Value, rulesetInfo.Value);
 
         breakPeriods = beatmap.Breaks
             // TODO investigate this. 
@@ -91,12 +91,12 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
             countDownAnimationInfo = calculateCountDownArrowAnimations();
     }
 
-    private double calculateGlobalPreemptTime(IReadOnlyList<Mod> mods, RulesetInfo rulesetInfo)
+    private double calculateGlobalPreemptTime(BeatmapInfo beatmapInfo, IReadOnlyList<Mod> mods, RulesetInfo rulesetInfo)
     {
         var ruleset = rulesetInfo.CreateInstance();
 
         // TODO: investigate if this matches stable's behavior.
-        var adjustedDifficulty = ruleset.GetAdjustedDisplayDifficulty(beatmap.BeatmapInfo, mods);
+        var adjustedDifficulty = ruleset.GetAdjustedDisplayDifficulty(beatmapInfo, mods);
 
         double ar = adjustedDifficulty.ApproachRate;
 
