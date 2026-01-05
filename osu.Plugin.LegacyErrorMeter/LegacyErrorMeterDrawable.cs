@@ -16,9 +16,6 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     private const float bar_height = 3f * stable_ratio;
     private const float background_height = bar_height * 4f;
     private const float centre_line_width = 1.5f * stable_ratio;
-    private const float min_meter_width = 220f;
-    private const float max_meter_width = 420f;
-    private const float pixels_per_millisecond = 2.2f;
     private const double arrow_move_duration = 800;
 
     private readonly DrawablePool<LegacyJudgementSpark> sparkPool = new DrawablePool<LegacyJudgementSpark>(64);
@@ -27,7 +24,6 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     private Container flashContainer = null!;
     private ArrowAverageIndicator arrow = null!;
 
-    private float meterWidth = min_meter_width;
     private double errorRange = 1;
     private double? floatingAverage;
 
@@ -35,11 +31,6 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     private OsuColour osuColour { get; set; } = null!;
 
     public LegacyErrorMeterDrawable()
-    {
-    }
-
-    [BackgroundDependencyLoader]
-    private void load()
     {
         Height = background_height;
 
@@ -108,16 +99,21 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
             .OrderByDescending(w => w.length)
             .ToArray();
 
-        errorRange = Math.Max(1, availableWindows.Length > 0 ? availableWindows.First().length : 1);
-        meterWidth = (float)Math.Clamp(errorRange * pixels_per_millisecond, min_meter_width, max_meter_width);
+        if (availableWindows.Length == 0)
+            return;
 
-        Width = meterWidth;
+        errorRange = availableWindows.First().length;
+
+        if (errorRange <= 0)
+            return;
+
+        Width = (float)(errorRange * stable_ratio);
 
         segmentsContainer.Clear();
 
         foreach (var window in availableWindows)
         {
-            var width = (float)(Math.Clamp(window.length, 0, errorRange) / errorRange) * meterWidth;
+            var width = (float)(Math.Clamp(window.length, 0, errorRange) / errorRange) * Width;
 
             segmentsContainer.Add(new Box
             {
@@ -137,17 +133,20 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
         if (!result.IsHit() || result.IsBonus())
             return;
 
-        double clamped = Math.Clamp(timeOffset, -errorRange, errorRange);
-        float offsetPixels = (float)(clamped / errorRange) * (meterWidth / 2f);
+        // stable uses int for time offset
+        int stableTimeOffset = (int)Math.Round(timeOffset);
+
+        double clamped = Math.Clamp(stableTimeOffset, -errorRange, errorRange);
+        float offset = (float)(clamped / errorRange) * (Width / 2f);
 
         if (floatingAverage == null)
-            floatingAverage = offsetPixels;
+            floatingAverage = offset;
         else
-            floatingAverage = floatingAverage * 0.8 + offsetPixels * 0.2;
+            floatingAverage = floatingAverage * 0.8 + offset * 0.2;
 
         arrow.MoveToX((float)floatingAverage, arrow_move_duration, Easing.Out);
 
-        spawnSpark(getColour(result), offsetPixels);
+        spawnSpark(getColour(result), offset);
     }
 
     public void ClearJudgements()
@@ -156,11 +155,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
         arrow.MoveToX(0, 200, Easing.Out);
 
-        foreach (var drawable in flashContainer.Children.ToArray())
-        {
-            drawable.ClearTransforms();
-            drawable.Expire();
-        }
+        flashContainer.Clear();
     }
 
     private void spawnSpark(Colour4 colour, float offsetPixels)
@@ -213,12 +208,12 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
             });
         }
 
-        public void Apply(Colour4 colour, float offset)
+        public void Apply(Colour4 colour, float taregtPosition)
         {
             ClearTransforms();
 
             Alpha = 0.4f;
-            Position = new Vector2(offset, 0);
+            X = taregtPosition;
             box.Colour = colour;
 
             this.FadeOut(10000)
