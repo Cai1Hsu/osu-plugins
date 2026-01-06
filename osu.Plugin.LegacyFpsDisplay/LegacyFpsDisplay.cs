@@ -167,7 +167,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         var displayRefreshRate = host.Window?.CurrentDisplayMode.Value.RefreshRate ?? 60;
 
         // Don't use clock.MaximumUpdateHz as it's somtimes unreliable
-        int multipler =  (frameSyncMode?.Value) switch
+        int multipler = (frameSyncMode?.Value) switch
         {
             FrameSync.Limit2x => 2,
             FrameSync.Limit4x => 4,
@@ -235,12 +235,14 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             _ => $"{(int)Math.Round(displayFrameTime)}m",
         };
 
-        if (displayFrameTime < 8.0)
-            frameTimeBackground.FadeColour(color_okay, background_fade_time);
-        else if (displayFrameTime < 16.0)
-            frameTimeBackground.FadeColour(color_warning, background_fade_time);
-        else
-            frameTimeBackground.FadeColour(color_danger, background_fade_time);
+        var newColor = displayFrameTime switch
+        {
+            < 8.0 => color_okay,
+            < 16.0 => color_warning,
+            _ => color_danger,
+        };
+
+        frameTimeBackground.FadeColour(newColor, background_fade_time);
     }
 
     private const float background_fade_time = 200;
@@ -251,26 +253,32 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         int displayFpsRounded = (int)Math.Min(displayFps, currentAimFps);
         fpsText.Text = $"{displayFpsRounded}";
 
+        Color4 newColor;
+
         if (drawClock.Throttling)
         {
             double throttlingTarget = drawClock.MaximumUpdateHz;
 
-            if (displayFpsRounded >= targetRefreshRate || displayFpsRounded >= throttlingTarget * 0.75f)
-                fpsBackground.FadeColour(color_okay, background_fade_time);
-            else if (displayFpsRounded > throttlingTarget - 10.0 && displayFpsRounded > throttlingTarget * 0.95)
-                fpsBackground.FadeColour(color_warning, background_fade_time);
-            else
-                fpsBackground.FadeColour(color_danger, background_fade_time);
+            newColor = displayFpsRounded switch
+            {
+                _ when targetRefreshRate >= throttlingTarget * 0.95f ||
+                    displayFpsRounded >= targetRefreshRate => color_okay,
+                _ when displayFpsRounded > throttlingTarget - 10.0 ||
+                    displayFpsRounded > throttlingTarget * 0.75f => color_warning,
+                _ => color_danger,
+            };
         }
         else
         {
-            if (displayFpsRounded >= (4 * targetRefreshRate))
-                fpsBackground.FadeColour(color_okay, background_fade_time);
-            else if (displayFpsRounded >= (2 * targetRefreshRate))
-                fpsBackground.FadeColour(color_warning, background_fade_time);
-            else
-                fpsBackground.FadeColour(color_danger, background_fade_time);
+            newColor = displayFpsRounded switch
+            {
+                _ when displayFpsRounded >= (4 * targetRefreshRate) => color_okay,
+                _ when displayFpsRounded >= (2 * targetRefreshRate) => color_warning,
+                _ => color_danger,
+            };
         }
+
+        fpsBackground.FadeColour(newColor, background_fade_time);
     }
 
     private partial class FpsLargeSpriteText : LegacySpriteText
