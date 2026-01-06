@@ -152,9 +152,15 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
 
         var window = host.Window;
 
-        window.CurrentDisplayBindable.BindValueChanged(_ => updateTargetRefreshRate());
-        window.CurrentDisplayMode.BindValueChanged(_ => updateTargetRefreshRate(), true);
+        currentDisplay.BindTo(window.CurrentDisplayBindable);
+        currentDisplayMode.BindTo(window.CurrentDisplayMode);
+
+        currentDisplay.BindValueChanged(_ => updateTargetRefreshRate());
+        currentDisplayMode.BindValueChanged(_ => updateTargetRefreshRate());
     }
+
+    private IBindable<Display> currentDisplay = new Bindable<Display>();
+    private IBindable<DisplayMode> currentDisplayMode = new Bindable<DisplayMode>();
 
     private IBindable<FrameSync>? frameSyncMode;
 
