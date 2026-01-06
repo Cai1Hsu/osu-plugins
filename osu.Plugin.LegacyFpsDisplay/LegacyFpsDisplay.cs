@@ -1,3 +1,6 @@
+// This file is adapted from osu!lazer's FpsCounter.
+// Original file: https://github.com/ppy/osu/blob/master/osu.Game/Graphics/UserInterface/FPSCounter.cs
+
 using System.Collections.Frozen;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
