@@ -281,16 +281,18 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
 
         protected override char[] FixedWidthExcludeCharacters => new[] { comma, dot, ms };
 
+        private static readonly FrozenDictionary<char, string> mappings = new Dictionary<char, string>
+        {
+            { ms, "ms" },
+            { comma, "comma" },
+            { dot, "dot" },
+        }.ToFrozenDictionary();
+
         public FpsLargeSpriteText() : base("fps")
         {
             FontOverlap = 1;
             FixedWidth = false;
-            CustomMappings = new Dictionary<char, string>
-            {
-                { ms, "ms" },
-                { comma, "comma" },
-                { dot, "dot" },
-            }.ToFrozenDictionary();
+            CustomMappings = mappings;
         }
     }
 
@@ -300,16 +302,18 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         public const char fps = 'f';
         public const char hz = 'h';
 
+        private static readonly FrozenDictionary<char, string> mappings = new Dictionary<char, string>
+        {
+            { slash, "slash" },
+            { fps, "fps" },
+            { hz, "hz" },
+        }.ToFrozenDictionary();
+
         public FpsSmallSpriteText() : base("fpss")
         {
             FontOverlap = 1f;
             FixedWidth = false;
-            CustomMappings = new Dictionary<char, string>
-            {
-                { slash, "slash" },
-                { fps, "fps" },
-                { hz, "hz" },
-            }.ToFrozenDictionary();
+            CustomMappings = mappings;
         }
     }
 }
