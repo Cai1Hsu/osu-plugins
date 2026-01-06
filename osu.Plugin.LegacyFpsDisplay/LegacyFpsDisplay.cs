@@ -225,7 +225,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             frameTimeBackground.FadeColour(color_danger, background_fade_time);
     }
 
-    private float background_fade_time = 200;
+    private const float background_fade_time = 200;
 
     private double displayFps = 0;
     private void updateFpsDisplay()
