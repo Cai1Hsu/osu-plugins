@@ -21,12 +21,6 @@ public abstract partial class BreakTrackingContainer : Container
             OnBreakEnd();
     }
 
-    public BreakTrackingContainer()
-    {
-        // We want to be notified of break state changes.
-        AlwaysPresent = true;
-    }
-
     [Resolved]
     private GameplayClockContainer? gameplayClockContainer { get; set; }
 
@@ -36,7 +30,7 @@ public abstract partial class BreakTrackingContainer : Container
     private BreakTracker? breakTracker;
 
     [BackgroundDependencyLoader]
-    private void load(Player? player, DrawableRuleset? drawableRuleset)
+    private void load(Player? player)
     {
         if (player is not null)
         {
@@ -45,9 +39,6 @@ public abstract partial class BreakTrackingContainer : Container
             ((IBindable<bool>)IsBreakTime).BindTo(player.IsBreakTime);
             CurrentBreakPeriod.BindTo(breakTracker.CurrentPeriod);
         }
-
-        if (drawableRuleset is not null)
-            Clock = drawableRuleset.Clock;
 
         if (gameplayClockContainer is not null)
             gameplayClockContainer.OnSeek += OnGameSeeked;
