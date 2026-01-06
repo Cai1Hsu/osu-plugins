@@ -3,6 +3,7 @@ using osu.Framework.Threading;
 using osu.Game;
 using osu.Game.Overlays.SkinEditor;
 using osu.Game.Plugins;
+using osu.Game.Plugins.Legacy;
 using osu.Game.Plugins.Skins;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;
@@ -13,6 +14,8 @@ public class LegacyBreakOverlayPlugin : OsuPlugin
 {
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
+        gameBase.EnsureLegacyResources();
+
         OsuGame game = (OsuGame)gameBase;
         SkinEditorOverlay? skinEditor = game.Dependencies.Get<SkinEditorOverlay>();
 
@@ -32,5 +35,11 @@ public class LegacyBreakOverlayPlugin : OsuPlugin
         },
         // In stable, only osu!standard has the break overlay.
         new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.MainHUDComponents, osuRuleset));
+
+        skinEditor.RegisterSkinComponents(new[]
+        {
+            typeof(LegacyHealthOverlay),
+            typeof(LegacyComboCounter),
+        }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.MainHUDComponents, null));
     }
 }
