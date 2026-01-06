@@ -270,6 +270,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         }
         else
         {
+            // FIXME: this is incorrect, as multiplier is included in targetRefreshRate
             newColor = displayFpsRounded switch
             {
                 _ when displayFpsRounded >= (4 * targetRefreshRate) => color_okay,
