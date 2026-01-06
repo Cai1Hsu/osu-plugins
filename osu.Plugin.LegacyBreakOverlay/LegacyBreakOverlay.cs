@@ -47,9 +47,6 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableD
     private BreakTracker breakTracker = null!;
     private readonly IBindable<bool> isBreakTime = new BindableBool();
 
-    // use the player's clock for timing accuracy during gameplay
-    public override IFrameBasedClock Clock => drawableRuleset is null ? base.Clock : drawableRuleset.FrameStableClock;
-
     private BreakPeriod[] breakPeriods = null!;
 
     private double globalPreemptTime = 0;
