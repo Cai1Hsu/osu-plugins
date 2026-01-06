@@ -7,10 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Beatmaps\**\*" />
+    <EmbeddedResource Include="Fonts\**\*" />
+    <EmbeddedResource Include="Samples\**\*" />
+    <EmbeddedResource Include="Skins\**\*" />
+    <EmbeddedResource Include="Shaders\**\*" />
+    <EmbeddedResource Include="Textures\**\*" />
+    <EmbeddedResource Include="Tracks\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\osu.Game.Plugins\osu.Game.Plugins.csproj" />
-    <ProjectReference Include="..\osu.Game.Plugins.Skins\osu.Game.Plugins.Skins.csproj" />
-    <!-- Legacy resources should be shared between plugins -->
-    <ProjectReference Include="..\osu.Game.Plugins.Legacy\osu.Game.Plugins.Legacy.csproj" />
   </ItemGroup>
 
   <ItemGroup>
