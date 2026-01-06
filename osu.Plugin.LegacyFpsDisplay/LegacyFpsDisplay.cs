@@ -3,6 +3,8 @@
 
 using System.Collections.Frozen;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
+using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
@@ -25,6 +27,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
 
     [Resolved]
     private GameHost host { get; set; } = null!;
+
     public bool UsesFixedAnchor { get; set; } = true;
 
     private FpsLargeSpriteText fpsText = null!;
@@ -47,7 +50,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
     }
 
     [BackgroundDependencyLoader]
-    private void load(ISkinSource skin)
+    private void load(ISkinSource skin, FrameworkConfigManager? config)
     {
         AutoSizeAxes = Axes.Both;
 
@@ -142,22 +145,37 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             }
         };
 
+        drawClock = host.DrawThread.Clock;
+
+        frameSyncMode = config?.GetBindable<FrameSync>(FrameworkSetting.FrameSync);
+        frameSyncMode?.BindValueChanged(_ => updateTargetRefreshRate());
+
         var window = host.Window;
 
-        window.CurrentDisplayBindable.BindValueChanged(_ => Scheduler.AddOnce(updateTargetRefreshRate));
-        window.CurrentDisplayMode.BindValueChanged(_ => Scheduler.AddOnce(updateTargetRefreshRate), true);
-
-        drawClock = host.DrawThread.Clock;
+        window.CurrentDisplayBindable.BindValueChanged(_ => updateTargetRefreshRate());
+        window.CurrentDisplayMode.BindValueChanged(_ => updateTargetRefreshRate(), true);
     }
+
+    private IBindable<FrameSync>? frameSyncMode;
 
     private ThrottledFrameClock drawClock = null!;
 
-    private float targetRefreshRate = 60;
+    private volatile float targetRefreshRate = 60;
 
     private void updateTargetRefreshRate()
     {
-        var display = host.Window?.CurrentDisplayMode;
-        targetRefreshRate = display?.Value.RefreshRate ?? 60; // 60 is stable's fallback
+        var displayRefreshRate = host.Window?.CurrentDisplayMode.Value.RefreshRate ?? 60;
+
+        // Don't use clock.MaximumUpdateHz as it's somtimes unreliable
+        int multipler =  (frameSyncMode?.Value) switch
+        {
+            FrameSync.Limit2x => 2,
+            FrameSync.Limit4x => 4,
+            FrameSync.Limit8x => 8,
+            _ => 1,
+        };
+
+        targetRefreshRate = MathF.Min(999, displayRefreshRate * multipler);
 
         targetRefreshRateText.Text = $"/{(int)MathF.Round(targetRefreshRate)}h";
     }
