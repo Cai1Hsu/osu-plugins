@@ -14,6 +14,7 @@ public abstract partial class BreakTrackingContainer : Container
 
     public virtual void OnGameSeeked()
     {
+        // Re-trigger break state handling with current value to ensure animations are in sync after seeking.
         onBreakTimeChanged(new ValueChangedEvent<Period?>(localCurrentBreak.Value, localCurrentBreak.Value));
     }
 
@@ -74,9 +75,7 @@ public abstract partial class BreakTrackingContainer : Container
         {
             localCurrentBreak.Value = CurrentBreak.Value;
 
-            // ensure first hit object appeared.
-            if (breakTracker.CurrentPeriod.Value is not null)
-                OnBreakStart();
+            OnBreakStart();
         }
         else
         {
