@@ -1,8 +1,6 @@
-using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Containers;
-using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Play;
 using osu.Game.Utils;
 
@@ -16,17 +14,27 @@ public abstract partial class BreakTrackingContainer : Container
 
     public virtual void OnGameSeeked()
     {
-        if (IsBreakTime.Value)
-            OnBreakStart();
+        onBreakTimeChanged(new ValueChangedEvent<Period?>(localCurrentBreak.Value, localCurrentBreak.Value));
+    }
+
+    protected void PlayAnimation(Action<Period> withBreak, Action withoutBreak)
+    {
+        var currentBreak = localCurrentBreak.Value;
+
+        if (currentBreak.HasValue)
+            withBreak(currentBreak.Value);
         else
-            OnBreakEnd();
+            withoutBreak();
     }
 
     [Resolved]
     private GameplayClockContainer? gameplayClockContainer { get; set; }
 
-    public readonly Bindable<bool> IsBreakTime = new Bindable<bool>();
-    public readonly IBindable<Period?> CurrentBreakPeriod = new Bindable<Period?>();
+    public readonly IBindable<Period?> CurrentBreak = new Bindable<Period?>();
+
+    private readonly Bindable<Period?> localCurrentBreak = new Bindable<Period?>();
+
+    protected IBindable<Period?> LocalCurrentBreak => localCurrentBreak;
 
     private BreakTracker breakTracker = null!;
 
@@ -38,8 +46,7 @@ public abstract partial class BreakTrackingContainer : Container
         breakTracker = player?.BreakOverlay.BreakTracker ?? cachedBreakTracker
             ?? throw new InvalidOperationException("BreakTrackingContainer requires a BreakTracker to function.");
 
-        ((IBindable<bool>)IsBreakTime).BindTo(breakTracker.IsBreakTime);
-        CurrentBreakPeriod.BindTo(breakTracker.CurrentPeriod);
+        CurrentBreak.BindTo(breakTracker.CurrentPeriod);
 
         if (UseBreakTrackerClock)
         {
@@ -48,20 +55,25 @@ public abstract partial class BreakTrackingContainer : Container
         }
 
         if (gameplayClockContainer is not null)
-            gameplayClockContainer.OnSeek += OnGameSeeked;
+            gameplayClockContainer.OnSeek += onGameSeeked;
     }
+
+    // wait a frame to allow break tracker to update its state.
+    private void onGameSeeked() => Scheduler.Add(OnGameSeeked);
 
     protected override void LoadComplete()
     {
         base.LoadComplete();
 
-        IsBreakTime.BindValueChanged(onBreakTimeChanged, true);
+        CurrentBreak.BindValueChanged(onBreakTimeChanged);
     }
 
-    private void onBreakTimeChanged(ValueChangedEvent<bool> @event)
+    private void onBreakTimeChanged(ValueChangedEvent<Period?> @event)
     {
-        if (@event.NewValue)
+        if (@event.NewValue.HasValue)
         {
+            localCurrentBreak.Value = CurrentBreak.Value;
+
             // ensure first hit object appeared.
             if (breakTracker.CurrentPeriod.Value is not null)
                 OnBreakStart();
@@ -69,6 +81,9 @@ public abstract partial class BreakTrackingContainer : Container
         else
         {
             OnBreakEnd();
+
+            // Sync status later to allow access to period information in OnBreakEnd.
+            localCurrentBreak.Value = CurrentBreak.Value;
         }
     }
 
@@ -77,6 +92,6 @@ public abstract partial class BreakTrackingContainer : Container
         base.Dispose(isDisposing);
 
         if (gameplayClockContainer is not null)
-            gameplayClockContainer.OnSeek -= OnGameSeeked;
+            gameplayClockContainer.OnSeek -= onGameSeeked;
     }
 }

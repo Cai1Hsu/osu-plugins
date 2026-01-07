@@ -159,7 +159,7 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
     private void playBreakAnimations()
     {
-        var maybePeriod = CurrentBreakPeriod.Value;
+        var maybePeriod = LocalCurrentBreak.Value;
 
         // if the intro is quite long, it's possible that we are in a break but no current period is set.
         if (maybePeriod is null)
@@ -222,7 +222,7 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
     {
         overlay.ClearAnimations();
 
-        if (IsBreakTime.Value)
+        if (LocalCurrentBreak.Value.HasValue)
             playBreakAnimations();
 
         if (Clock.CurrentTime < firstHitObjectStartTime)

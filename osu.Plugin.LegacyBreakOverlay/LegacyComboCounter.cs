@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Game.Plugins.Legacy;
 using osu.Game.Skinning;
+using osu.Game.Utils;
 using LazerLegacyCombo = osu.Game.Skinning.LegacyDefaultComboCounter;
 
 namespace osu.Plugin.LegacyBreakOverlay;
@@ -30,15 +32,48 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
     private const float duration = 1000f;
     private const float offset_x = -80f * stable_ratio;
 
+    public override void OnGameSeeked()
+    {
+        combo.ClearTransforms();
+
+        base.OnGameSeeked();
+    }
+
     public override void OnBreakEnd()
     {
-        combo.FadeIn(duration)
-             .MoveToX(0, duration, Easing.Out);
+        void playAnimation()
+        {
+            combo.FadeIn(duration)
+                .MoveToX(0, duration, Easing.Out);
+        }
+
+        PlayAnimation(b =>
+        {
+            using (BeginAbsoluteSequence(b.End))
+                playAnimation();
+        }, () =>
+        {
+            playAnimation();
+            combo.FinishTransforms();
+        });
     }
 
     public override void OnBreakStart()
     {
-        combo.FadeOut(duration)
-             .MoveToX(offset_x, duration, Easing.In);
+        void playAnimation()
+        {
+            combo.FadeOut(duration)
+                .MoveToX(offset_x, duration, Easing.In);
+        }
+
+        PlayAnimation(b =>
+        {
+            using (BeginAbsoluteSequence(b.Start))
+                playAnimation();
+        }, () =>
+        {
+            playAnimation();
+            combo.FinishTransforms();
+        });
     }
 }
