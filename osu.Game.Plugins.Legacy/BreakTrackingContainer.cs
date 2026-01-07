@@ -22,7 +22,7 @@ public abstract partial class BreakTrackingContainer : Container
 
     private BreakTracker breakTracker = null!;
 
-    // Setting this to false to allow animations rewinding on seek.s
+    // Setting this to false to allow animations rewinding on seeks.
     public override bool RemoveCompletedTransforms => false;
 
     protected virtual bool UseBreakTrackerClock => true;
