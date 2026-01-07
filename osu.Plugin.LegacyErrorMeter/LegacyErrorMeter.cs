@@ -17,7 +17,7 @@ public partial class LegacyErrorMeter : HitErrorMeter
     public Bindable<bool> HideBeforeFirstHit { get; } = new BindableBool(true);
 
     [BackgroundDependencyLoader]
-    private void load(DrawableRuleset? ruleset)
+    private void load()
     {
         AutoSizeAxes = Axes.Both;
 
@@ -26,18 +26,15 @@ public partial class LegacyErrorMeter : HitErrorMeter
         if (HitWindows is not null)
             MeterDrawable.SetHitWindows(HitWindows);
 
-        if (ruleset is not null)
-            Clock = ruleset.Clock;
-
         if (HideBeforeFirstHit.Value)
             this.FadeOut();
     }
 
     protected override void OnNewJudgement(JudgementResult judgement)
     {
-        if (!judgement.IsHit || 
-            !judgement.Type.IsScorable() || 
-            judgement.Type.IsBonus() || 
+        if (!judgement.IsHit ||
+            !judgement.Type.IsScorable() ||
+            judgement.Type.IsBonus() ||
             judgement.HitObject.HitWindows?.WindowFor(HitResult.Miss) == 0)
             return;
 

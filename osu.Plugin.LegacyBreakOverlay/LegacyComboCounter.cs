@@ -30,15 +30,35 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
     private const float duration = 1000f;
     private const float offset_x = -80f * stable_ratio;
 
-    public override void OnBreakEnd()
+    private void slideOut()
+    {
+        combo.FadeOut(duration)
+            .MoveToX(offset_x, duration, Easing.In);
+    }
+
+    private void slideIn()
     {
         combo.FadeIn(duration)
-             .MoveToX(0, duration, Easing.Out);
+            .MoveToX(0, duration, Easing.Out);
     }
 
     public override void OnBreakStart()
     {
-        combo.FadeOut(duration)
-             .MoveToX(offset_x, duration, Easing.In);
+        base.OnBreakStart();
+
+        var currentBreak = CurrentBreak.Value;
+
+        if (currentBreak is null)
+            return;
+
+        var period = currentBreak.Value;
+
+        using (BeginAbsoluteSequence(period.Start))
+        {
+            slideOut();
+
+            using (BeginDelayedSequence(period.Duration))
+                slideIn();
+        }
     }
 }

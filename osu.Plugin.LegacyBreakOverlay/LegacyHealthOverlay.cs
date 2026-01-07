@@ -29,18 +29,37 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
     private const float duration = 500;
     private const float offset_y = -20 * stable_ratio;
 
-    public override void OnBreakEnd()
+    private void slideIn()
     {
-        // Slide in
         healthDisplay
             .FadeIn(duration)
             .MoveToY(0, duration);
     }
 
-    public override void OnBreakStart()
+    private void slideOut()
     {
         healthDisplay
             .FadeOut(duration)
             .MoveToY(offset_y, duration);
+    }
+
+    public override void OnBreakStart()
+    {
+        base.OnBreakStart();
+
+        var currentBreak = CurrentBreak.Value;
+
+        if (currentBreak is null)
+            return;
+
+        var period = currentBreak.Value;
+
+        using (BeginAbsoluteSequence(period.Start))
+        {
+            slideOut();
+
+            using (BeginDelayedSequence(period.Duration))
+                slideIn();
+        }
     }
 }
