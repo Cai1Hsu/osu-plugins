@@ -54,8 +54,6 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
         Add(overlay = new LegacyBreakOverlayDrawable());
 
-        overlay.ClearAnimations();
-
         var beatmap = workingBeatmap.Value.Beatmap;
 
         globalPreemptTime = calculateGlobalPreemptTime(beatmap.BeatmapInfo, mods.Value, rulesetInfo.Value);
@@ -134,8 +132,18 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
     private const double min_break_duration_for_section_ranking = 2880;
 
-    private void playBreakAnimations(Period period)
+    public override void OnBreakStart()
     {
+        base.OnBreakStart();
+
+        var maybePeriod = CurrentBreak.Value;
+
+        // if the intro is quite long, it's possible that we are in a break but no current period is set.
+        if (maybePeriod is null)
+            return;
+
+        var period = maybePeriod.Value;
+
         // Sometimes transparency get modified by other components, so we update it again here.
         updateLazerBreakOverlayTransparency();
 
@@ -145,8 +153,11 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
         double breakStartTime = period.Start;
         double breakEndTime = period.End + BreakOverlay.BREAK_FADE_DURATION;
 
-        playSectionRanking();
-        playResumeWarningArrows();
+        using (BeginAbsoluteSequence(breakStartTime))
+        {
+            playSectionRanking();
+            playResumeWarningArrows();
+        }
 
         void playSectionRanking()
         {
@@ -160,9 +171,7 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
                 ? (breakStartTime + halfDuration)
                 : (breakEndTime - min_break_duration_for_section_ranking);
 
-            double delay = beginTime - breakStartTime;
-
-            using (BeginDelayedSequence(delay))
+            using (BeginDelayedSequence(beginTime - breakStartTime))
                 overlay.PlayBreakRankingAnimation(IsSectionPassing());
         }
 
@@ -173,25 +182,10 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
             int flashCount = Math.Min(5, (int)((breakDuration + 200) / 200)) + preemptCount;
             int loopStartTime = (int)(breakEndTime - 200 * (flashCount - preemptCount));
 
-            double delay = loopStartTime - breakStartTime;
-
-            using (BeginDelayedSequence(delay))
+            // FIXME: animation looks bad(and delayed for about 1s) when rewinding to mid-break.
+            // transformations conflict?
+            using (BeginDelayedSequence(loopStartTime - breakStartTime))
                 overlay.PlayWarningAnimation(flashCount);
         }
-    }
-
-    public override void OnBreakStart()
-    {
-        var maybePeriod = CurrentBreak.Value;
-
-        // if the intro is quite long, it's possible that we are in a break but no current period is set.
-        if (maybePeriod is null)
-            return;
-
-        var period = maybePeriod.Value;
-
-        using (BeginAbsoluteSequence(period.Start))
-            // schedule to ensure non-animatoin actions are executed when animation begins
-            playBreakAnimations(period);
     }
 }
