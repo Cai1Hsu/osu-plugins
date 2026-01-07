@@ -2,7 +2,6 @@ using osu.Framework.Graphics;
 using osu.Game.Skinning;
 using osu.Game.Plugins.Legacy;
 using osu.Framework.Allocation;
-using System.Diagnostics;
 
 namespace osu.Plugin.LegacyBreakOverlay;
 
@@ -30,50 +29,37 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
     private const float duration = 500;
     private const float offset_y = -20 * stable_ratio;
 
-    public override void OnGameSeeked()
+    private void slideIn()
     {
-        healthDisplay.ClearTransforms();
-
-        base.OnGameSeeked();
+        healthDisplay
+            .FadeIn(duration)
+            .MoveToY(0, duration);
     }
 
-    public override void OnBreakEnd()
+    private void slideOut()
     {
-        void playAnimation()
-        {
-            healthDisplay
-                .FadeIn(duration)
-                .MoveToY(0, duration);
-        }
-
-        PlayAnimation(b =>
-        {
-            using (BeginAbsoluteSequence(b.End))
-                playAnimation();
-        }, () =>
-        {
-            playAnimation();
-            healthDisplay.FinishTransforms();
-        });
+        healthDisplay
+            .FadeOut(duration)
+            .MoveToY(offset_y, duration);
     }
 
     public override void OnBreakStart()
     {
-        void playAnimation()
-        {
-            healthDisplay
-                .FadeOut(duration)
-                .MoveToY(offset_y, duration);
-        }
+        base.OnBreakStart();
 
-        PlayAnimation(b =>
+        var currentBreak = CurrentBreak.Value;
+
+        if (currentBreak is null)
+            return;
+
+        var period = currentBreak.Value;
+
+        using (BeginAbsoluteSequence(period.Start))
         {
-            using (BeginAbsoluteSequence(b.Start))
-                playAnimation();
-        }, () =>
-        {
-            playAnimation();
-            healthDisplay.FinishTransforms();
-        });
+            slideOut();
+
+            using (BeginDelayedSequence(period.Duration))
+                slideIn();
+        }
     }
 }

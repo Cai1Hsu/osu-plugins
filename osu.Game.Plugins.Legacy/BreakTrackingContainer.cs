@@ -8,36 +8,22 @@ namespace osu.Game.Plugins.Legacy;
 
 public abstract partial class BreakTrackingContainer : Container
 {
-    public abstract void OnBreakStart();
-
-    public abstract void OnBreakEnd();
-
-    public virtual void OnGameSeeked()
+    public virtual void OnBreakStart()
     {
-        // Re-trigger break state handling with current value to ensure animations are in sync after seeking.
-        onBreakTimeChanged(new ValueChangedEvent<Period?>(localCurrentBreak.Value, localCurrentBreak.Value));
+        Scheduler.CancelDelayedTasks();
     }
 
-    protected void PlayAnimation(Action<Period> withBreak, Action withoutBreak)
+    public virtual void OnBreakEnd()
     {
-        var currentBreak = localCurrentBreak.Value;
-
-        if (currentBreak.HasValue)
-            withBreak(currentBreak.Value);
-        else
-            withoutBreak();
+        Scheduler.CancelDelayedTasks();
     }
-
-    [Resolved]
-    private GameplayClockContainer? gameplayClockContainer { get; set; }
 
     public readonly IBindable<Period?> CurrentBreak = new Bindable<Period?>();
 
-    private readonly Bindable<Period?> localCurrentBreak = new Bindable<Period?>();
-
-    protected IBindable<Period?> LocalCurrentBreak => localCurrentBreak;
-
     private BreakTracker breakTracker = null!;
+
+    // Setting this to false to allow animations rewinding on seek.s
+    public override bool RemoveCompletedTransforms => false;
 
     protected virtual bool UseBreakTrackerClock => true;
 
@@ -54,13 +40,7 @@ public abstract partial class BreakTrackingContainer : Container
             Clock = breakTracker.Clock;
             ProcessCustomClock = false;
         }
-
-        if (gameplayClockContainer is not null)
-            gameplayClockContainer.OnSeek += onGameSeeked;
     }
-
-    // wait a frame to allow break tracker to update its state.
-    private void onGameSeeked() => Scheduler.Add(OnGameSeeked);
 
     protected override void LoadComplete()
     {
@@ -72,25 +52,8 @@ public abstract partial class BreakTrackingContainer : Container
     private void onBreakTimeChanged(ValueChangedEvent<Period?> @event)
     {
         if (@event.NewValue.HasValue)
-        {
-            localCurrentBreak.Value = CurrentBreak.Value;
-
             OnBreakStart();
-        }
         else
-        {
             OnBreakEnd();
-
-            // Sync status later to allow access to period information in OnBreakEnd.
-            localCurrentBreak.Value = CurrentBreak.Value;
-        }
-    }
-
-    protected override void Dispose(bool isDisposing)
-    {
-        base.Dispose(isDisposing);
-
-        if (gameplayClockContainer is not null)
-            gameplayClockContainer.OnSeek -= onGameSeeked;
     }
 }

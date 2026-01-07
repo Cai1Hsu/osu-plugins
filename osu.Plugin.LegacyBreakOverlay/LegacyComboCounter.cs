@@ -1,9 +1,7 @@
-using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Game.Plugins.Legacy;
 using osu.Game.Skinning;
-using osu.Game.Utils;
 using LazerLegacyCombo = osu.Game.Skinning.LegacyDefaultComboCounter;
 
 namespace osu.Plugin.LegacyBreakOverlay;
@@ -32,48 +30,35 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
     private const float duration = 1000f;
     private const float offset_x = -80f * stable_ratio;
 
-    public override void OnGameSeeked()
+    private void slideOut()
     {
-        combo.ClearTransforms();
-
-        base.OnGameSeeked();
+        combo.FadeOut(duration)
+            .MoveToX(offset_x, duration, Easing.In);
     }
 
-    public override void OnBreakEnd()
+    private void slideIn()
     {
-        void playAnimation()
-        {
-            combo.FadeIn(duration)
-                .MoveToX(0, duration, Easing.Out);
-        }
-
-        PlayAnimation(b =>
-        {
-            using (BeginAbsoluteSequence(b.End))
-                playAnimation();
-        }, () =>
-        {
-            playAnimation();
-            combo.FinishTransforms();
-        });
+        combo.FadeIn(duration)
+            .MoveToX(0, duration, Easing.Out);
     }
 
     public override void OnBreakStart()
     {
-        void playAnimation()
-        {
-            combo.FadeOut(duration)
-                .MoveToX(offset_x, duration, Easing.In);
-        }
+        base.OnBreakStart();
 
-        PlayAnimation(b =>
+        var currentBreak = CurrentBreak.Value;
+
+        if (currentBreak is null)
+            return;
+
+        var period = currentBreak.Value;
+
+        using (BeginAbsoluteSequence(period.Start))
         {
-            using (BeginAbsoluteSequence(b.Start))
-                playAnimation();
-        }, () =>
-        {
-            playAnimation();
-            combo.FinishTransforms();
-        });
+            slideOut();
+
+            using (BeginDelayedSequence(period.Duration))
+                slideIn();
+        }
     }
 }

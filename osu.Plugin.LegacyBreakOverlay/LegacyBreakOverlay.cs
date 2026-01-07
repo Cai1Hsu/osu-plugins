@@ -10,6 +10,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets;
 using osu.Game.Plugins.Legacy;
 using osu.Framework.Graphics;
+using osu.Game.Utils;
 
 namespace osu.Plugin.LegacyBreakOverlay;
 
@@ -53,11 +54,15 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
         Add(overlay = new LegacyBreakOverlayDrawable());
 
+        overlay.ClearAnimations();
+
         var beatmap = workingBeatmap.Value.Beatmap;
 
         globalPreemptTime = calculateGlobalPreemptTime(beatmap.BeatmapInfo, mods.Value, rulesetInfo.Value);
 
         var firstHitObject = beatmap.HitObjects.OrderBy(h => h.StartTime).FirstOrDefault();
+
+        double firstHitObjectStartTime;
 
         if (firstHitObject is not null)
             firstHitObjectStartTime = firstHitObject.StartTime;
@@ -65,7 +70,7 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
             firstHitObjectStartTime = gameplayClock.GameplayStartTime;
 
         if (firstHitObject is not null && firstHitObject.StartTime > 6000)
-            countDownAnimationInfo = calculateCountDownArrowAnimations();
+            scheduleCountDownAnimation(firstHitObjectStartTime);
     }
 
     private double calculateGlobalPreemptTime(BeatmapInfo beatmapInfo, IReadOnlyList<Mod> mods, RulesetInfo rulesetInfo)
@@ -89,40 +94,14 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
         };
     }
 
-    private double firstHitObjectStartTime;
-
-    private CountDownAnimationInfo? countDownAnimationInfo = null;
-
-    private readonly struct CountDownAnimationInfo
-    {
-        public readonly double StartTime;
-        public readonly int LoopCount;
-
-        public CountDownAnimationInfo(double startTime, int loopCount)
-        {
-            StartTime = startTime;
-            LoopCount = loopCount;
-        }
-    }
-
-    private void scheduleCountDownAnimation()
-    {
-        if (countDownAnimationInfo is null)
-            return;
-
-        var info = countDownAnimationInfo.Value;
-
-        using (BeginAbsoluteSequence(info.StartTime))
-            overlay.PlayWarningAnimation(info.LoopCount);
-    }
-
-    private CountDownAnimationInfo calculateCountDownArrowAnimations()
+    private void scheduleCountDownAnimation(double firstHitObjectStartTime)
     {
         // use integer to match stable's behavior
         int startTime = (int)firstHitObjectStartTime - (int)globalPreemptTime - 900;
         int loopCount = 5 + Math.Min(2, (int)(globalPreemptTime / 200));
 
-        return new CountDownAnimationInfo(startTime, loopCount);
+        using (BeginAbsoluteSequence(startTime))
+            overlay.PlayWarningAnimation(loopCount);
     }
 
     protected override void LoadComplete()
@@ -133,8 +112,6 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
         {
             updateLazerBreakOverlayTransparency();
         }, true);
-
-        scheduleCountDownAnimation();
     }
 
     private void updateLazerBreakOverlayTransparency()
@@ -157,16 +134,8 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
     private const double min_break_duration_for_section_ranking = 2880;
 
-    private void playBreakAnimations()
+    private void playBreakAnimations(Period period)
     {
-        var maybePeriod = LocalCurrentBreak.Value;
-
-        // if the intro is quite long, it's possible that we are in a break but no current period is set.
-        if (maybePeriod is null)
-            return;
-
-        var period = maybePeriod.Value;
-
         // Sometimes transparency get modified by other components, so we update it again here.
         updateLazerBreakOverlayTransparency();
 
@@ -191,7 +160,9 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
                 ? (breakStartTime + halfDuration)
                 : (breakEndTime - min_break_duration_for_section_ranking);
 
-            using (BeginAbsoluteSequence(beginTime))
+            double delay = beginTime - breakStartTime;
+
+            using (BeginDelayedSequence(delay))
                 overlay.PlayBreakRankingAnimation(IsSectionPassing());
         }
 
@@ -202,30 +173,25 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
             int flashCount = Math.Min(5, (int)((breakDuration + 200) / 200)) + preemptCount;
             int loopStartTime = (int)(breakEndTime - 200 * (flashCount - preemptCount));
 
-            using (BeginAbsoluteSequence(loopStartTime))
+            double delay = loopStartTime - breakStartTime;
+
+            using (BeginDelayedSequence(delay))
                 overlay.PlayWarningAnimation(flashCount);
         }
     }
 
     public override void OnBreakStart()
     {
-        playBreakAnimations();
-    }
+        var maybePeriod = CurrentBreak.Value;
 
-    public override void OnBreakEnd()
-    {
-        if (Clock.CurrentTime > firstHitObjectStartTime)
-            overlay.ClearAnimations();
-    }
+        // if the intro is quite long, it's possible that we are in a break but no current period is set.
+        if (maybePeriod is null)
+            return;
 
-    public override void OnGameSeeked()
-    {
-        overlay.ClearAnimations();
+        var period = maybePeriod.Value;
 
-        if (LocalCurrentBreak.Value.HasValue)
-            playBreakAnimations();
-
-        if (Clock.CurrentTime < firstHitObjectStartTime)
-            scheduleCountDownAnimation();
+        using (BeginAbsoluteSequence(period.Start))
+            // schedule to ensure non-animatoin actions are executed when animation begins
+            playBreakAnimations(period);
     }
 }
