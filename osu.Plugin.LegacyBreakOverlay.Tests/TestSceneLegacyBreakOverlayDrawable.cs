@@ -15,9 +15,9 @@ using osuTK.Graphics;
 
 namespace osu.Plugin.LegacyBreakOverlay.Tests;
 
-public partial class TestSceneLegacyBreakOverlayBase : OsuTestScene, IStorageResourceProvider
+public partial class TestSceneLegacyBreakOverlayDrawable : OsuTestScene, IStorageResourceProvider
 {
-    private LegacyBreakOverlayBase legacyBreakOverlay = null!;
+    private LegacyBreakOverlayDrawable legacyBreakOverlay = null!;
     private int animationLoopCount = 1;
 
     public string LocalSkinPath
@@ -52,7 +52,7 @@ public partial class TestSceneLegacyBreakOverlayBase : OsuTestScene, IStorageRes
             },
             new SkinProvidingContainer(skin)
             {
-                Child = legacyBreakOverlay = new LegacyBreakOverlayBase(),
+                Child = legacyBreakOverlay = new LegacyBreakOverlayDrawable(),
             }
         };
     }

@@ -13,7 +13,7 @@ namespace osu.Plugin.LegacyBreakOverlay;
 /// <summary>
 /// The base skin component of legacy break overlay, usually used for testing purposes.
 /// </summary>
-public partial class LegacyBreakOverlayBase : CompositeDrawable
+public partial class LegacyBreakOverlayDrawable : CompositeDrawable
 {
     [Resolved]
     private ISkinSource? skin { get; set; } = null;
@@ -27,7 +27,7 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
     private static readonly Vector2 warning_arrow_position = new Vector2(80, 100) * stable_magic_ratio;
     private const float warning_arrow_duration = 100;
 
-    public LegacyBreakOverlayBase()
+    public LegacyBreakOverlayDrawable()
     {
         Anchor = Anchor.Centre;
         Origin = Anchor.Centre;

@@ -22,7 +22,7 @@ namespace osu.Plugin.LegacyBreakOverlay;
 /// <summary>
 /// The skin component that provides full legacy break overlay experience.
 /// </summary>
-public partial class LegacyBreakOverlay : LegacyBreakOverlayBase, ISerialisableDrawable
+public partial class LegacyBreakOverlay : LegacyBreakOverlayDrawable, ISerialisableDrawable
 {
     bool ISerialisableDrawable.UsesFixedAnchor { get; set; } = true;
 
