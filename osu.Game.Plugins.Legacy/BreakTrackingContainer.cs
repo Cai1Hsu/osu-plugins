@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Containers;
@@ -15,7 +16,7 @@ public abstract partial class BreakTrackingContainer : Container
 
     public virtual void OnGameSeeked()
     {
-        if (IsBreakTime.Value && CurrentBreakPeriod.Value is not null)
+        if (IsBreakTime.Value)
             OnBreakStart();
         else
             OnBreakEnd();
@@ -27,25 +28,23 @@ public abstract partial class BreakTrackingContainer : Container
     public readonly Bindable<bool> IsBreakTime = new Bindable<bool>();
     public readonly IBindable<Period?> CurrentBreakPeriod = new Bindable<Period?>();
 
-    private BreakTracker? breakTracker;
+    private BreakTracker breakTracker = null!;
 
     protected virtual bool UseBreakTrackerClock => true;
 
     [BackgroundDependencyLoader]
-    private void load(Player? player)
+    private void load(Player? player, BreakTracker? cachedBreakTracker)
     {
-        if (player is not null)
+        breakTracker = player?.BreakOverlay.BreakTracker ?? cachedBreakTracker
+            ?? throw new InvalidOperationException("BreakTrackingContainer requires a BreakTracker to function.");
+
+        ((IBindable<bool>)IsBreakTime).BindTo(breakTracker.IsBreakTime);
+        CurrentBreakPeriod.BindTo(breakTracker.CurrentPeriod);
+
+        if (UseBreakTrackerClock)
         {
-            breakTracker = player.BreakOverlay.BreakTracker;
-
-            ((IBindable<bool>)IsBreakTime).BindTo(player.IsBreakTime);
-            CurrentBreakPeriod.BindTo(breakTracker.CurrentPeriod);
-
-            if (UseBreakTrackerClock)
-            {
-                Clock = breakTracker.Clock;
-                ProcessCustomClock = false;
-            }
+            Clock = breakTracker.Clock;
+            ProcessCustomClock = false;
         }
 
         if (gameplayClockContainer is not null)
@@ -63,9 +62,8 @@ public abstract partial class BreakTrackingContainer : Container
     {
         if (@event.NewValue)
         {
-            if (breakTracker is null ||
-                // ensure first hit object appeared.
-                breakTracker.CurrentPeriod.Value is not null)
+            // ensure first hit object appeared.
+            if (breakTracker.CurrentPeriod.Value is not null)
                 OnBreakStart();
         }
         else
