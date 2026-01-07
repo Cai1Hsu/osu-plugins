@@ -29,6 +29,8 @@ public abstract partial class BreakTrackingContainer : Container
 
     private BreakTracker? breakTracker;
 
+    protected virtual bool UseBreakTrackerClock => true;
+
     [BackgroundDependencyLoader]
     private void load(Player? player)
     {
@@ -38,6 +40,12 @@ public abstract partial class BreakTrackingContainer : Container
 
             ((IBindable<bool>)IsBreakTime).BindTo(player.IsBreakTime);
             CurrentBreakPeriod.BindTo(breakTracker.CurrentPeriod);
+
+            if (UseBreakTrackerClock)
+            {
+                Clock = breakTracker.Clock;
+                ProcessCustomClock = false;
+            }
         }
 
         if (gameplayClockContainer is not null)
