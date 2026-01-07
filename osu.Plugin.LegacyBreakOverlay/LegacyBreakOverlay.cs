@@ -1,28 +1,22 @@
-using System.Collections.Generic;
 using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
-using osu.Framework.Timing;
-using osu.Framework.Utils;
 using osu.Game.Beatmaps;
-using osu.Game.Beatmaps.Timing;
 using osu.Game.Configuration;
-using osu.Game.Rulesets.Objects.Types;
-using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Scoring;
-using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Play;
 using osu.Game.Skinning;
-using osu.Game.Utils;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets;
+using osu.Game.Plugins.Legacy;
+using osu.Framework.Graphics;
 
 namespace osu.Plugin.LegacyBreakOverlay;
 
 /// <summary>
 /// The skin component that provides full legacy break overlay experience.
 /// </summary>
-public partial class LegacyBreakOverlay : LegacyBreakOverlayDrawable, ISerialisableDrawable
+public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableDrawable
 {
     bool ISerialisableDrawable.UsesFixedAnchor { get; set; } = true;
 
@@ -39,48 +33,36 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayDrawable, ISerialisa
     private Player? player { get; set; }
 
     [Resolved]
-    private DrawableRuleset drawableRuleset { get; set; } = null!;
-
-    [Resolved]
     private ScoreProcessor scoreProcessor { get; set; } = null!;
-
-    private BreakTracker breakTracker = null!;
-    private readonly IBindable<bool> isBreakTime = new BindableBool();
-
-    private BreakPeriod[] breakPeriods = null!;
 
     private double globalPreemptTime = 0;
 
-    [BackgroundDependencyLoader]
-    private void load(IBindable<WorkingBeatmap> workingBeatmap, IBindable<IReadOnlyList<Mod>> mods, IBindable<RulesetInfo> rulesetInfo)
+    private LegacyBreakOverlayDrawable overlay = null!;
+
+    public LegacyBreakOverlay()
     {
-        Debug.Assert(drawableRuleset is not null, "DrawableRuleset should be resolved when LegacyBreakOverlay is used in gameplay.");
+        RelativeSizeAxes = Axes.Both;
+        Anchor = Anchor.Centre;
+        Origin = Anchor.Centre;
+    }
+
+    [BackgroundDependencyLoader]
+    private void load(IBindable<WorkingBeatmap> workingBeatmap, IBindable<IReadOnlyList<Mod>> mods, IBindable<RulesetInfo> rulesetInfo, IGameplayClock gameplayClock)
+    {
         Debug.Assert(scoreProcessor is not null, "ScoreProcessor should be resolved when LegacyBreakOverlay is used in gameplay.");
+
+        Add(overlay = new LegacyBreakOverlayDrawable());
 
         var beatmap = workingBeatmap.Value.Beatmap;
 
         globalPreemptTime = calculateGlobalPreemptTime(beatmap.BeatmapInfo, mods.Value, rulesetInfo.Value);
-
-        breakPeriods = beatmap.Breaks
-            // TODO investigate this. 
-            // but in BreakTracker, only breaks with effects are considered.
-            // So those without effects would never trigger our events.
-            .Where(b => b.HasEffect)
-            .OrderBy(b => b.StartTime)
-            .ToArray();
 
         var firstHitObject = beatmap.HitObjects.OrderBy(h => h.StartTime).FirstOrDefault();
 
         if (firstHitObject is not null)
             firstHitObjectStartTime = firstHitObject.StartTime;
         else
-            firstHitObjectStartTime = drawableRuleset.GameplayStartTime;
-
-        AddInternal(breakTracker = new BreakTracker(drawableRuleset.GameplayStartTime, scoreProcessor)
-        {
-            Breaks = breakPeriods
-        });
-        isBreakTime.BindTo(breakTracker.IsBreakTime);
+            firstHitObjectStartTime = gameplayClock.GameplayStartTime;
 
         if (firstHitObject is not null && firstHitObject.StartTime > 6000)
             countDownAnimationInfo = calculateCountDownArrowAnimations();
@@ -131,7 +113,7 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayDrawable, ISerialisa
         var info = countDownAnimationInfo.Value;
 
         using (BeginAbsoluteSequence(info.StartTime))
-            PlayWarningAnimation(info.LoopCount);
+            overlay.PlayWarningAnimation(info.LoopCount);
     }
 
     private CountDownAnimationInfo calculateCountDownArrowAnimations()
@@ -152,14 +134,6 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayDrawable, ISerialisa
             updateLazerBreakOverlayTransparency();
         }, true);
 
-        isBreakTime.BindValueChanged(v =>
-        {
-            if (v.NewValue)
-                playBreakAnimations();
-            else if (Clock.CurrentTime > firstHitObjectStartTime)
-                ClearAnimations();
-        });
-
         scheduleCountDownAnimation();
     }
 
@@ -169,28 +143,6 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayDrawable, ISerialisa
             return;
 
         player.BreakOverlay.Alpha = LazerBreakOverlayTransparency.Value;
-    }
-
-    private double lastFrameTime = double.MinValue;
-    protected override void Update()
-    {
-        base.Update();
-
-        double currentTime = Clock.CurrentTime;
-
-        // When rewinding, we need to re-play the break animations if we're currently in a break.
-        if (currentTime < lastFrameTime)
-        {
-            ClearAnimations();
-
-            if (isBreakTime.Value)
-                playBreakAnimations();
-
-            if (currentTime < firstHitObjectStartTime)
-                scheduleCountDownAnimation();
-        }
-
-        lastFrameTime = currentTime;
     }
 
     protected virtual bool IsSectionPassing()
@@ -203,35 +155,20 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayDrawable, ISerialisa
         return scoreProcessor.Accuracy.Value > 0.9;
     }
 
-    private int getPeriodIndex(Period period)
-    {
-        var breaks = breakPeriods;
-
-        for (int i = 0; i < breaks.Length; i++)
-        {
-            if (Precision.AlmostEquals(period.Start, breaks[i].StartTime) &&
-                // BreakTracker adjusts the end time by subtracting BreakOverlay.BREAK_FADE_DURATION
-                Precision.AlmostEquals(period.End, breaks[i].EndTime - BreakOverlay.BREAK_FADE_DURATION))
-                return i;
-        }
-
-        return -1;
-    }
-
     private const double min_break_duration_for_section_ranking = 2880;
 
     private void playBreakAnimations()
     {
-        var maybePeriod = breakTracker.CurrentPeriod.Value;
+        var maybePeriod = CurrentBreakPeriod.Value;
 
         // if the intro is quite long, it's possible that we are in a break but no current period is set.
         if (maybePeriod is null)
             return;
 
+        var period = maybePeriod.Value;
+
         // Sometimes transparency get modified by other components, so we update it again here.
         updateLazerBreakOverlayTransparency();
-
-        var period = maybePeriod.Value;
 
         // BreakTracker subtracts BreakOverlay.BREAK_FADE_DURATION from the end time to trigger the end of break earlier.
         // Using original value is confirmed to match osu!stable's behavior.
@@ -255,23 +192,40 @@ public partial class LegacyBreakOverlay : LegacyBreakOverlayDrawable, ISerialisa
                 : (breakEndTime - min_break_duration_for_section_ranking);
 
             using (BeginAbsoluteSequence(beginTime))
-                PlayBreakRankingAnimation(IsSectionPassing());
+                overlay.PlayBreakRankingAnimation(IsSectionPassing());
         }
 
         void playResumeWarningArrows()
         {
-            int breakIndex = getPeriodIndex(period);
-
-            if (breakIndex == -1)
-                return;
-
             // stable uses integer for these timings, we keep consistent.
             int preemptCount = Math.Min(2, (int)(globalPreemptTime / 200));
             int flashCount = Math.Min(5, (int)((breakDuration + 200) / 200)) + preemptCount;
             int loopStartTime = (int)(breakEndTime - 200 * (flashCount - preemptCount));
 
             using (BeginAbsoluteSequence(loopStartTime))
-                PlayWarningAnimation(flashCount);
+                overlay.PlayWarningAnimation(flashCount);
         }
+    }
+
+    public override void OnBreakStart()
+    {
+        playBreakAnimations();
+    }
+
+    public override void OnBreakEnd()
+    {
+        if (Clock.CurrentTime > firstHitObjectStartTime)
+            overlay.ClearAnimations();
+    }
+
+    public override void OnGameSeeked()
+    {
+        overlay.ClearAnimations();
+
+        if (IsBreakTime.Value)
+            playBreakAnimations();
+
+        if (Clock.CurrentTime < firstHitObjectStartTime)
+            scheduleCountDownAnimation();
     }
 }
