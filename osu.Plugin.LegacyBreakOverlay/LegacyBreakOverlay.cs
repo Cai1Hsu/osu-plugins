@@ -138,9 +138,6 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
     private void scheduleAnimationForBreak(BreakPeriod period)
     {
-        // Sometimes transparency get modified by other components, so we update it again here.
-        updateLazerBreakOverlayTransparency();
-
         // BreakTracker subtracts BreakOverlay.BREAK_FADE_DURATION from the end time to trigger the end of break earlier.
         // Using original value is confirmed to match osu!stable's behavior.
         double breakDuration = period.Duration;
@@ -151,6 +148,9 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
         {
             playSectionRanking();
             playResumeWarningArrows();
+
+            // Sometimes transparency get modified by other components, so we update it again here.
+            Schedule(updateLazerBreakOverlayTransparency);
         }
 
         void playSectionRanking()
