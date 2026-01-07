@@ -10,7 +10,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets;
 using osu.Game.Plugins.Legacy;
 using osu.Framework.Graphics;
-using osu.Game.Utils;
+using osu.Game.Beatmaps.Timing;
 
 namespace osu.Plugin.LegacyBreakOverlay;
 
@@ -69,6 +69,10 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
         if (firstHitObject is not null && firstHitObject.StartTime > 6000)
             scheduleCountDownAnimation(firstHitObjectStartTime);
+
+        // schedule all animations to avoid conflicts when rewinding.
+        foreach (var period in beatmap.Breaks)
+            scheduleAnimationForBreak(period);
     }
 
     private double calculateGlobalPreemptTime(BeatmapInfo beatmapInfo, IReadOnlyList<Mod> mods, RulesetInfo rulesetInfo)
@@ -132,26 +136,16 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
     private const double min_break_duration_for_section_ranking = 2880;
 
-    public override void OnBreakStart()
+    private void scheduleAnimationForBreak(BreakPeriod period)
     {
-        base.OnBreakStart();
-
-        var maybePeriod = CurrentBreak.Value;
-
-        // if the intro is quite long, it's possible that we are in a break but no current period is set.
-        if (maybePeriod is null)
-            return;
-
-        var period = maybePeriod.Value;
-
         // Sometimes transparency get modified by other components, so we update it again here.
         updateLazerBreakOverlayTransparency();
 
         // BreakTracker subtracts BreakOverlay.BREAK_FADE_DURATION from the end time to trigger the end of break earlier.
         // Using original value is confirmed to match osu!stable's behavior.
-        double breakDuration = period.Duration + BreakOverlay.BREAK_FADE_DURATION;
-        double breakStartTime = period.Start;
-        double breakEndTime = period.End + BreakOverlay.BREAK_FADE_DURATION;
+        double breakDuration = period.Duration;
+        double breakStartTime = period.StartTime;
+        double breakEndTime = period.EndTime;
 
         using (BeginAbsoluteSequence(breakStartTime))
         {
@@ -182,8 +176,6 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
             int flashCount = Math.Min(5, (int)((breakDuration + 200) / 200)) + preemptCount;
             int loopStartTime = (int)(breakEndTime - 200 * (flashCount - preemptCount));
 
-            // FIXME: animation looks bad(and delayed for about 1s) when rewinding to mid-break.
-            // transformations conflict?
             using (BeginDelayedSequence(loopStartTime - breakStartTime))
                 overlay.PlayWarningAnimation(flashCount);
         }
