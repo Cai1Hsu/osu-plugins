@@ -160,18 +160,21 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
 
     private void updateFailingTexture()
     {
-        Texture? texture = skin?.GetTexture("section-fail");
-
-        if (texture is not null)
-            SectionRankingSprite.Texture = texture;
+        updateSectionRankingTexture(skin?.GetTexture("section-fail"));
     }
 
     private void updatePassingTexture()
     {
-        Texture? texture = skin?.GetTexture("section-pass");
+        updateSectionRankingTexture(skin?.GetTexture("section-pass"));
+    }
 
+    private void updateSectionRankingTexture(Texture? texture)
+    {
         if (texture is not null)
             SectionRankingSprite.Texture = texture;
+        else
+            // Hide to avoid showing old texture
+            SectionRankingSprite.Alpha = 0;
     }
 
     protected void PlayPassingAnimation()
