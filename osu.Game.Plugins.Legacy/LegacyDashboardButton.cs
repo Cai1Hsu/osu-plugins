@@ -26,6 +26,9 @@ public partial class LegacyDashboardButton : LegacyOverlayButton, ISerialisableD
         OverlayVisibility.BindValueChanged(v =>
         {
             NormalColour = v.NewValue is Visibility.Visible ? Color4.White : Color4.Gray;
+
+            // when user closed the overlay in other way, ensure the button colour is updated.
+            Sprite.FadeColour(NormalColour, FadeDuration);
         }, true);
     }
 }
