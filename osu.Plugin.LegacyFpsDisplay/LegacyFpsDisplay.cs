@@ -14,7 +14,7 @@ using osu.Framework.Utils;
 using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
-using LegacySpriteText = osu.Game.Plugins.Legacy.LegacySpriteText;
+using LegacySpriteTextContainer = osu.Game.Plugins.Legacy.LegacySpriteTextContainer;
 
 namespace osu.Plugin.LegacyFpsDisplay;
 
@@ -81,32 +81,28 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                                 Texture = skin.GetTexture("fps-box"),
                                 Colour = color_okay,
                             },
-                            new Container
+                            fpsText = new FpsLargeSpriteText
                             {
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.CentreRight,
                                 AutoSizeAxes = Axes.X,
-                                Height = 11,
+                                FontHeight = 11,
                                 X = -7,
-                                Child = fpsText = new FpsLargeSpriteText
+                                SpriteText =
                                 {
-                                    Anchor = Anchor.TopCentre,
-                                    Origin = Anchor.TopCentre,
                                     Text = "999",
-                                },
+                                }
                             },
-                            new Container
+                            targetRefreshRateText = new FpsSmallSpriteText
                             {
+                                AutoSizeAxes = Axes.X,
+                                FontHeight = 10,
                                 Anchor = Anchor.BottomRight,
                                 Origin = Anchor.BottomRight,
-                                AutoSizeAxes = Axes.X,
-                                Height = 10,
-                                Child = targetRefreshRateText = new FpsSmallSpriteText
+                                SpriteText =
                                 {
-                                    Anchor = Anchor.TopCentre,
-                                    Origin = Anchor.TopCentre,
                                     Text = "/240f",
-                                },
+                                }
                             },
                         }
                     },
@@ -126,16 +122,14 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                                 Texture = skin.GetTexture("fps-box"),
                                 Colour = color_okay,
                             },
-                            new Container
+                            frameTimeText = new FpsLargeSpriteText
                             {
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.Centre,
                                 AutoSizeAxes = Axes.X,
-                                Height = 11,
-                                Child = frameTimeText = new FpsLargeSpriteText
+                                FontHeight = 11,
+                                SpriteText =
                                 {
-                                    Anchor = Anchor.TopCentre,
-                                    Origin = Anchor.TopCentre,
                                     Text = "16ms",
                                 }
                             }
@@ -288,13 +282,19 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         fpsBackground.FadeColour(newColor, background_fade_time);
     }
 
-    private partial class FpsLargeSpriteText : LegacySpriteText
+    private partial class FpsLargeSpriteText : LegacySpriteTextContainer
     {
         public const char ms = 'm';
         public const char comma = ',';
         public const char dot = '.';
 
-        protected override char[] FixedWidthExcludeCharacters => new[] { comma, dot, ms };
+        private static readonly char[] fixedWidthExcludeCharacters = new[] { comma, dot, ms };
+
+        protected override void WithSpriteText(CustomizableSpriteText spriteText)
+        {
+            spriteText.FixedWidthExclude = fixedWidthExcludeCharacters;
+            spriteText.FontOverlap = 1f;
+        }
 
         private static readonly FrozenDictionary<char, string> mappings = new Dictionary<char, string>
         {
@@ -305,13 +305,12 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
 
         public FpsLargeSpriteText() : base("fps")
         {
-            FontOverlap = 1;
             FixedWidth = false;
             CustomMappings = mappings;
         }
     }
 
-    private partial class FpsSmallSpriteText : LegacySpriteText
+    private partial class FpsSmallSpriteText : LegacySpriteTextContainer
     {
         private const char slash = '/';
         public const char fps = 'f';
@@ -324,9 +323,13 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             { hz, "hz" },
         }.ToFrozenDictionary();
 
+        protected override void WithSpriteText(CustomizableSpriteText spriteText)
+        {
+            spriteText.FontOverlap = 1f;
+        }
+
         public FpsSmallSpriteText() : base("fpss")
         {
-            FontOverlap = 1f;
             FixedWidth = false;
             CustomMappings = mappings;
         }
