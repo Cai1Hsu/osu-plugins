@@ -11,7 +11,9 @@ namespace osu.Game.Plugins.Legacy;
 
 public partial class LegacySpriteButton : Button
 {
-    private Sprite sprite = null!;
+    public const float FadeDuration = 100;
+
+    protected Sprite Sprite { get; private set; } = null!;
 
     public string? Texture { get; set; }
 
@@ -35,7 +37,7 @@ public partial class LegacySpriteButton : Button
 
         InternalChildren = new Drawable[]
         {
-            sprite = new Sprite
+            Sprite = new Sprite
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
@@ -56,7 +58,7 @@ public partial class LegacySpriteButton : Button
         HoverSample?.Play();
 
         if (ApplyHoverEffect)
-            sprite.FadeColour(HoverColour, 100);
+            Sprite.FadeColour(HoverColour, FadeDuration);
 
         return base.OnHover(e);
     }
@@ -64,7 +66,7 @@ public partial class LegacySpriteButton : Button
     protected override void OnHoverLost(HoverLostEvent e)
     {
         // don't check ApplyHoverEffect to ensure we normal colour applied
-        sprite.FadeColour(NormalColour, 100);
+        Sprite.FadeColour(NormalColour, FadeDuration);
 
         base.OnHoverLost(e);
     }
@@ -76,7 +78,7 @@ public partial class LegacySpriteButton : Button
 
         // match stable behaviour of fade hover effect when ApplyHoverEffect became false
         if (!ApplyHoverEffect)
-            sprite.FadeColour(NormalColour, 100);
+            Sprite.FadeColour(NormalColour, FadeDuration);
 
         return base.OnClick(e);
     }
@@ -95,6 +97,6 @@ public partial class LegacySpriteButton : Button
         Texture? texture = GetTexture(textureName);
 
         if (texture is not null)
-            sprite.Texture = texture;
+            Sprite.Texture = texture;
     }
 }
