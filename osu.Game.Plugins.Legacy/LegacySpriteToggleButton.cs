@@ -10,8 +10,6 @@ public partial class LegacySpriteToggleButton : LegacySpriteStatedButton<bool>
         set => Texture = value;
     }
 
-    public override bool ApplyHoverEffect => !State.Value;
-
     protected override string? GetTextureNameForState(bool state)
         => state ? ToggledTexture : Texture;
 
