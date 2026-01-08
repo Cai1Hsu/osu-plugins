@@ -26,9 +26,9 @@ public partial class LegacySpriteButton : Button
     [Resolved]
     private TextureStore? textures { get; set; }
 
-    public PoolableSkinnableSample? HoverSample { get; init; } = new PoolableSkinnableSample(new SampleInfo("click-short"));
+    public PoolableSkinnableSample? HoverSample { get; set; }
 
-    public PoolableSkinnableSample? ClickSample { get; init; } = new PoolableSkinnableSample(new SampleInfo("click-short-confirm"));
+    public PoolableSkinnableSample? ClickSample { get; set; }
 
     [BackgroundDependencyLoader]
     private void load()
@@ -44,11 +44,8 @@ public partial class LegacySpriteButton : Button
             }
         };
 
-        if (HoverSample is not null)
-            AddInternal(HoverSample);
-
-        if (ClickSample is not null)
-            AddInternal(ClickSample);
+        AddInternal(HoverSample ??= new PoolableSkinnableSample(new SampleInfo("click-short")));
+        AddInternal(ClickSample ??= new PoolableSkinnableSample(new SampleInfo("click-short-confirm")));
 
         SetTexture(Texture);
     }
