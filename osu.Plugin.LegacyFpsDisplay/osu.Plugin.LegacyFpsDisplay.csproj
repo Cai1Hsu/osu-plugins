@@ -10,9 +10,6 @@
     <ProjectReference Include="..\osu.Game.Plugins\osu.Game.Plugins.csproj">
       <Private>false</Private>
     </ProjectReference>
-    <ProjectReference Include="..\osu.Game.Plugins.Skins\osu.Game.Plugins.Skins.csproj">
-      <Private>false</Private>
-    </ProjectReference>
     <ProjectReference Include="..\osu.Game.Plugins.Legacy\osu.Game.Plugins.Legacy.csproj" >
       <Private>false</Private>
     </ProjectReference>
