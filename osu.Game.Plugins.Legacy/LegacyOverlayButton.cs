@@ -1,16 +1,23 @@
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Game.Screens.Play;
 
 namespace osu.Game.Plugins.Legacy;
 
 public partial class LegacyOverlayButton : LegacySpriteToggleButton
 {
     protected readonly Bindable<Visibility> OverlayVisibility = new Bindable<Visibility>();
-    public readonly BindableBool KeepShown = new BindableBool(true);
+    public readonly BindableBool KeepShown = new BindableBool();
+    private readonly IBindable<LocalUserPlayingState> userPlayingState = new Bindable<LocalUserPlayingState>();
+
+    public override void Hide() => this.FadeOut(FadeDuration);
+
+    public override void Show() => this.FadeIn(FadeDuration);
 
     [BackgroundDependencyLoader]
-    private void load()
+    private void load(ILocalUserPlayInfo? localUserInfo)
     {
         OverlayVisibility.BindValueChanged(v =>
         {
@@ -25,23 +32,22 @@ public partial class LegacyOverlayButton : LegacySpriteToggleButton
         KeepShown.BindValueChanged(v =>
         {
             if (v.NewValue)
-            {
-                if (OverlayVisibility.Value is Visibility.Visible)
-                    Show();
-            }
-            else
-            {
-                if (OverlayVisibility.Value is Visibility.Hidden)
-                    Hide();
-            }
+                Show();
+            else if (OverlayVisibility.Value is Visibility.Hidden)
+                Hide();
         });
 
         State.BindValueChanged(v =>
         {
-            if (v.NewValue)
-                OverlayVisibility.Value = Visibility.Visible;
-            else
-                OverlayVisibility.Value = Visibility.Hidden;
+            OverlayVisibility.Value = v.NewValue ? Visibility.Visible : Visibility.Hidden;
         });
+
+        if (localUserInfo is not null)
+            userPlayingState.BindTo(localUserInfo.PlayingState);
+
+        userPlayingState.BindValueChanged(state =>
+        {
+            KeepShown.Value = state.NewValue is not LocalUserPlayingState.Playing;
+        }, true);
     }
 }
