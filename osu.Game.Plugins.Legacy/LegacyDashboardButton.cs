@@ -13,11 +13,11 @@ public partial class LegacyDashboardButton : LegacyOverlayButton, ISerialisableD
 
     public LegacyDashboardButton()
     {
-        DefaultTexture = "UI/overlay-online";
-        ToggledTexture = "UI/overlay-online";
+        TextureVisible = "UI/overlay-online";
+        TextureHidden = "UI/overlay-online";
     }
 
-    public override bool ApplyHoverEffect => OverlayVisibility.Value is Visibility.Visible || !State.Value;
+    public override bool ApplyHoverEffect => State.Value is Visibility.Visible;
 
     [BackgroundDependencyLoader]
     private void load(DashboardOverlay? dashboardOverlay)

@@ -10,8 +10,8 @@ public partial class LegacyChatButton : LegacyOverlayButton, ISerialisableDrawab
 
     public LegacyChatButton()
     {
-        DefaultTexture = "UI/overlay-show"; // default state, chat is hidden
-        ToggledTexture = "UI/overlay-hide";
+        TextureVisible = "UI/overlay-hide"; // when overlay is shown, this button indicates it can be hidden
+        TextureHidden = "UI/overlay-show";
     }
 
     [BackgroundDependencyLoader]

@@ -6,7 +6,7 @@ using osu.Game.Screens.Play;
 
 namespace osu.Game.Plugins.Legacy;
 
-public partial class LegacyOverlayButton : LegacySpriteToggleButton
+public partial class LegacyOverlayButton : LegacySpriteStatedButton<Visibility>
 {
     protected readonly Bindable<Visibility> OverlayVisibility = new Bindable<Visibility>();
     public readonly BindableBool KeepShown = new BindableBool();
@@ -19,9 +19,10 @@ public partial class LegacyOverlayButton : LegacySpriteToggleButton
     [BackgroundDependencyLoader]
     private void load(ILocalUserPlayInfo? localUserInfo)
     {
+        // don't use BindTo so that we know who triggered the change.
         OverlayVisibility.BindValueChanged(v =>
         {
-            State.Value = v.NewValue is Visibility.Visible;
+            State.Value = v.NewValue;
 
             if (v.NewValue is Visibility.Visible)
                 Show();
@@ -29,10 +30,7 @@ public partial class LegacyOverlayButton : LegacySpriteToggleButton
                 Hide();
         });
 
-        State.BindValueChanged(v =>
-        {
-            OverlayVisibility.Value = v.NewValue ? Visibility.Visible : Visibility.Hidden;
-        });
+        State.BindValueChanged(v => OverlayVisibility.Value = v.NewValue);
 
         if (localUserInfo is not null)
             userPlayingState.BindTo(localUserInfo.PlayingState);
@@ -50,4 +48,17 @@ public partial class LegacyOverlayButton : LegacySpriteToggleButton
                 Hide();
         }, true);
     }
+
+    protected override Visibility GetNewState(Visibility currentState)
+        => (Visibility)(((int)currentState + 1) % 2);
+
+    public string? TextureVisible { get; set; }
+    public string? TextureHidden { get; set; }
+
+    protected override string? GetTextureNameForState(Visibility visibility) => visibility switch
+    {
+        Visibility.Visible => TextureVisible,
+        Visibility.Hidden => TextureHidden,
+        _ => throw new InvalidOperationException($"Unhandled {nameof(Visibility)} value: {visibility}"),
+    };
 }
