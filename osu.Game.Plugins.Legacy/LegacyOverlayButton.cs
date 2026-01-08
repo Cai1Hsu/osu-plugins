@@ -39,7 +39,14 @@ public abstract partial class LegacyOverlayButton : LegacySpriteStatedButton<Vis
         {
             KeepShown.Value = state.NewValue is not LocalUserPlayingState.Playing;
         }, true);
+    }
 
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        // OverlayVisibility is usually bound in derived classes' load methods.
+        // Wait until bound finished so that OverlayVisibility has correct initial value.
         KeepShown.BindValueChanged(v =>
         {
             if (v.NewValue)
