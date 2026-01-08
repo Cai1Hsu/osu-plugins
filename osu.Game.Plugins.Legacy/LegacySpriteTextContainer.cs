@@ -69,7 +69,7 @@ public partial class LegacySpriteTextContainer : Container
         var textureLookup = CreateTextureLookup(Dependencies);
         var glyphStore = new LegacyGlyphStore(fontPrefix, textureLookup, MaxSizePerGlyph, CustomMappings);
 
-        spriteText.glyphStore = glyphStore;
+        spriteText.GlyphStore = glyphStore;
 
         spriteText.Font = new FontUsage(fontPrefix, 1, fixedWidth: FixedWidth);
 
@@ -82,10 +82,10 @@ public partial class LegacySpriteTextContainer : Container
 
     public partial class CustomizableSpriteText : OsuSpriteText
     {
-        internal ITexturedGlyphLookupStore glyphStore = null!;
+        internal ITexturedGlyphLookupStore GlyphStore { get; set; } = null!;
 
         protected override TextBuilder CreateTextBuilder(ITexturedGlyphLookupStore _)
-            => base.CreateTextBuilder(glyphStore);
+            => base.CreateTextBuilder(GlyphStore);
 
         private readonly static char[] defaultFixedWidthExcludeCharacters = new[] { ',', '.', '%', 'x', '/' };
 
