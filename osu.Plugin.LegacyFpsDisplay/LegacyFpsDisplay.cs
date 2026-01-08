@@ -302,12 +302,6 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
 
         private static readonly char[] fixedWidthExcludeCharacters = new[] { comma, dot, ms };
 
-        protected override void WithSpriteText(CustomizableSpriteText spriteText)
-        {
-            spriteText.FixedWidthExclude = fixedWidthExcludeCharacters;
-            spriteText.FontOverlap = 1f;
-        }
-
         private static readonly FrozenDictionary<char, string> mappings = new Dictionary<char, string>
         {
             { ms, "ms" },
@@ -322,6 +316,9 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         {
             FixedWidth = false;
             CustomMappings = mappings;
+
+            SpriteText.FixedWidthExclude = fixedWidthExcludeCharacters;
+            SpriteText.FontOverlap = 1f;
         }
     }
 
@@ -338,11 +335,6 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             { hz, "hz" },
         }.ToFrozenDictionary();
 
-        protected override void WithSpriteText(CustomizableSpriteText spriteText)
-        {
-            spriteText.FontOverlap = 1f;
-        }
-
         protected override TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
             => LegacyFpsDisplay.CreateTextureLookup(dependencies);
 
@@ -350,6 +342,8 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         {
             FixedWidth = false;
             CustomMappings = mappings;
+
+            SpriteText.FontOverlap = 1f;
         }
     }
 }

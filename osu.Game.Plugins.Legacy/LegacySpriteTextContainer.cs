@@ -45,10 +45,6 @@ public partial class LegacySpriteTextContainer : Container
         return skin.GetTexture;
     }
 
-    protected virtual void WithSpriteText(CustomizableSpriteText spriteText)
-    {
-    }
-
     public float FontHeight
     {
         get => Height;
@@ -61,7 +57,7 @@ public partial class LegacySpriteTextContainer : Container
         set => spriteText.Text = value;
     }
 
-    public OsuSpriteText SpriteText => spriteText;
+    public CustomizableSpriteText SpriteText => spriteText;
 
     private CustomizableSpriteText spriteText = null!;
 
@@ -74,8 +70,6 @@ public partial class LegacySpriteTextContainer : Container
         var glyphStore = new LegacyGlyphStore(fontPrefix, textureLookup, MaxSizePerGlyph, CustomMappings);
 
         spriteText.glyphStore = glyphStore;
-
-        WithSpriteText(spriteText);
 
         spriteText.Font = new FontUsage(fontPrefix, 1, fixedWidth: FixedWidth);
 
