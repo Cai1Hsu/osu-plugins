@@ -65,7 +65,7 @@ public partial class LegacySpriteButton : Button
 
     protected override void OnHoverLost(HoverLostEvent e)
     {
-        // don't check ApplyHoverEffect to ensure we normal colour applied
+        // don't check ApplyHoverEffect to ensure normal colour applied
         Sprite.FadeColour(NormalColour, FadeDuration);
 
         base.OnHoverLost(e);
