@@ -29,14 +29,6 @@ public partial class LegacyOverlayButton : LegacySpriteToggleButton
                 Hide();
         });
 
-        KeepShown.BindValueChanged(v =>
-        {
-            if (v.NewValue)
-                Show();
-            else if (OverlayVisibility.Value is Visibility.Hidden)
-                Hide();
-        });
-
         State.BindValueChanged(v =>
         {
             OverlayVisibility.Value = v.NewValue ? Visibility.Visible : Visibility.Hidden;
@@ -48,6 +40,14 @@ public partial class LegacyOverlayButton : LegacySpriteToggleButton
         userPlayingState.BindValueChanged(state =>
         {
             KeepShown.Value = state.NewValue is not LocalUserPlayingState.Playing;
+        }, true);
+
+        KeepShown.BindValueChanged(v =>
+        {
+            if (v.NewValue)
+                Show();
+            else if (OverlayVisibility.Value is Visibility.Hidden)
+                Hide();
         }, true);
     }
 }
