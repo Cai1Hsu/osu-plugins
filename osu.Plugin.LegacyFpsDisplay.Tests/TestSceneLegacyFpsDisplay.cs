@@ -1,7 +1,4 @@
-using osu.Framework.Allocation;
-using osu.Framework.Audio;
 using osu.Framework.Graphics;
-using osu.Framework.IO.Stores;
 using osu.Framework.Testing;
 using osu.Game.Tests.Visual;
 using osuTK;
