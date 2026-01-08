@@ -4,5 +4,5 @@ using osu.Game.Tests;
 
 using (var host = Host.GetSuitableDesktopHost(TestOsuGame.GameName, new HostOptions()))
 {
-    host.Run(new OsuTestBrowser());
+    host.Run(new TestOsuGame());
 }
