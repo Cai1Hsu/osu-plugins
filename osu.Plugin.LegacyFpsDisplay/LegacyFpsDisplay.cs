@@ -8,12 +8,14 @@ using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.Textures;
 using osu.Framework.Platform;
 using osu.Framework.Timing;
 using osu.Framework.Utils;
 using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
+using static osu.Game.Plugins.Legacy.LegacySpriteTextContainer;
 using LegacySpriteTextContainer = osu.Game.Plugins.Legacy.LegacySpriteTextContainer;
 
 namespace osu.Plugin.LegacyFpsDisplay;
@@ -50,7 +52,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
     }
 
     [BackgroundDependencyLoader]
-    private void load(ISkinSource skin, FrameworkConfigManager? config)
+    private void load(TextureStore textures, FrameworkConfigManager? config)
     {
         AutoSizeAxes = Axes.Both;
 
@@ -78,7 +80,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                                 Name = "background",
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.Centre,
-                                Texture = skin.GetTexture("fps-box"),
+                                Texture = GetTexture(textures, "UI/fps-box"),
                                 Colour = color_okay,
                             },
                             fpsText = new FpsLargeSpriteText
@@ -119,7 +121,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                                 Name = "background",
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.Centre,
-                                Texture = skin.GetTexture("fps-box"),
+                                Texture = GetTexture(textures, "UI/fps-box"),
                                 Colour = color_okay,
                             },
                             frameTimeText = new FpsLargeSpriteText
@@ -282,6 +284,15 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         fpsBackground.FadeColour(newColor, background_fade_time);
     }
 
+    internal static Texture? GetTexture(TextureStore textures, string name)
+        => textures.Get($"{name}@2x") ?? textures.Get(name);
+
+    internal static TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
+    {
+        var textures = dependencies.Get<TextureStore>();
+        return name => GetTexture(textures, name);
+    }
+
     private partial class FpsLargeSpriteText : LegacySpriteTextContainer
     {
         public const char ms = 'm';
@@ -303,7 +314,10 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             { dot, "dot" },
         }.ToFrozenDictionary();
 
-        public FpsLargeSpriteText() : base("fps")
+        protected override TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
+            => LegacyFpsDisplay.CreateTextureLookup(dependencies);
+
+        public FpsLargeSpriteText() : base("UI/fps")
         {
             FixedWidth = false;
             CustomMappings = mappings;
@@ -328,7 +342,10 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             spriteText.FontOverlap = 1f;
         }
 
-        public FpsSmallSpriteText() : base("fpss")
+        protected override TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
+            => LegacyFpsDisplay.CreateTextureLookup(dependencies);
+
+        public FpsSmallSpriteText() : base("UI/fpss")
         {
             FixedWidth = false;
             CustomMappings = mappings;
