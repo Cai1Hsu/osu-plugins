@@ -50,6 +50,13 @@ public partial class LegacySpriteButton : Button
         SetTexture(Texture);
     }
 
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        Sprite.FadeColour(NormalColour);
+    }
+
     protected override bool OnHover(HoverEvent e)
     {
         HoverSample?.Play();
