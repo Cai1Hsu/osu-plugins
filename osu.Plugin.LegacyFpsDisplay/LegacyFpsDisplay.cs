@@ -289,7 +289,8 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
 
     internal static TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
     {
-        var textures = dependencies.Get<TextureStore>();
+        var textures = dependencies.Get<TextureStore>()
+            ?? throw new InvalidOperationException($"Could not retrieve {nameof(TextureStore)} from dependency container.");
         return name => GetTexture(textures, name);
     }
 

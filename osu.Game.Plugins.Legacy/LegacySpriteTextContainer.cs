@@ -40,8 +40,8 @@ public partial class LegacySpriteTextContainer : Container
 
     protected virtual TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
     {
-        var skin = dependencies.Get<ISkinSource>();
-
+        var skin = dependencies.Get<ISkinSource>()
+            ?? throw new InvalidOperationException($"No {nameof(ISkinSource)} available in the dependency container.");
         return skin.GetTexture;
     }
 
