@@ -59,7 +59,7 @@ public partial class LegacySpriteTextContainer : Container
 
     public CustomizableSpriteText SpriteText => spriteText;
 
-    private CustomizableSpriteText spriteText = null!;
+    private CustomizableSpriteText spriteText;
 
     [BackgroundDependencyLoader]
     private void load()
