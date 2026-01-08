@@ -116,7 +116,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                         Size = new Vector2(65, 20),
                         Children = new Drawable[]
                         {
-                            frameTimeBackground =new Sprite
+                            frameTimeBackground = new Sprite
                             {
                                 Name = "background",
                                 Anchor = Anchor.Centre,
