@@ -1,0 +1,99 @@
+using osu.Framework.Allocation;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.Textures;
+using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Input.Events;
+using osu.Game.Skinning;
+
+namespace osu.Game.Plugins.Legacy;
+
+public partial class LegacySpriteButton : Button
+{
+    private Sprite sprite = null!;
+
+    public string? Texture { get; set; }
+
+    public Colour4 HoverColour { get; set; } = Colour4.Pink;
+
+    public Colour4 NormalColour { get; set; } = Colour4.White;
+
+    public virtual bool ApplyHoverEffect => true;
+
+    [Resolved]
+    private TextureStore? textures { get; set; }
+
+    public PoolableSkinnableSample? HoverSample { get; init; } = null;
+
+    public PoolableSkinnableSample? ClickSample { get; init; } = null;
+
+    [BackgroundDependencyLoader]
+    private void load()
+    {
+        AutoSizeAxes = Axes.Both;
+
+        InternalChildren = new Drawable[]
+        {
+            sprite = new Sprite
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+            }
+        };
+
+        if (HoverSample is not null)
+            AddInternal(HoverSample);
+
+        if (ClickSample is not null)
+            AddInternal(ClickSample);
+
+        SetTexture(Texture);
+    }
+
+    protected override bool OnHover(HoverEvent e)
+    {
+        HoverSample?.Play();
+
+        if (ApplyHoverEffect)
+            sprite.FadeColour(HoverColour, 100);
+
+        return base.OnHover(e);
+    }
+
+    protected override void OnHoverLost(HoverLostEvent e)
+    {
+        // don't check ApplyHoverEffect to ensure we normal colour applied
+        sprite.FadeColour(NormalColour, 100);
+
+        base.OnHoverLost(e);
+    }
+
+    protected override bool OnClick(ClickEvent e)
+    {
+        // TODO: should we allow sample to be played when triggered from bindings?
+        ClickSample?.Play();
+
+        // match stable behaviour of fade hover effect when ApplyHoverEffect became false
+        if (!ApplyHoverEffect)
+            sprite.FadeColour(NormalColour, 100);
+
+        return base.OnClick(e);
+    }
+
+    protected Texture? GetTexture(string textureName)
+    {
+        return textures?.Get($"{textureName}@2x")
+            ?? textures?.Get(textureName);
+    }
+
+    protected void SetTexture(string? textureName)
+    {
+        if (string.IsNullOrEmpty(textureName))
+            return;
+
+        Texture? texture = GetTexture(textureName);
+
+        if (texture is not null)
+            sprite.Texture = texture;
+    }
+}
