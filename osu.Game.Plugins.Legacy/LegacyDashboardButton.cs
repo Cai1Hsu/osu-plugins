@@ -17,8 +17,6 @@ public partial class LegacyDashboardButton : LegacyOverlayButton, ISerialisableD
         TextureHidden = "UI/overlay-online";
     }
 
-    public override bool ApplyHoverEffect => State.Value is Visibility.Visible;
-
     [BackgroundDependencyLoader]
     private void load(DashboardOverlay? dashboardOverlay)
     {
@@ -27,12 +25,7 @@ public partial class LegacyDashboardButton : LegacyOverlayButton, ISerialisableD
 
         OverlayVisibility.BindValueChanged(v =>
         {
-            if (v.NewValue is Visibility.Hidden)
-                Sprite.FadeColour(Color4.Gray, FadeDuration);
-            else
-                Sprite.FadeColour(NormalColour, FadeDuration);
+            NormalColour = v.NewValue is Visibility.Visible ? Color4.White : Color4.Gray;
         }, true);
-
-        Sprite.FinishTransforms(); // ensure colour is applied immediately
     }
 }
