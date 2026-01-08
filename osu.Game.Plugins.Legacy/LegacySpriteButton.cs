@@ -4,6 +4,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
+using osu.Game.Audio;
 using osu.Game.Skinning;
 
 namespace osu.Game.Plugins.Legacy;
@@ -23,9 +24,9 @@ public partial class LegacySpriteButton : Button
     [Resolved]
     private TextureStore? textures { get; set; }
 
-    public PoolableSkinnableSample? HoverSample { get; init; } = null;
+    public PoolableSkinnableSample? HoverSample { get; init; } = new PoolableSkinnableSample(new SampleInfo("click-short"));
 
-    public PoolableSkinnableSample? ClickSample { get; init; } = null;
+    public PoolableSkinnableSample? ClickSample { get; init; } = new PoolableSkinnableSample(new SampleInfo("click-short-confirm"));
 
     [BackgroundDependencyLoader]
     private void load()

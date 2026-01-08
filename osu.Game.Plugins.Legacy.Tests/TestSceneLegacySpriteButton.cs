@@ -6,7 +6,6 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.IO.Stores;
 using osu.Framework.Platform;
 using osu.Framework.Testing;
-using osu.Game.Audio;
 using osu.Game.Database;
 using osu.Game.IO;
 using osu.Game.Skinning;
@@ -50,8 +49,6 @@ public partial class TestSceneLegacySpriteButton : OsuTestScene, IStorageResourc
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
-                HoverSample = new PoolableSkinnableSample(new SampleInfo("click-short")),
-                ClickSample = new PoolableSkinnableSample(new SampleInfo("click-short-confirm")),
                 DefaultTexture = "UI/overlay-show",
                 ToggledTexture = "UI/overlay-hide",
             });
