@@ -1,0 +1,33 @@
+using osu.Framework.Allocation;
+using osu.Framework.Graphics;
+using osu.Game.Overlays;
+using osu.Game.Skinning;
+using osuTK.Graphics;
+
+namespace osu.Game.Plugins.Legacy;
+
+public partial class LegacyDashboardButton : LegacyOverlayButton, ISerialisableDrawable
+{
+    public bool UsesFixedAnchor { get; set; } = true;
+
+    public LegacyDashboardButton()
+    {
+        DefaultTexture = "UI/overlay-online";
+        ToggledTexture = "UI/overlay-online";
+    }
+
+    [BackgroundDependencyLoader]
+    private void load(DashboardOverlay? dashboardOverlay)
+    {
+        if (dashboardOverlay is not null)
+            OverlayVisibility.BindTo(dashboardOverlay.State);
+
+        State.BindValueChanged(v =>
+        {
+            if (v.NewValue)
+                Sprite.FadeColour(Color4.Gray, FadeDuration);
+            else
+                Sprite.FadeColour(NormalColour, FadeDuration);
+        });
+    }
+}
