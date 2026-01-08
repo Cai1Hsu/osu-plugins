@@ -1,5 +1,6 @@
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Game.Overlays;
 using osu.Game.Skinning;
 using osuTK.Graphics;
@@ -22,12 +23,14 @@ public partial class LegacyDashboardButton : LegacyOverlayButton, ISerialisableD
         if (dashboardOverlay is not null)
             OverlayVisibility.BindTo(dashboardOverlay.State);
 
-        State.BindValueChanged(v =>
+        OverlayVisibility.BindValueChanged(v =>
         {
-            if (v.NewValue)
+            if (v.NewValue is Visibility.Hidden)
                 Sprite.FadeColour(Color4.Gray, FadeDuration);
             else
                 Sprite.FadeColour(NormalColour, FadeDuration);
-        });
+        }, true);
+
+        Sprite.FinishTransforms(); // ensure colour is applied immediately
     }
 }
