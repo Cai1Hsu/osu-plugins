@@ -41,7 +41,8 @@ public static class GameExtensions
 
         // ensure the instance actually created before we try to access it.
         // Run this at first to avoid exceptions thrown during plugin loading being logged to Sentry.
-        game.InvokeWhenReadyFallback(disableSentryLogging);
+        disableSentryLogging(game); // sentry is registered at a very early stage.
+        game.InvokeWhenReadyFallback(disableSentryLogging); // double insurance.
 
         // The new hook method runs so early that the game instance is still loading.
         // We need to delay here because the dependencies are not yet available.
