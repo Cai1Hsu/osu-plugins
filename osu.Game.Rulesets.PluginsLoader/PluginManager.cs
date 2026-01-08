@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Humanizer;
 using osu.Framework;
 using osu.Framework.Allocation;
@@ -36,7 +35,7 @@ public partial class PluginManager : Drawable
 
     private bool hasPluginsFromStartupDirectory = false;
 
-    public void LoadEarlyAssemblies()
+    public void LoadEarlyAssemblies(Storage? gameStorage)
     {
         Debug.Assert(!loadStopwatch.IsRunning);
         loadStopwatch.Start();
@@ -44,7 +43,12 @@ public partial class PluginManager : Drawable
         try
         {
             loadPluginsFromAppDomain();
-            tryLoadLocalEarlyAssemblies();
+
+            if (gameStorage is not null)
+                loadPluginsFromStorage(gameStorage, "plugins");
+            else
+                // This serves as a fallback to load plugins from storage
+                tryLoadLocalEarlyAssemblies();
 
             // Place your plugins in the startup directory is a bad idea, they will be removed when the game updates.
             // This is generally for development purposes only.
@@ -342,7 +346,10 @@ public partial class PluginManager : Drawable
                 loadedPlugins.Add(pluginInstance);
             }
 
-            Scheduler.Add(() => GetPluginEnabled(pluginInstance).Value = true);
+            var enabled = plugin_enabled_field.GetValue(pluginInstance) as Bindable<bool>;
+
+            if (enabled is not null)
+                Scheduler.Add(() => enabled.Value = true);
 
             Logger.Log($"Successfully loaded plugin: {pluginType.FullName} from {pluginType.Assembly.Location}", LoggingTarget.Runtime, LogLevel.Verbose);
         }
@@ -361,6 +368,6 @@ public partial class PluginManager : Drawable
     }
 
     // intentially not use InternalVisibleTo so that loader can be decoupled from the plugin library.
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "enabled")]
-    private static extern ref BindableBool GetPluginEnabled(OsuPlugin plugin);
+    private static readonly FieldInfo plugin_enabled_field = typeof(OsuPlugin)
+        .GetField("enabled", BindingFlags.NonPublic | BindingFlags.Instance)!;
 }

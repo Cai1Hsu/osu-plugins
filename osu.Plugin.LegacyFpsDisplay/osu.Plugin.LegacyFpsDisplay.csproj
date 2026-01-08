@@ -4,8 +4,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!-- 0.0.0.0 allows arbitrary versioning -->
-    <AssemblyVersion>0.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +13,7 @@
     <ProjectReference Include="..\osu.Game.Plugins.Skins\osu.Game.Plugins.Skins.csproj">
       <Private>false</Private>
     </ProjectReference>
-    <ProjectReference Include="..\osu.Game.Plugins.Legacy\osu.Game.Plugins.Legacy.csproj">
+    <ProjectReference Include="..\osu.Game.Plugins.Legacy\osu.Game.Plugins.Legacy.csproj" >
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>

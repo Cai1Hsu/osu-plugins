@@ -20,11 +20,10 @@ public partial class PluginLoaderRuleset : Ruleset
 {
     static PluginLoaderRuleset()
     {
-        // In certain platforms (notably iOS and Android), referenced assemblies are not automatically loaded.
-        // As such, we manually load any assemblies matching our plugin pattern to ensure they are available
-        // This action has to be performed before any attempt to access types from those assemblies or our code crashes.
-        // if (requiresDynamicAssemblyLoading()) // enabling as skin extensions are shared between plugins
-            loadPluginAssembly();
+        // Manual load is required for:
+        // - Skin extension plugins requires their types to be loaded very early or the game throws exceptions as type resolution fails.
+        // - AOT platforms(iOS/Android) where assemblies are not automatically loaded when referenced.
+        loadPluginAssembly();
     }
 
     // Our code rarely caches private members because we expect access them is fast with UnsafeAccessor, this is designed.
@@ -42,12 +41,6 @@ public partial class PluginLoaderRuleset : Ruleset
         RuntimeInfo.Platform.iOS => true,
         _ => false,
     };
-
-    private static bool requiresDynamicAssemblyLoading()
-        // it happen to be the platforms that don't support UnsafeAccessor.
-        // although our code won't actually work on those platforms,
-        // let's still run a bit to at least notify the user about the lack of support.
-        => IsUnsupportedPlatforms;
 
     private static void loadPluginAssembly()
     {
@@ -83,8 +76,6 @@ public partial class PluginLoaderRuleset : Ruleset
     {
         // Dummy constructor to differentiate instantiation from RulesetStore
     }
-
-    private static readonly Assembly osu_game_assembly = typeof(OsuGame).Assembly;
 
     /// <summary>
     /// This constructor is intended to be called by <see cref="RulesetStore"/> via reflection only.

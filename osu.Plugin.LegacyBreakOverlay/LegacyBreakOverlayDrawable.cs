@@ -13,7 +13,7 @@ namespace osu.Plugin.LegacyBreakOverlay;
 /// <summary>
 /// The base skin component of legacy break overlay, usually used for testing purposes.
 /// </summary>
-public partial class LegacyBreakOverlayBase : CompositeDrawable
+public partial class LegacyBreakOverlayDrawable : CompositeDrawable
 {
     [Resolved]
     private ISkinSource? skin { get; set; } = null;
@@ -27,7 +27,7 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
     private static readonly Vector2 warning_arrow_position = new Vector2(80, 100) * stable_magic_ratio;
     private const float warning_arrow_duration = 100;
 
-    public LegacyBreakOverlayBase()
+    public LegacyBreakOverlayDrawable()
     {
         Anchor = Anchor.Centre;
         Origin = Anchor.Centre;
@@ -40,12 +40,14 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
+                Alpha = 0,
             },
             WarningArrowContainer = new Container()
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
                 RelativeSizeAxes = Axes.Both,
+                Alpha = 0,
                 Children = new Drawable[]
                 {
                     new WarningArrow
@@ -88,8 +90,6 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
         // FIXME: in tests, samples from skin were not used. but in normal play, they were used.
         AddInternal(sectionPassSample = new PoolableSkinnableSample(new SampleInfo("Gameplay/sectionpass")));
         AddInternal(sectionFailSample = new PoolableSkinnableSample(new SampleInfo("Gameplay/sectionfail")));
-
-        ClearAnimations(); // ensure starting from a clean state
     }
 
     public void PlayWarningAnimation(int loopCount)
@@ -117,13 +117,6 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
             playSample();
             scheduledSamplePlay = null;
         });
-
-        Texture? texture = skin?.GetTexture(passing ? "section-pass" : "section-fail");
-
-        if (texture is null)
-            return;
-
-        SectionRankingSprite.Texture = texture;
 
         playAnimation();
 
@@ -165,9 +158,32 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
         scheduledSamplePlay = null;
     }
 
+    private void updateFailingTexture()
+    {
+        updateSectionRankingTexture(skin?.GetTexture("section-fail"));
+    }
+
+    private void updatePassingTexture()
+    {
+        updateSectionRankingTexture(skin?.GetTexture("section-pass"));
+    }
+
+    private void updateSectionRankingTexture(Texture? texture)
+    {
+        if (texture is not null)
+            SectionRankingSprite.Texture = texture;
+        else
+            // Hide to avoid showing old texture
+            SectionRankingSprite.Alpha = 0;
+    }
+
     protected void PlayPassingAnimation()
     {
         SectionRankingSprite
+            .Delay(0)
+            // update texture right before animation starts to ensure proper texture used
+            // also good for skin changes during gameplay
+            .Schedule(updatePassingTexture)
             .Delay(20)
             .FadeInFromZero()
             .Delay(80)
@@ -185,6 +201,8 @@ public partial class LegacyBreakOverlayBase : CompositeDrawable
     protected void PlayFailingAnimation()
     {
         SectionRankingSprite
+            .Delay(0)
+            .Schedule(updateFailingTexture)
             .Delay(130)
             .FadeInFromZero()
             .Delay(100)
