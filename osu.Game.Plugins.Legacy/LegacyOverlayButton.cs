@@ -6,7 +6,7 @@ using osu.Game.Screens.Play;
 
 namespace osu.Game.Plugins.Legacy;
 
-public partial class LegacyOverlayButton : LegacySpriteStatedButton<Visibility>
+public abstract partial class LegacyOverlayButton : LegacySpriteStatedButton<Visibility>
 {
     protected readonly Bindable<Visibility> OverlayVisibility = new Bindable<Visibility>();
     public readonly BindableBool KeepShown = new BindableBool();
