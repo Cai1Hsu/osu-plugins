@@ -1,5 +1,6 @@
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
+using osu.Game.Beatmaps.Timing;
 using osu.Game.Plugins.Legacy;
 using osu.Game.Skinning;
 using LazerLegacyCombo = osu.Game.Skinning.LegacyDefaultComboCounter;
@@ -27,6 +28,20 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
         InternalChild = combo = new LazerLegacyCombo();
     }
 
+    protected override void ScheduleBreakAnimations(IReadOnlyList<BreakPeriod> breaks)
+    {
+        foreach (var period in breaks)
+        {
+            using (BeginAbsoluteSequence(period.StartTime))
+            {
+                slideOut();
+
+                using (BeginDelayedSequence(period.Duration))
+                    slideIn();
+            }
+        }
+    }
+
     private const float duration = 1000f;
     private const float offset_x = -80f * stable_ratio;
 
@@ -40,25 +55,5 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
     {
         combo.FadeIn(duration)
             .MoveToX(0, duration, Easing.Out);
-    }
-
-    public override void OnBreakStart()
-    {
-        base.OnBreakStart();
-
-        var currentBreak = CurrentBreak.Value;
-
-        if (currentBreak is null)
-            return;
-
-        var period = currentBreak.Value;
-
-        using (BeginAbsoluteSequence(period.Start))
-        {
-            slideOut();
-
-            using (BeginDelayedSequence(period.Duration))
-                slideIn();
-        }
     }
 }

@@ -2,6 +2,7 @@ using osu.Framework.Graphics;
 using osu.Game.Skinning;
 using osu.Game.Plugins.Legacy;
 using osu.Framework.Allocation;
+using osu.Game.Beatmaps.Timing;
 
 namespace osu.Plugin.LegacyBreakOverlay;
 
@@ -26,6 +27,20 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
         InternalChild = healthDisplay = new LegacyHealthDisplay();
     }
 
+    protected override void ScheduleBreakAnimations(IReadOnlyList<BreakPeriod> breaks)
+    {
+        foreach (var period in breaks)
+        {
+            using (BeginAbsoluteSequence(period.StartTime))
+            {
+                slideOut();
+
+                using (BeginDelayedSequence(period.Duration))
+                    slideIn();
+            }
+        }
+    }
+
     private const float duration = 500;
     private const float offset_y = -20 * stable_ratio;
 
@@ -41,25 +56,5 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
         healthDisplay
             .FadeOut(duration)
             .MoveToY(offset_y, duration);
-    }
-
-    public override void OnBreakStart()
-    {
-        base.OnBreakStart();
-
-        var currentBreak = CurrentBreak.Value;
-
-        if (currentBreak is null)
-            return;
-
-        var period = currentBreak.Value;
-
-        using (BeginAbsoluteSequence(period.Start))
-        {
-            slideOut();
-
-            using (BeginDelayedSequence(period.Duration))
-                slideIn();
-        }
     }
 }

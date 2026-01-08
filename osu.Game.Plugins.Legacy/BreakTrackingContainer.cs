@@ -1,6 +1,9 @@
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Lists;
+using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Timing;
 using osu.Game.Screens.Play;
 using osu.Game.Utils;
 
@@ -10,12 +13,10 @@ public abstract partial class BreakTrackingContainer : Container
 {
     public virtual void OnBreakStart()
     {
-        Scheduler.CancelDelayedTasks();
     }
 
     public virtual void OnBreakEnd()
     {
-        Scheduler.CancelDelayedTasks();
     }
 
     public readonly IBindable<Period?> CurrentBreak = new Bindable<Period?>();
@@ -28,7 +29,7 @@ public abstract partial class BreakTrackingContainer : Container
     protected virtual bool UseBreakTrackerClock => true;
 
     [BackgroundDependencyLoader]
-    private void load(Player? player, BreakTracker? cachedBreakTracker)
+    private void load(Player? player, BreakTracker? cachedBreakTracker, IBindable<WorkingBeatmap> workingBeatmap)
     {
         breakTracker = player?.BreakOverlay.BreakTracker ?? cachedBreakTracker
             ?? throw new InvalidOperationException("BreakTrackingContainer requires a BreakTracker to function.");
@@ -40,6 +41,14 @@ public abstract partial class BreakTrackingContainer : Container
             Clock = breakTracker.Clock;
             ProcessCustomClock = false;
         }
+
+        var beatmap = workingBeatmap.Value.Beatmap;
+
+        ScheduleBreakAnimations(beatmap.Breaks);
+    }
+
+    protected virtual void ScheduleBreakAnimations(IReadOnlyList<BreakPeriod> breaks)
+    {
     }
 
     protected override void LoadComplete()
