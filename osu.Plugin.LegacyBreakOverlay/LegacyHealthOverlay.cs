@@ -19,11 +19,7 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
         Anchor = Anchor.TopLeft;
         Origin = Anchor.TopLeft;
         AutoSizeAxes = Axes.Both;
-    }
 
-    [BackgroundDependencyLoader]
-    private void load()
-    {
         InternalChild = healthDisplay = new LegacyHealthDisplay();
     }
 

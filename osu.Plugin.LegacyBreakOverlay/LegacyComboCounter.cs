@@ -20,11 +20,7 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
         Anchor = Anchor.BottomLeft;
         Origin = Anchor.BottomLeft;
         AutoSizeAxes = Axes.Both;
-    }
 
-    [BackgroundDependencyLoader]
-    private void load()
-    {
         InternalChild = combo = new LazerLegacyCombo();
     }
 
