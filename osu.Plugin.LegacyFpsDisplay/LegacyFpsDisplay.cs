@@ -87,8 +87,6 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                             {
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.CentreRight,
-                                AutoSizeAxes = Axes.X,
-                                FontHeight = 11,
                                 X = -7,
                                 SpriteText =
                                 {
@@ -97,8 +95,6 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                             },
                             targetRefreshRateText = new FpsSmallSpriteText
                             {
-                                AutoSizeAxes = Axes.X,
-                                FontHeight = 10,
                                 Anchor = Anchor.BottomRight,
                                 Origin = Anchor.BottomRight,
                                 SpriteText =
@@ -128,8 +124,6 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                             {
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.Centre,
-                                AutoSizeAxes = Axes.X,
-                                FontHeight = 11,
                                 SpriteText =
                                 {
                                     Text = "16ms",
@@ -316,6 +310,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         {
             FixedWidth = false;
             CustomMappings = mappings;
+            FontHeight = 11;
 
             SpriteText.FixedWidthExclude = fixedWidthExcludeCharacters;
             SpriteText.FontOverlap = 1f;
@@ -342,6 +337,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         {
             FixedWidth = false;
             CustomMappings = mappings;
+            FontHeight = 10;
 
             SpriteText.FontOverlap = 1f;
         }
