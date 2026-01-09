@@ -2,6 +2,7 @@ using osu.Framework.Graphics;
 using osu.Game.Skinning;
 using osu.Game.Plugins.Legacy;
 using osu.Framework.Allocation;
+using osu.Game.Beatmaps.Timing;
 
 namespace osu.Plugin.LegacyBreakOverlay;
 
@@ -11,19 +12,28 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
 
     public bool UsesFixedAnchor { get; set; } = true;
 
-    private LegacyHealthDisplay healthDisplay = null!;
-
     public LegacyHealthOverlay()
     {
         Anchor = Anchor.TopLeft;
         Origin = Anchor.TopLeft;
         AutoSizeAxes = Axes.Both;
+        AlwaysPresent = true;
+
+        InternalChild = new LegacyHealthDisplay();
     }
 
-    [BackgroundDependencyLoader]
-    private void load()
+    protected override void ScheduleBreakAnimations(IReadOnlyList<BreakPeriod> breaks)
     {
-        InternalChild = healthDisplay = new LegacyHealthDisplay();
+        foreach (var period in breaks)
+        {
+            using (BeginAbsoluteSequence(period.StartTime))
+            {
+                slideOut();
+
+                using (BeginDelayedSequence(period.Duration))
+                    slideIn();
+            }
+        }
     }
 
     private const float duration = 500;
@@ -31,35 +41,13 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
 
     private void slideIn()
     {
-        healthDisplay
-            .FadeIn(duration)
+        this.FadeIn(duration)
             .MoveToY(0, duration);
     }
 
     private void slideOut()
     {
-        healthDisplay
-            .FadeOut(duration)
+        this.FadeOut(duration)
             .MoveToY(offset_y, duration);
-    }
-
-    public override void OnBreakStart()
-    {
-        base.OnBreakStart();
-
-        var currentBreak = CurrentBreak.Value;
-
-        if (currentBreak is null)
-            return;
-
-        var period = currentBreak.Value;
-
-        using (BeginAbsoluteSequence(period.Start))
-        {
-            slideOut();
-
-            using (BeginDelayedSequence(period.Duration))
-                slideIn();
-        }
     }
 }

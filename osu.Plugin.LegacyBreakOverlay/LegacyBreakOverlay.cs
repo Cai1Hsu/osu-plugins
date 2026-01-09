@@ -10,7 +10,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets;
 using osu.Game.Plugins.Legacy;
 using osu.Framework.Graphics;
-using osu.Game.Beatmaps.Timing;
+using osu.Game.Utils;
 
 namespace osu.Plugin.LegacyBreakOverlay;
 
@@ -36,6 +36,9 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
     [Resolved]
     private ScoreProcessor scoreProcessor { get; set; } = null!;
 
+    [Resolved]
+    private GameplayClockContainer? gameplayClock { get; set; } = null!;
+
     private double globalPreemptTime = 0;
 
     private LegacyBreakOverlayDrawable overlay = null!;
@@ -47,8 +50,14 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
         Origin = Anchor.Centre;
     }
 
+    // passing/failing is generated when break begin
+    // we should track rewinding ourselves
+    public override bool RemoveCompletedTransforms => true;
+
+    private double? firstHitObjectStartTime;
+
     [BackgroundDependencyLoader]
-    private void load(IBindable<WorkingBeatmap> workingBeatmap, IBindable<IReadOnlyList<Mod>> mods, IBindable<RulesetInfo> rulesetInfo, IGameplayClock gameplayClock)
+    private void load(IBindable<WorkingBeatmap> workingBeatmap, IBindable<IReadOnlyList<Mod>> mods, IBindable<RulesetInfo> rulesetInfo)
     {
         Debug.Assert(scoreProcessor is not null, "ScoreProcessor should be resolved when LegacyBreakOverlay is used in gameplay.");
 
@@ -60,19 +69,31 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
         var firstHitObject = beatmap.HitObjects.OrderBy(h => h.StartTime).FirstOrDefault();
 
-        double firstHitObjectStartTime;
-
         if (firstHitObject is not null)
             firstHitObjectStartTime = firstHitObject.StartTime;
-        else
-            firstHitObjectStartTime = gameplayClock.GameplayStartTime;
 
-        if (firstHitObject is not null && firstHitObject.StartTime > 6000)
-            scheduleCountDownAnimation(firstHitObjectStartTime);
+        scheduleCountDownAnimation();
 
-        // schedule all animations to avoid conflicts when rewinding.
-        foreach (var period in beatmap.Breaks)
-            scheduleAnimationForBreak(period);
+        if (gameplayClock is not null)
+            gameplayClock.OnSeek += onGameSeek;
+    }
+
+    private void onGameSeek()
+    {
+        Scheduler.Add(replayAnimations);
+    }
+
+    private void replayAnimations()
+    {
+        overlay.ClearAnimations();
+
+        if (firstHitObjectStartTime.HasValue && Clock.CurrentTime <= firstHitObjectStartTime.Value)
+            scheduleCountDownAnimation();
+
+        var currentBreak = CurrentBreak.Value;
+
+        if (currentBreak.HasValue)
+            scheduleAnimationForBreak(currentBreak.Value);
     }
 
     private double calculateGlobalPreemptTime(BeatmapInfo beatmapInfo, IReadOnlyList<Mod> mods, RulesetInfo rulesetInfo)
@@ -96,10 +117,16 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
         };
     }
 
-    private void scheduleCountDownAnimation(double firstHitObjectStartTime)
+    private void scheduleCountDownAnimation()
     {
+        if (!firstHitObjectStartTime.HasValue)
+            return;
+
+        if (firstHitObjectStartTime.Value < 6000)
+            return;
+
         // use integer to match stable's behavior
-        int startTime = (int)firstHitObjectStartTime - (int)globalPreemptTime - 900;
+        int startTime = (int)firstHitObjectStartTime.Value - (int)globalPreemptTime - 900;
         int loopCount = 5 + Math.Min(2, (int)(globalPreemptTime / 200));
 
         using (BeginAbsoluteSequence(startTime))
@@ -136,22 +163,29 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
     private const double min_break_duration_for_section_ranking = 2880;
 
-    private void scheduleAnimationForBreak(BreakPeriod period)
+    public override void OnBreakStart()
+    {
+        var currentPeriod = CurrentBreak.Value;
+
+        if (!currentPeriod.HasValue)
+            return;
+
+        scheduleAnimationForBreak(currentPeriod.Value);
+    }
+
+    private void scheduleAnimationForBreak(Period period)
     {
         // BreakTracker subtracts BreakOverlay.BREAK_FADE_DURATION from the end time to trigger the end of break earlier.
         // Using original value is confirmed to match osu!stable's behavior.
-        double breakDuration = period.Duration;
-        double breakStartTime = period.StartTime;
-        double breakEndTime = period.EndTime;
+        double breakDuration = period.Duration + BreakOverlay.BREAK_FADE_DURATION;
+        double breakStartTime = period.Start;
+        double breakEndTime = period.End + BreakOverlay.BREAK_FADE_DURATION;
 
-        using (BeginAbsoluteSequence(breakStartTime))
-        {
-            playSectionRanking();
-            playResumeWarningArrows();
+        playSectionRanking();
+        playResumeWarningArrows();
 
-            // Sometimes transparency get modified by other components, so we update it again here.
-            Schedule(updateLazerBreakOverlayTransparency);
-        }
+        // Sometimes transparency get modified by other components, so we update it again here.
+        Schedule(updateLazerBreakOverlayTransparency);
 
         void playSectionRanking()
         {
@@ -165,7 +199,7 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
                 ? (breakStartTime + halfDuration)
                 : (breakEndTime - min_break_duration_for_section_ranking);
 
-            using (BeginDelayedSequence(beginTime - breakStartTime))
+            using (BeginAbsoluteSequence(beginTime))
                 overlay.PlayBreakRankingAnimation(IsSectionPassing());
         }
 
@@ -176,8 +210,16 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
             int flashCount = Math.Min(5, (int)((breakDuration + 200) / 200)) + preemptCount;
             int loopStartTime = (int)(breakEndTime - 200 * (flashCount - preemptCount));
 
-            using (BeginDelayedSequence(loopStartTime - breakStartTime))
+            using (BeginAbsoluteSequence(loopStartTime))
                 overlay.PlayWarningAnimation(flashCount);
         }
+    }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        if (gameplayClock is not null)
+            gameplayClock.OnSeek -= onGameSeek;
     }
 }
