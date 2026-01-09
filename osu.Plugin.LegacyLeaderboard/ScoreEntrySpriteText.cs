@@ -7,11 +7,13 @@ public partial class ScoreEntrySpriteText : LegacySpriteTextContainer
 {
     private const char comma = ',';
     private const char dot = '.';
+    private const char percent = '%';
 
     private static readonly FrozenDictionary<char, string> mappings = new Dictionary<char, string>
     {
         { comma, "comma" },
         { dot, "dot" },
+        { percent, "percent" },
     }.ToFrozenDictionary();
 
     public ScoreEntrySpriteText()
