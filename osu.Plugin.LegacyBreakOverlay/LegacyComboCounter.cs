@@ -1,5 +1,6 @@
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Game.Beatmaps.Timing;
 using osu.Game.Plugins.Legacy;
 using osu.Game.Skinning;
@@ -13,6 +14,8 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
 
     public bool UsesFixedAnchor { get; set; } = true;
 
+    private Container counter;
+
     public LegacyComboCounter()
     {
         Anchor = Anchor.BottomLeft;
@@ -20,7 +23,11 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
         AutoSizeAxes = Axes.Both;
         AlwaysPresent = true;
 
-        InternalChild = new LazerLegacyCombo();
+        InternalChild = counter = new Container()
+        {
+            AutoSizeAxes = Axes.Both,
+            Child = new LazerLegacyCombo(),
+        };
     }
 
     protected override void ScheduleBreakAnimations(IReadOnlyList<BreakPeriod> breaks)
@@ -42,13 +49,15 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
 
     private void slideOut()
     {
-        this.FadeOut(duration)
+        counter
+            .FadeOut(duration)
             .MoveToX(offset_x, duration, Easing.In);
     }
 
     private void slideIn()
     {
-        this.FadeIn(duration)
+        counter
+            .FadeIn(duration)
             .MoveToX(0, duration, Easing.Out);
     }
 }
