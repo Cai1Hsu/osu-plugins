@@ -13,15 +13,14 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
 
     public bool UsesFixedAnchor { get; set; } = true;
 
-    private LazerLegacyCombo combo = null!;
-
     public LegacyComboCounter()
     {
         Anchor = Anchor.BottomLeft;
         Origin = Anchor.BottomLeft;
         AutoSizeAxes = Axes.Both;
+        AlwaysPresent = true;
 
-        InternalChild = combo = new LazerLegacyCombo();
+        InternalChild = new LazerLegacyCombo();
     }
 
     protected override void ScheduleBreakAnimations(IReadOnlyList<BreakPeriod> breaks)
@@ -43,13 +42,13 @@ public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableD
 
     private void slideOut()
     {
-        combo.FadeOut(duration)
+        this.FadeOut(duration)
             .MoveToX(offset_x, duration, Easing.In);
     }
 
     private void slideIn()
     {
-        combo.FadeIn(duration)
+        this.FadeIn(duration)
             .MoveToX(0, duration, Easing.Out);
     }
 }

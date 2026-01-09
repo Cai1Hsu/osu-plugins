@@ -12,15 +12,14 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
 
     public bool UsesFixedAnchor { get; set; } = true;
 
-    private LegacyHealthDisplay healthDisplay = null!;
-
     public LegacyHealthOverlay()
     {
         Anchor = Anchor.TopLeft;
         Origin = Anchor.TopLeft;
         AutoSizeAxes = Axes.Both;
+        AlwaysPresent = true;
 
-        InternalChild = healthDisplay = new LegacyHealthDisplay();
+        InternalChild = new LegacyHealthDisplay();
     }
 
     protected override void ScheduleBreakAnimations(IReadOnlyList<BreakPeriod> breaks)
@@ -42,15 +41,13 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
 
     private void slideIn()
     {
-        healthDisplay
-            .FadeIn(duration)
+        this.FadeIn(duration)
             .MoveToY(0, duration);
     }
 
     private void slideOut()
     {
-        healthDisplay
-            .FadeOut(duration)
+        this.FadeOut(duration)
             .MoveToY(offset_y, duration);
     }
 }
