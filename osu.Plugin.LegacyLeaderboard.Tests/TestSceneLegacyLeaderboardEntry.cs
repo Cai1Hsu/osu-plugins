@@ -8,6 +8,8 @@ using osu.Framework.Platform;
 using osu.Framework.Testing;
 using osu.Game.Database;
 using osu.Game.IO;
+using osu.Game.Scoring;
+using osu.Game.Screens.Select.Leaderboards;
 using osu.Game.Skinning;
 using osu.Game.Tests.Visual;
 using osuTK;
@@ -27,7 +29,8 @@ public partial class TestSceneLegacyLeaderboardEntry : OsuTestScene, IStorageRes
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
-                Child = new LegacyLeaderboardEntry()
+                // FIXME: test broken due to dependency of leaderboard and score info.
+                Child = new LegacyLeaderboardEntry(new GameplayLeaderboardScore(new ScoreInfo(), true, GameplayLeaderboardScore.ComboDisplayMode.Current))
                 {
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
