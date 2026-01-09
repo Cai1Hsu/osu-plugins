@@ -55,12 +55,14 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
                 Scale = new Vector2(background_scale),
             },
             // TODO: use stable's font
-            nameSprite = new OsuSpriteText
+            nameSprite = new TruncatingSpriteText
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.TopLeft,
-                Font= new FontUsage(size: 14f, fixedWidth: false),
+                Font = new FontUsage(size: 14f, fixedWidth: false),
                 Scale = new Vector2(stable_ratio),
+                RelativeSizeAxes = Axes.X,
+                Width = 1 / stable_ratio, // we scaled up, so we need to scale down the width
                 Position = background_offset + new Vector2(2.5f, -2f) * stable_ratio,
                 AllowMultiline = false,
             },
