@@ -44,16 +44,15 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
                 Origin = Anchor.TopLeft,
                 Font= new FontUsage(size: 14f, fixedWidth: false),
                 Scale = new Vector2(stable_ratio),
-                Position = background_offset +new Vector2(2.5f, -2f) * stable_ratio,
+                Position = background_offset + new Vector2(2.5f, -2f) * stable_ratio,
                 AllowMultiline = false,
-                Text = "PlayerName",
             },
             scoreSprite = new ScoreEntrySpriteText()
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.TopLeft,
                 FixedWidth = true,
-                Position = background_offset+new Vector2(2f, 18f) * stable_ratio,
+                Position = background_offset + new Vector2(2f, 18f) * stable_ratio,
                 Colour = Color4.White,
                 SpriteText =
                 {
