@@ -10,6 +10,7 @@ using osuTK;
 using osu.Game.Configuration;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Extensions.EnumExtensions;
 
 namespace osu.Plugin.LegacyLeaderboard;
 
@@ -243,6 +244,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     private Texture? GetTexture(string lookup)
         => textures.Get($"{lookup}@2x") ?? textures.Get(lookup);
 
+    private bool IsRightSideLayout => Anchor.HasFlagFast(Anchor.x2);
+
     public void FlashExplosionAt(LegacyLeaderboardEntry? entry = null)
     {
         entry ??= trackingEntry;
@@ -252,12 +255,20 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         entry.FlashBackground();
 
         var position = entry.Position + new Vector2(0, entry.Height / 2);
+        var scale = Vector2.One;
+
+        if (IsRightSideLayout)
+        {
+            position.X += entry.Width;
+            scale.X = -1;
+        }
 
         Sprite explision2 = new Sprite
         {
             Anchor = Anchor.TopLeft,
             Origin = Anchor.CentreLeft,
             Position = position,
+            Scale = scale,
             Texture = GetTexture("UI/scoreboard-explosion-2"),
             Blending = BlendingParameters.Additive,
         };
@@ -274,6 +285,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             Anchor = Anchor.TopLeft,
             Origin = Anchor.CentreLeft,
             Position = position,
+            Scale = scale,
             Texture = GetTexture("UI/scoreboard-explosion-1"),
             Blending = BlendingParameters.Additive,
         };
