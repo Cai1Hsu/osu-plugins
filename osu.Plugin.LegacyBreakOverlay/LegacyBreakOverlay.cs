@@ -61,7 +61,7 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
     {
         Debug.Assert(scoreProcessor is not null, "ScoreProcessor should be resolved when LegacyBreakOverlay is used in gameplay.");
 
-        Add(overlay = new LegacyBreakOverlayDrawable());
+        AddInternal(overlay = new LegacyBreakOverlayDrawable());
 
         var beatmap = workingBeatmap.Value.Beatmap;
 

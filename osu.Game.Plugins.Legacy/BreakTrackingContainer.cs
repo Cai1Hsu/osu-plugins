@@ -9,7 +9,7 @@ using osu.Game.Utils;
 
 namespace osu.Game.Plugins.Legacy;
 
-public abstract partial class BreakTrackingContainer : Container
+public abstract partial class BreakTrackingContainer : CompositeDrawable
 {
     public virtual void OnBreakStart()
     {
