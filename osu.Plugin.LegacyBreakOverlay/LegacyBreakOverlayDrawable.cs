@@ -118,6 +118,8 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
             scheduledSamplePlay = null;
         });
 
+        updateSectionRankingTexture(passing ? skin?.GetTexture("section-pass") : skin?.GetTexture("section-fail"));
+
         playAnimation();
 
         void playSample()
@@ -158,16 +160,6 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
         scheduledSamplePlay = null;
     }
 
-    private void updateFailingTexture()
-    {
-        updateSectionRankingTexture(skin?.GetTexture("section-fail"));
-    }
-
-    private void updatePassingTexture()
-    {
-        updateSectionRankingTexture(skin?.GetTexture("section-pass"));
-    }
-
     private void updateSectionRankingTexture(Texture? texture)
     {
         if (texture is not null)
@@ -180,10 +172,6 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
     protected void PlayPassingAnimation()
     {
         SectionRankingSprite
-            .Delay(0)
-            // update texture right before animation starts to ensure proper texture used
-            // also good for skin changes during gameplay
-            .Schedule(updatePassingTexture)
             .Delay(20)
             .FadeInFromZero()
             .Delay(80)
@@ -201,8 +189,6 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
     protected void PlayFailingAnimation()
     {
         SectionRankingSprite
-            .Delay(0)
-            .Schedule(updateFailingTexture)
             .Delay(130)
             .FadeInFromZero()
             .Delay(100)
