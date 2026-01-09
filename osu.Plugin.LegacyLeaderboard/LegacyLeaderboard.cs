@@ -11,6 +11,7 @@ using osu.Game.Configuration;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Extensions.EnumExtensions;
+using osu.Framework.Utils;
 
 namespace osu.Plugin.LegacyLeaderboard;
 
@@ -232,12 +233,21 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
             entry.LeaderboardDisplayIndex.Value = newLeaderboardIndex;
 
+            float targetY = newLeaderboardIndex * entry_height;
+
             // no need to animate if it was already invisible
             if (previouslyInvisible)
+            {
+                // Don't set position if still during a fade-out.
+                if (Precision.AlmostEquals(entry.Alpha, 0))
+                    // if leaderboard's size adjusted, ensure new position is applied.
+                    entry.Y = targetY;
+
                 continue;
+            }
 
             entry.FadeOut(transition_duration)
-                .MoveToY(newLeaderboardIndex * entry_height, transition_duration, Easing.Out);
+                .MoveToY(targetY, transition_duration, Easing.Out);
         }
     }
 
