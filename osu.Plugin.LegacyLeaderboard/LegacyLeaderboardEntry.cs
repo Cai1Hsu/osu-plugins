@@ -21,6 +21,9 @@ namespace osu.Plugin.LegacyLeaderboard;
 
 public partial class LegacyLeaderboardEntry : CompositeDrawable
 {
+    public const float HEIGHT = 103 * background_scale; // default sprite's height is 103
+    public const float WIDTH = 82 * stable_ratio;
+
     private const float stable_ratio = 1.6f;
 
     // stable uses 0.62 but McOsu and Wieku/danser-go both use 0.625 for some reason.
@@ -36,6 +39,10 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
 
     public LegacyLeaderboardEntry(GameplayLeaderboardScore score)
     {
+        Anchor = Anchor.TopLeft;
+        Origin = Anchor.TopLeft;
+        Size = new Vector2(WIDTH, HEIGHT);
+
         User = score.User;
         IsTracking = score.Tracked;
         TotalScore.BindTo(score.TotalScore);
@@ -45,7 +52,11 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
         ScorePosition.BindTo(score.Position);
         ProviderDisplayOrder.BindTo(score.DisplayOrder);
         GetDisplayScore = score.GetDisplayScore;
+    }
 
+    [BackgroundDependencyLoader]
+    private void load(ISkinSource skin)
+    {
         InternalChildren = new Drawable[]
         {
             backgroundSprite = new Sprite
@@ -104,16 +115,6 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
                 }
             }
         };
-    }
-
-    [BackgroundDependencyLoader]
-    private void load(ISkinSource skin)
-    {
-        // background vertical offset + 18 for score/combos Y + 14 for score/combos height
-        float height = 103 * background_scale; // default sprite's height is 103
-        float width = 82 * stable_ratio;
-
-        Size = new Vector2(width, height);
 
         Texture? getCroppedBackground()
         {

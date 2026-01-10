@@ -79,7 +79,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     private void updateSize()
     {
-        Vector2 size = new Vector2(82 * stable_ratio, entry_height * MaxEntries.Value);
+        Vector2 size = new Vector2(LegacyLeaderboardEntry.WIDTH, entry_height * MaxEntries.Value);
 
         entriesContainer.Size = size;
         explosionContainer.Size = size;
