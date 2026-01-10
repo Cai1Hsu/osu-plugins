@@ -260,13 +260,20 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         {
             var entry = sorted[i];
 
+            bool previouslyInvisible = !entry.VisibleInLeaderboard.Value;
+
+            bool duringTransitionToInvisibility = false;
+
+            // no need to animate if it was already invisible
+            // or if it's during transition to invisibility
+            if (previouslyInvisible && (duringTransitionToInvisibility = Precision.AlmostBigger(entry.Alpha, 0)))
+                continue;
+
             // displayed entries are sorted, safely use binary search to improve performance
             int sortedIndex = displayedEntries.BinarySearch(entry, comparer);
 
             if (sortedIndex >= 0)
                 continue;
-
-            bool previouslyInvisible = !entry.VisibleInLeaderboard.Value;
 
             entry.VisibleInLeaderboard.Value = false;
             int newLeaderboardIndex = (trackingIndex < 0 || i < trackingIndex)
@@ -277,22 +284,21 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
             float targetY = newLeaderboardIndex * entry_height;
 
-            // no need to animate if it was already invisible
             if (previouslyInvisible)
             {
                 // Only set position after fully faded out to avoid visual popping.
-                if (Precision.AlmostEquals(entry.Alpha, 0))
+                if (!duringTransitionToInvisibility)
                     // if leaderboard's size adjusted, ensure new position is applied.
                     entry.Y = targetY;
-
-                continue;
             }
+            else
+            {
+                // update depth to make animation smoother
+                updateEntryDepth(entry);
 
-            // update depth to make animation smoother
-            updateEntryDepth(entry);
-
-            entry.FadeOut(transition_duration)
-                .MoveToY(targetY, transition_duration, Easing.Out);
+                entry.FadeOut(transition_duration)
+                    .MoveToY(targetY, transition_duration, Easing.Out);
+            }
         }
     }
 
