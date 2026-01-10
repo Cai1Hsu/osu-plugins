@@ -132,42 +132,38 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     {
         var maxEntries = Math.Max(1, MaxEntries.Value);
 
-        var displayedEntries = new List<LegacyLeaderboardEntry>();
+        int capacity = Math.Min(scoreSorted.Count, maxEntries);
+        var displayedEntries = new List<LegacyLeaderboardEntry>(capacity);
 
-        if (scoreSorted.FirstOrDefault() is { } firstPlace && !firstPlace.IsTracking)
+        // always add first place, but if we only have one slot, ensure tracking is prioritised
+        if (scoreSorted.FirstOrDefault() is { } firstPlace &&
+            (!firstPlace.IsTracking || maxEntries > 1 || trackingEntry is null))
+        {
             displayedEntries.Add(firstPlace);
 
-        if (displayedEntries.Count >= maxEntries)
-            return displayedEntries;
+            if (displayedEntries.Count >= maxEntries)
+                return displayedEntries;
+        }
 
         // try fill the reset from tracking entry upwards
         int trackingIndex = trackingEntry is null ? -1 : scoreSorted.IndexOf(trackingEntry);
+        int fillStartIndex = displayedEntries.Count; // start from where we left off
 
-        if (trackingIndex < -1)
+        // if tracking is the first place, we have already added it.
+        // Start filling from index 1 as normal.
+        if (trackingIndex > 0)
         {
-            trackingIndex = 0; // fill normally from second place
-        }
-        else if (trackingIndex > 1)
-        {
-            int remainingSlots = maxEntries - displayedEntries.Count - 1; // reserve one for tracking entry
-            int upfillStart = Math.Max(1, trackingIndex - remainingSlots);
+            int remainingSlots = maxEntries - displayedEntries.Count;
 
-            while (upfillStart < trackingIndex && displayedEntries.Count < (maxEntries - 1))
-            {
-                var entry = scoreSorted[upfillStart++];
-                Debug.Assert(!entry.IsTracking);
-                displayedEntries.Add(entry);
-            }
+            // Ensure tracking entry is always shown.
+            fillStartIndex = Math.Max(fillStartIndex, trackingIndex - remainingSlots + 1);
         }
 
-        if (trackingEntry is not null)
-            displayedEntries.Add(trackingEntry);
-
-        int downfillStart = trackingIndex + 1;
-        while (downfillStart < scoreSorted.Count && displayedEntries.Count < maxEntries)
+        // Sequentially add entries to ensure stable ordering.
+        // This should keep place ordering consistent with the sorted list.
+        while (fillStartIndex < scoreSorted.Count && displayedEntries.Count < maxEntries)
         {
-            var entry = scoreSorted[downfillStart++];
-            Debug.Assert(!entry.IsTracking);
+            var entry = scoreSorted[fillStartIndex++];
             displayedEntries.Add(entry);
         }
 
@@ -225,6 +221,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         var displayedEntries = sortDisplayedEntries(sorted);
 
+        // handle entries to be displayed
         for (int i = 0; i < displayedEntries.Count; i++)
         {
             var entry = displayedEntries[i];
@@ -249,9 +246,10 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         // FIXME: investigate how stable actually handles this case
         int invisibleIndex = displayedEntries.Count;
 
-        for (int i = 0; i < entriesContainer.Count; i++)
+        // handle entries to be hidden
+        for (int i = 0; i < sorted.Count; i++)
         {
-            var entry = entriesContainer[i];
+            var entry = sorted[i];
 
             // displayed entries are sorted, safely use binary search to improve performance
             if (displayedEntries.BinarySearch(entry, comparer) >= 0)
