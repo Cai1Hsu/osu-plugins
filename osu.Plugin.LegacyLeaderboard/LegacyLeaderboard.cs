@@ -32,9 +32,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     public Bindable<int> MaxEntries { get; private set; } = new BindableInt(6)
     {
         MinValue = 1,
-        // 100 is the maximum number of scores you can retrieve from the API.
-        // Although you can have more than 100 locally, your screen wouldn't be able to show them all anyway.
-        MaxValue = 100,
+        // Limited by <see cref="CalculateEntryTransparency">, entries beyond 24 will be fully transparent.
+        MaxValue = 24,
         Default = 6, // stable's default
     };
 
