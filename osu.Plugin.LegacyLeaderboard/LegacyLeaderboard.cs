@@ -213,15 +213,15 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     private static readonly IComparer<LegacyLeaderboardEntry> comparer = Comparer<LegacyLeaderboardEntry>.Create(CompareEntries);
 
+    // make higher score look closer to front
+    private void updateEntryDepth(LegacyLeaderboardEntry entry)
+        => entriesContainer.ChangeChildDepth(entry, entry.LeaderboardDisplayIndex.Value);
+
     private void sort()
     {
         var sorted = new SortedList<LegacyLeaderboardEntry>(comparer);
 
         sorted.AddRange(entriesContainer.Children);
-
-        // make higher score look closer to front
-        for (int i = 0; i < sorted.Count; i++)
-            entriesContainer.ChangeChildDepth(sorted[i], i);
 
         var displayedEntries = sortDisplayedEntries(sorted);
 
@@ -241,6 +241,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
             entry.VisibleInLeaderboard.Value = true;
             entry.LeaderboardDisplayIndex.Value = i;
+
+            updateEntryDepth(entry);
 
             entry.FadeTo(CalculateEntryTransparency(i), transition_duration)
                 .MoveToY(i * entry_height, transition_duration, Easing.Out);
@@ -285,6 +287,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
                 continue;
             }
+
+            // update depth to make animation smoother
+            updateEntryDepth(entry);
 
             entry.FadeOut(transition_duration)
                 .MoveToY(targetY, transition_duration, Easing.Out);
