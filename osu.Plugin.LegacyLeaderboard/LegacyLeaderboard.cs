@@ -170,7 +170,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         Debug.Assert(displayedEntries.Count <= maxEntries);
         Debug.Assert(trackingEntry is null || displayedEntries.Contains(trackingEntry));
-        Debug.Assert(scoreSorted.Count <= MaxEntries.Value || displayedEntries.Count == maxEntries);
+        Debug.Assert(scoreSorted.Count <= maxEntries || displayedEntries.Count == maxEntries);
 
         return displayedEntries;
     }
