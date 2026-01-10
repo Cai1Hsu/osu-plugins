@@ -134,8 +134,11 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         var displayedEntries = new List<LegacyLeaderboardEntry>(capacity);
 
         // always add first place, but if we only have one slot, ensure tracking is prioritised
-        if (scoreSorted.FirstOrDefault() is { } firstPlace &&
-            (!firstPlace.IsTracking || maxEntries > 1 || trackingEntry is null))
+        if (scoreSorted.FirstOrDefault() is { } firstPlace && (
+            firstPlace.IsTracking || // first place is tracking
+            trackingEntry is null || // tracking not present
+            maxEntries > 1 // has enough slot for tracking
+        ))
         {
             displayedEntries.Add(firstPlace);
 
