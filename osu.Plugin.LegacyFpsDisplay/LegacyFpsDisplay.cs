@@ -281,8 +281,6 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         public const char comma = ',';
         public const char dot = '.';
 
-        private static readonly char[] fixedWidthExcludeCharacters = new[] { comma, dot, ms };
-
         private static readonly FrozenDictionary<char, string> mappings = new Dictionary<char, string>
         {
             { ms, "ms" },
@@ -290,15 +288,25 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             { dot, "dot" },
         }.ToFrozenDictionary();
 
+        private partial class FpsLargeSpriteText : LegacySpriteText
+        {
+            public FpsLargeSpriteText(string fontPrefix) : base(fontPrefix)
+            {
+            }
+
+            private static readonly char[] fixedWidthExcludeCharacters = new[] { comma, dot, ms };
+
+            protected override char[] FixedWidthExcludeCharacters => fixedWidthExcludeCharacters;
+        }
+
         protected override TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
             => LegacyFpsDisplay.CreateTextureLookup(dependencies);
 
         protected override LegacySpriteText CreateSpriteText(string fontPrefix)
         {
-            var spriteText = base.CreateSpriteText(fontPrefix);
+            var spriteText = new FpsLargeSpriteText(fontPrefix);
             spriteText.FixedWidth = false;
             spriteText.FontOverlap = 1f;
-            spriteText.FixedWidthExclude = fixedWidthExcludeCharacters;
             spriteText.CustomMappings = mappings;
             return spriteText;
         }
