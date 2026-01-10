@@ -186,7 +186,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         if (scoreComparison != 0)
             return scoreComparison;
 
-        int quitComparison = y.HasQuit.Value.CompareTo(x.HasQuit.Value);
+        // quitters go to the bottom
+        int quitComparison = x.HasQuit.Value.CompareTo(y.HasQuit.Value);
         if (quitComparison != 0)
             return quitComparison;
 
