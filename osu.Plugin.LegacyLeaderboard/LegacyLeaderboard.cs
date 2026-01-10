@@ -208,8 +208,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     private static readonly IComparer<LegacyLeaderboardEntry> comparer = Comparer<LegacyLeaderboardEntry>.Create(CompareEntries);
 
     // make higher score look closer to front
-    private void updateEntryDepth(LegacyLeaderboardEntry entry)
-        => entriesContainer.ChangeChildDepth(entry, entry.LeaderboardDisplayIndex.Value);
+    private void updateEntryDepth(LegacyLeaderboardEntry entry, float? depth = null)
+        => entriesContainer.ChangeChildDepth(entry, depth ??= entry.LeaderboardDisplayIndex.Value);
 
     private void sort()
     {
@@ -288,7 +288,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             else
             {
                 // update depth to make animation smoother
-                updateEntryDepth(entry);
+                // make fading out entries appear at bottom of any existing ones
+                updateEntryDepth(entry, sorted.Count + 1024); // very large depth to ensure it's at the back
 
                 entry.FadeOut(transition_duration)
                     .MoveToY(targetY, transition_duration, Easing.Out);
