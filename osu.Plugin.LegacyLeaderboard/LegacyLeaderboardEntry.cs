@@ -46,6 +46,7 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
         User = score.User;
         IsTracking = score.Tracked;
         TotalScore.BindTo(score.TotalScore);
+        TieBreaker = score.TotalScoreTiebreaker;
         Accuracy.BindTo(score.Accuracy);
         Combo.BindTo(score.Combo);
         HasQuit.BindTo(score.HasQuit);
@@ -147,6 +148,7 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
     [Resolved]
     private IAPIProvider api { get; set; } = null!;
 
+    public long TieBreaker { get; }
     public BindableLong TotalScore { get; } = new BindableLong();
     public BindableDouble Accuracy { get; } = new BindableDouble(1); // accuracy is not displayed in legacy leaderboard
     public BindableInt Combo { get; } = new BindableInt();

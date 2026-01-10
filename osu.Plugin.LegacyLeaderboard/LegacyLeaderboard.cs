@@ -199,14 +199,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         // Don't compare ProviderDisplayOrder as tracking's may be 0
 
-        int xUserId = x.User?.OnlineID ?? int.MinValue;
-        int yUserId = y.User?.OnlineID ?? int.MinValue;
-        int userIdComparison = xUserId.CompareTo(yUserId);
-        if (userIdComparison != 0)
-            return userIdComparison;
-
-        // Compare by reference as a last resort to ensure a stable sort.
-        return RuntimeHelpers.GetHashCode(x).CompareTo(RuntimeHelpers.GetHashCode(y));
+        return x.TieBreaker.CompareTo(y.TieBreaker);
     }
 
     private const float transition_duration = 600;
