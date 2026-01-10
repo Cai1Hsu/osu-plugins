@@ -112,10 +112,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         var entry = CreateEntry(score);
 
         if (score.Tracked)
-        {
-            Debug.Assert(trackingEntry is null);
-            trackingEntry = entry;
-        }
+            // multiple tracking score is not expected.
+            // but in case it happens, prefer the first one.
+            trackingEntry ??= entry;
 
         entriesContainer.Add(entry);
         entry.Y = -entry_height; // start above the visible area
