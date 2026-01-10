@@ -34,7 +34,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     public Bindable<int> MaxEntries { get; private set; } = new BindableInt(6)
     {
         MinValue = 1,
-        // Limited by <see cref="CalculateEntryTransparency">, entries beyond 24 will be fully transparent.
+        // Limited by CalculateEntryTransparency, entries beyond 24 will be fully transparent.
         MaxValue = 24,
         Default = 6, // stable's default
     };
