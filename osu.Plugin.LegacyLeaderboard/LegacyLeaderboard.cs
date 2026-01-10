@@ -349,12 +349,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             .Expire();
     }
 
-    public float CalculateEntryTransparency(int index)
+    public static float CalculateEntryTransparency(int index)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
-
-        if (index >= MaxEntries.Value || index > entriesContainer.Count - 1)
-            return 0;
 
         return MathF.Max(0, 0.8f - (index * (0.1f / 3)));
     }
