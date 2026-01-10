@@ -256,13 +256,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
             bool previouslyInvisible = !entry.VisibleInLeaderboard.Value;
 
-            bool duringTransitionToInvisibility = false;
-
-            // no need to animate if it was already invisible
-            // or if it's during transition to invisibility
-            if (previouslyInvisible && (duringTransitionToInvisibility = Precision.AlmostBigger(entry.Alpha, 0)))
-                continue;
-
             // displayed entries are sorted, safely use binary search to improve performance
             int sortedIndex = displayedEntries.BinarySearch(entry, comparer);
 
@@ -281,7 +274,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             if (previouslyInvisible)
             {
                 // Only set position after fully faded out to avoid visual popping.
-                if (!duringTransitionToInvisibility)
+                if (Precision.AlmostEquals(entry.Alpha, 0))
                     // if leaderboard's size adjusted, ensure new position is applied.
                     entry.Y = targetY;
             }
