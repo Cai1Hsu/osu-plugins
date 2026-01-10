@@ -169,6 +169,13 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     private static int CompareEntries(LegacyLeaderboardEntry x, LegacyLeaderboardEntry y)
     {
+        if (x.ScorePosition.Value.HasValue && y.ScorePosition.Value.HasValue)
+        {
+            int positionComparison = x.ScorePosition.Value.Value.CompareTo(y.ScorePosition.Value.Value);
+            if (positionComparison != 0)
+                return positionComparison;
+        }
+
         int scoreComparison = y.TotalScore.Value.CompareTo(x.TotalScore.Value);
         if (scoreComparison != 0)
             return scoreComparison;
