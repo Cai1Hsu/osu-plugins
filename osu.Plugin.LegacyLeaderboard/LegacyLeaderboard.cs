@@ -117,7 +117,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         entry.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort), true);
     }
 
-    private IReadOnlyList<LegacyLeaderboardEntry> sortDisplayedEntries(SortedList<LegacyLeaderboardEntry> scoreSorted)
+    private List<LegacyLeaderboardEntry> sortDisplayedEntries(SortedList<LegacyLeaderboardEntry> scoreSorted)
     {
         var maxEntries = Math.Max(1, MaxEntries.Value);
 
@@ -194,9 +194,11 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     private const float transition_duration = 600;
 
+    private static readonly IComparer<LegacyLeaderboardEntry> comparer = Comparer<LegacyLeaderboardEntry>.Create(CompareEntries);
+
     private void sort()
     {
-        var sorted = new SortedList<LegacyLeaderboardEntry>(CompareEntries);
+        var sorted = new SortedList<LegacyLeaderboardEntry>(comparer);
 
         sorted.AddRange(entriesContainer.Children);
 
@@ -230,7 +232,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         {
             var entry = entriesContainer[i];
 
-            if (displayedEntries.Contains(entry))
+            // displayed entries are sorted, safely use binary search to improve performance
+            if (displayedEntries.BinarySearch(entry, comparer) >= 0)
                 continue;
 
             bool previouslyInvisible = !entry.VisibleInLeaderboard.Value;
