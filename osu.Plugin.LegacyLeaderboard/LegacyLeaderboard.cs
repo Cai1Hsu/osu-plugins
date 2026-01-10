@@ -112,9 +112,13 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         entriesContainer.Add(entry);
         entry.Y = -entry_height; // start above the visible area
+        entry.Alpha = 0;
+        entry.VisibleInLeaderboard.Value = false;
 
+        // Don't display immediately, position info is still unavailable.
+        // Provider will trigger event when ready.
         entry.ScorePosition.BindValueChanged(_ => Scheduler.AddOnce(sort));
-        entry.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort), true);
+        entry.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort));
     }
 
     private List<LegacyLeaderboardEntry> sortDisplayedEntries(SortedList<LegacyLeaderboardEntry> scoreSorted)

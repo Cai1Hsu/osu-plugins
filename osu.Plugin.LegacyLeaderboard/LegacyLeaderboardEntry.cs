@@ -187,7 +187,6 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
 
         Combo.BindValueChanged(v => comboSprite.Text = $@"{v.NewValue:N0}x", true);
 
-        this.FadeOut();
         FinishTransforms(true);
     }
 
@@ -213,9 +212,6 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
 
     private void updatePanelState()
     {
-        if (VisibleInLeaderboard.Value)
-            this.FadeIn(fade_in_duration);
-
         rankSprite.Text = ScorePosition.Value.HasValue ? $"{ScorePosition.Value.Value}" : string.Empty;
 
         if (ScorePosition.Value.HasValue)
