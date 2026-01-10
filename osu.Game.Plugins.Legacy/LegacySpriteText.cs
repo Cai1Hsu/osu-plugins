@@ -87,12 +87,12 @@ public partial class LegacySpriteText : OsuSpriteText
 
         public LegacyGlyphStore(string fontName, TextureLookupDelegate textureLookup, Vector2? maxSize, FrozenDictionary<char, string>? customMappings = null)
         {
+            ArgumentNullException.ThrowIfNull(textureLookup);
+
             this.fontName = fontName;
             this.textureLookup = textureLookup;
             this.maxSize = maxSize;
             this.customMappings = customMappings;
-
-            ArgumentNullException.ThrowIfNull(textureLookup);
         }
 
         public ITexturedCharacterGlyph? Get(string? fontName, char character)
