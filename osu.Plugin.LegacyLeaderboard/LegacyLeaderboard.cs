@@ -70,13 +70,16 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             }
         };
 
-        MaxEntries.BindValueChanged(_ => updateSize(entry_height * MaxEntries.Value), true);
-        MaxEntries.BindValueChanged(_ => Scheduler.AddOnce(sort));
+        MaxEntries.BindValueChanged(_ =>
+        {
+            updateSize();
+            Scheduler.AddOnce(sort);
+        });
     }
 
-    private void updateSize(float height)
+    private void updateSize()
     {
-        Vector2 size = new Vector2(82 * stable_ratio, height);
+        Vector2 size = new Vector2(82 * stable_ratio, entry_height * MaxEntries.Value);
 
         entriesContainer.Size = size;
         explosionContainer.Size = size;
@@ -86,6 +89,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     protected override void LoadComplete()
     {
         base.LoadComplete();
+
+        updateSize();
 
         scores.BindCollectionChanged((_, _) =>
         {
