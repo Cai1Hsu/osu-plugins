@@ -5,6 +5,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Textures;
 using osu.Framework.Logging;
 using osu.Framework.Screens;
 using osu.Framework.Threading;
@@ -219,4 +220,29 @@ public static class PluginHelper
             // Note that although usually only one game instance exists, testing environments may have multiple.
             // We leave the choice to the caller to decide how to handle multiple instances.
             .OfType<Framework.Game>();
+
+    /// <summary>
+    /// Gets a texture from the store, prioritizing high-DPI versions if available.
+    /// </summary>
+    /// <param name="store">The texture store to retrieve the texture from.</param>
+    /// <param name="lookup">The lookup string for the texture.</param>
+    /// <returns>The retrieved texture, or null if not found.</returns>
+    public static Texture? GetAutoSized(this TextureStore store, string lookup)
+    {
+        return store.Get($"{lookup}@2x") ?? store.Get(lookup);
+    }
+
+    /// <summary>
+    /// Gets a texture from the store, prioritizing high-DPI versions if available.
+    /// </summary>
+    /// <param name="store">The texture store to retrieve the texture from.</param>
+    /// <param name="lookup">The lookup string for the texture.</param>
+    /// <param name="wrapModeS">The wrap mode for the S (U) texture coordinate.</param>
+    /// <param name="wrapModeT">The wrap mode for the T (V) texture coordinate.</param>
+    /// <returns>The retrieved texture, or null if not found.</returns>
+    public static Texture? GetAutoSized(this TextureStore store, string lookup, WrapMode wrapModeS, WrapMode wrapModeT)
+    {
+        return store.Get($"{lookup}@2x", wrapModeS, wrapModeT)
+            ?? store.Get(lookup, wrapModeS, wrapModeT);
+    }
 }

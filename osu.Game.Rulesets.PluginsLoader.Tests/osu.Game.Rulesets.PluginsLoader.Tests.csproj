@@ -17,6 +17,7 @@
     <ProjectReference Include="..\osu.Plugin.LegacyBreakOverlay\osu.Plugin.LegacyBreakOverlay.csproj" />
     <ProjectReference Include="..\osu.Plugin.LegacyErrorMeter\osu.Plugin.LegacyErrorMeter.csproj" />
     <ProjectReference Include="..\osu.Plugin.LegacyFpsDisplay\osu.Plugin.LegacyFpsDisplay.csproj" />
+    <ProjectReference Include="..\osu.Plugin.LegacyLeaderboard\osu.Plugin.LegacyLeaderboard.csproj" />
   </ItemGroup>
 
   <ItemGroup>
