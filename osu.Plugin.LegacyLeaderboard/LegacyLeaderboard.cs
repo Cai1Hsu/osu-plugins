@@ -287,7 +287,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             scale.X = -1;
         }
 
-        Sprite explision2 = new Sprite
+        Sprite explosion2 = new Sprite
         {
             Anchor = Anchor.TopLeft,
             Origin = Anchor.CentreLeft,
@@ -297,9 +297,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             Blending = BlendingParameters.Additive,
         };
 
-        explosionContainer.Add(explision2);
+        explosionContainer.Add(explosion2);
 
-        explision2
+        explosion2
             .ScaleTo(new Vector2(16, 1.2f), 200, Easing.Out)
             .FadeOut(400)
             .Expire();
