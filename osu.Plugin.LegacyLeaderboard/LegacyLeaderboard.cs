@@ -13,6 +13,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Utils;
 using osu.Game.Plugins;
+using System.Runtime.CompilerServices;
 
 namespace osu.Plugin.LegacyLeaderboard;
 
@@ -194,7 +195,16 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         if (trackingComparison != 0)
             return trackingComparison;
 
-        return x.ProviderDisplayOrder.Value.CompareTo(y.ProviderDisplayOrder.Value);
+        // Don't compare ProviderDisplayOrder as tracking's may be 0
+
+        int xUserId = x.User?.OnlineID ?? int.MinValue;
+        int yUserId = y.User?.OnlineID ?? int.MinValue;
+        int userIdComparison = xUserId.CompareTo(yUserId);
+        if (userIdComparison != 0)
+            return userIdComparison;
+
+        // Compare by reference as a last resort to ensure a stable sort.
+        return RuntimeHelpers.GetHashCode(x).CompareTo(RuntimeHelpers.GetHashCode(y));
     }
 
     private const float transition_duration = 600;
