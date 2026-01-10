@@ -9,13 +9,13 @@ using osu.Framework.Graphics.Textures;
 using osu.Game.Configuration;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API;
-using osu.Game.Plugins.Legacy;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Screens.Select.Leaderboards;
 using osu.Game.Skinning;
 using osu.Game.Users;
 using osuTK;
 using osuTK.Graphics;
+using LegacySpriteText = osu.Game.Plugins.Legacy.LegacySpriteText;
 
 namespace osu.Plugin.LegacyLeaderboard;
 
@@ -32,9 +32,9 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
     private static readonly Vector2 background_offset = new Vector2(0, 20 * background_scale);
 
     private OsuSpriteText nameSprite = null!;
-    private LegacySpriteTextContainer scoreSprite = null!;
-    private LegacySpriteTextContainer comboSprite = null!;
-    private LegacySpriteTextContainer rankSprite = null!;
+    private LegacySpriteText scoreSprite = null!;
+    private LegacySpriteText comboSprite = null!;
+    private LegacySpriteText rankSprite = null!;
     private Sprite backgroundSprite = null!;
 
     public LegacyLeaderboardEntry(GameplayLeaderboardScore score)
@@ -85,10 +85,8 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
                 FixedWidth = true,
                 Position = background_offset + new Vector2(2f, 18f) * stable_ratio,
                 Colour = Color4.White,
-                SpriteText =
-                {
-                    FontOverlap = 2.5f * stable_ratio,
-                }
+                FontOverlap = 2.5f * stable_ratio,
+                TextureLookup = skin.GetTexture,
             },
             comboSprite = new ScoreEntrySpriteText()
             {
@@ -97,10 +95,8 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
                 FixedWidth = true,
                 Colour = new Color4(153, 251, 255, 255),
                 Position = background_offset + new Vector2(0, 18f) * stable_ratio,
-                SpriteText =
-                {
-                    FontOverlap = 2.5f * stable_ratio,
-                }
+                FontOverlap = 2.5f * stable_ratio,
+                TextureLookup = skin.GetTexture,
             },
             rankSprite = new ScoreEntrySpriteText()
             {
@@ -110,10 +106,8 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
                 Colour = new Color4(255, 255, 255, 80),
                 Scale = new Vector2(2.2f),
                 Alpha = 0,
-                SpriteText =
-                {
-                    FontOverlap = 3f,
-                }
+                FontOverlap = 3f,
+                TextureLookup = skin.GetTexture,
             }
         };
 

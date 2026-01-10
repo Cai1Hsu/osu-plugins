@@ -3,7 +3,7 @@ using osu.Game.Plugins.Legacy;
 
 namespace osu.Plugin.LegacyLeaderboard;
 
-public partial class ScoreEntrySpriteText : LegacySpriteTextContainer
+public partial class ScoreEntrySpriteText : LegacySpriteText
 {
     private const char comma = ',';
     private const char dot = '.';
@@ -19,7 +19,6 @@ public partial class ScoreEntrySpriteText : LegacySpriteTextContainer
     public ScoreEntrySpriteText()
         : base("scoreentry")
     {
-        FontHeight = 14;
         CustomMappings = mappings;
     }
 }
