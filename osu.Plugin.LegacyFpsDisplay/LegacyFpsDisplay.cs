@@ -12,29 +12,31 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Platform;
 using osu.Framework.Timing;
 using osu.Framework.Utils;
-using osu.Game.Skinning;
+using osu.Game.Plugins.Legacy;
 using osuTK;
 using osuTK.Graphics;
-using static osu.Game.Plugins.Legacy.LegacySpriteTextContainer;
+using static osu.Game.Plugins.Legacy.LegacySpriteText;
 using LegacySpriteTextContainer = osu.Game.Plugins.Legacy.LegacySpriteTextContainer;
+using ISerialisableDrawable = osu.Game.Skinning.ISerialisableDrawable;
+using osu.Game.Plugins;
 
 namespace osu.Plugin.LegacyFpsDisplay;
 
 public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
 {
-    // private readonly static Color4 color_holyfuck = new Color4(255, 36, 0, 255);
-    private readonly static Color4 color_danger = new Color4(255, 149, 24, 255);
-    private readonly static Color4 color_warning = new Color4(255, 204, 34, 255);
-    private readonly static Color4 color_okay = new Color4(172, 220, 25, 255);
+    // private static readonly Color4 color_holyfuck = new Color4(255, 36, 0, 255);
+    private static readonly Color4 color_danger = new Color4(255, 149, 24, 255);
+    private static readonly Color4 color_warning = new Color4(255, 204, 34, 255);
+    private static readonly Color4 color_okay = new Color4(172, 220, 25, 255);
 
     [Resolved]
     private GameHost host { get; set; } = null!;
 
     public bool UsesFixedAnchor { get; set; } = true;
 
-    private FpsLargeSpriteText fpsText = null!;
-    private FpsSmallSpriteText targetRefreshRateText = null!;
-    private FpsLargeSpriteText frameTimeText = null!;
+    private FpsLargeSpriteTextContainer fpsText = null!;
+    private FpsSmallSpriteTextContainer targetRefreshRateText = null!;
+    private FpsLargeSpriteTextContainer frameTimeText = null!;
 
     private Sprite fpsBackground = null!;
     private Sprite frameTimeBackground = null!;
@@ -80,27 +82,19 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                                 Name = "background",
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.Centre,
-                                Texture = GetTexture(textures, "UI/fps-box"),
+                                Texture = textures.GetAutoSized("UI/fps-box"),
                                 Colour = color_okay,
                             },
-                            fpsText = new FpsLargeSpriteText
+                            fpsText = new FpsLargeSpriteTextContainer
                             {
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.CentreRight,
                                 X = -7,
-                                SpriteText =
-                                {
-                                    Text = "999",
-                                }
                             },
-                            targetRefreshRateText = new FpsSmallSpriteText
+                            targetRefreshRateText = new FpsSmallSpriteTextContainer
                             {
                                 Anchor = Anchor.BottomRight,
                                 Origin = Anchor.BottomRight,
-                                SpriteText =
-                                {
-                                    Text = "/240f",
-                                }
                             },
                         }
                     },
@@ -117,17 +111,13 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
                                 Name = "background",
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.Centre,
-                                Texture = GetTexture(textures, "UI/fps-box"),
+                                Texture = textures.GetAutoSized("UI/fps-box"),
                                 Colour = color_okay,
                             },
-                            frameTimeText = new FpsLargeSpriteText
+                            frameTimeText = new FpsLargeSpriteTextContainer
                             {
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.Centre,
-                                SpriteText =
-                                {
-                                    Text = "16ms",
-                                }
                             }
                         }
                     }
@@ -146,7 +136,7 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         currentDisplayMode.BindTo(window.CurrentDisplayMode);
 
         currentDisplay.BindValueChanged(_ => updateTargetRefreshRate());
-        currentDisplayMode.BindValueChanged(_ => updateTargetRefreshRate());
+        currentDisplayMode.BindValueChanged(_ => updateTargetRefreshRate(), true);
     }
 
     private IBindable<Display> currentDisplay = new Bindable<Display>();
@@ -278,23 +268,18 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
         fpsBackground.FadeColour(newColor, background_fade_time);
     }
 
-    internal static Texture? GetTexture(TextureStore textures, string name)
-        => textures.Get($"{name}@2x") ?? textures.Get(name);
-
     internal static TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
     {
         var textures = dependencies.Get<TextureStore>()
             ?? throw new InvalidOperationException($"Could not retrieve {nameof(TextureStore)} from dependency container.");
-        return name => GetTexture(textures, name);
+        return textures.GetAutoSized;
     }
 
-    private partial class FpsLargeSpriteText : LegacySpriteTextContainer
+    private partial class FpsLargeSpriteTextContainer : LegacySpriteTextContainer
     {
         public const char ms = 'm';
         public const char comma = ',';
         public const char dot = '.';
-
-        private static readonly char[] fixedWidthExcludeCharacters = new[] { comma, dot, ms };
 
         private static readonly FrozenDictionary<char, string> mappings = new Dictionary<char, string>
         {
@@ -303,21 +288,36 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             { dot, "dot" },
         }.ToFrozenDictionary();
 
+        private partial class FpsLargeSpriteText : LegacySpriteText
+        {
+            public FpsLargeSpriteText(string fontPrefix) : base(fontPrefix)
+            {
+            }
+
+            private static readonly char[] fixedWidthExcludeCharacters = new[] { comma, dot, ms };
+
+            protected override char[] FixedWidthExcludeCharacters => fixedWidthExcludeCharacters;
+        }
+
         protected override TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
             => LegacyFpsDisplay.CreateTextureLookup(dependencies);
 
-        public FpsLargeSpriteText() : base("UI/fps")
+        protected override LegacySpriteText CreateSpriteText(string fontPrefix)
         {
-            FixedWidth = false;
-            CustomMappings = mappings;
-            FontHeight = 11;
+            var spriteText = new FpsLargeSpriteText(fontPrefix);
+            spriteText.FixedWidth = false;
+            spriteText.FontOverlap = 1f;
+            spriteText.CustomMappings = mappings;
+            return spriteText;
+        }
 
-            SpriteText.FixedWidthExclude = fixedWidthExcludeCharacters;
-            SpriteText.FontOverlap = 1f;
+        public FpsLargeSpriteTextContainer() : base("UI/fps")
+        {
+            FontHeight = 11;
         }
     }
 
-    private partial class FpsSmallSpriteText : LegacySpriteTextContainer
+    private partial class FpsSmallSpriteTextContainer : LegacySpriteTextContainer
     {
         private const char slash = '/';
         public const char fps = 'f';
@@ -330,16 +330,21 @@ public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
             { hz, "hz" },
         }.ToFrozenDictionary();
 
+        protected override LegacySpriteText CreateSpriteText(string fontPrefix)
+        {
+            var spriteText = base.CreateSpriteText(fontPrefix);
+            spriteText.FixedWidth = false;
+            spriteText.FontOverlap = 1f;
+            spriteText.CustomMappings = mappings;
+            return spriteText;
+        }
+
         protected override TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
             => LegacyFpsDisplay.CreateTextureLookup(dependencies);
 
-        public FpsSmallSpriteText() : base("UI/fpss")
+        public FpsSmallSpriteTextContainer() : base("UI/fpss")
         {
-            FixedWidth = false;
-            CustomMappings = mappings;
             FontHeight = 10;
-
-            SpriteText.FontOverlap = 1f;
         }
     }
 }
