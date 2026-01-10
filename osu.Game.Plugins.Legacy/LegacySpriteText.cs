@@ -56,7 +56,7 @@ public partial class LegacySpriteText : OsuSpriteText
     protected override char[] FixedWidthExcludeCharacters => defaultFixedWidthExcludeCharacters;
 
 
-    private readonly static char[] defaultFixedWidthExcludeCharacters = new[] { ',', '.', '%', 'x', '/' };
+    private static readonly char[] defaultFixedWidthExcludeCharacters = new[] { ',', '.', '%', 'x', '/' };
 
     private char fixedWidthReferenceCharacter = '0';
     protected override TextBuilder CreateTextBuilder(ITexturedGlyphLookupStore _)

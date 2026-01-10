@@ -124,7 +124,7 @@ public partial class PluginLoaderRuleset : Ruleset
         }
     }
 
-    private readonly static HashSet<OsuGame> processed_games = new();
+    private static readonly HashSet<OsuGame> processed_games = new();
 
     private const BindingFlags internal_binding_flags = BindingFlags.Instance | BindingFlags.NonPublic;
 

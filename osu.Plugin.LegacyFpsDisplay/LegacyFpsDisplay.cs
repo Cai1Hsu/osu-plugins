@@ -24,10 +24,10 @@ namespace osu.Plugin.LegacyFpsDisplay;
 
 public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
 {
-    // private readonly static Color4 color_holyfuck = new Color4(255, 36, 0, 255);
-    private readonly static Color4 color_danger = new Color4(255, 149, 24, 255);
-    private readonly static Color4 color_warning = new Color4(255, 204, 34, 255);
-    private readonly static Color4 color_okay = new Color4(172, 220, 25, 255);
+    // private static readonly Color4 color_holyfuck = new Color4(255, 36, 0, 255);
+    private static readonly Color4 color_danger = new Color4(255, 149, 24, 255);
+    private static readonly Color4 color_warning = new Color4(255, 204, 34, 255);
+    private static readonly Color4 color_okay = new Color4(172, 220, 25, 255);
 
     [Resolved]
     private GameHost host { get; set; } = null!;
