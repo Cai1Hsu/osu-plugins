@@ -95,7 +95,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         scores.BindCollectionChanged((_, _) =>
         {
             trackingEntry = null;
-            lastTrackingPosition = null;
+            lastTrackingPosition = -1;
 
             entriesContainer.Clear();
 
@@ -105,7 +105,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     }
 
     private LegacyLeaderboardEntry? trackingEntry;
-    private int? lastTrackingPosition;
+    private int lastTrackingPosition;
 
     public void AddScore(GameplayLeaderboardScore score)
     {
@@ -225,15 +225,18 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         var displayedEntries = sortDisplayedEntries(sorted);
 
+        int trackingIndex = trackingEntry is null ? -1 : sorted.IndexOf(trackingEntry);
+
         // handle entries to be displayed
         for (int i = 0; i < displayedEntries.Count; i++)
         {
             var entry = displayedEntries[i];
 
             if (entry.IsTracking &&
-                lastTrackingPosition.HasValue &&
-                entry.ScorePosition.Value.HasValue &&
-                entry.ScorePosition.Value < lastTrackingPosition.Value)
+                // negative lastTrackingPosition indicates first sort after reset
+                // we don't want to flash in this case
+                lastTrackingPosition > 0 &&
+                trackingIndex < lastTrackingPosition)
                 FlashExplosionAt(entry);
 
             entry.VisibleInLeaderboard.Value = true;
@@ -244,9 +247,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         }
 
         if (trackingEntry is not null)
-            lastTrackingPosition = trackingEntry.ScorePosition.Value;
-
-        int trackingIndex = trackingEntry is null ? -1 : sorted.IndexOf(trackingEntry);
+            lastTrackingPosition = trackingIndex;
 
         // first invisible after last displayed
         // FIXME: investigate how stable actually handles this case
