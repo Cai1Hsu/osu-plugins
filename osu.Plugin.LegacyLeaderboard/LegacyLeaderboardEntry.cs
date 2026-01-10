@@ -122,8 +122,11 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
             if (texture is null)
                 return null;
 
-            Vector2 cropAt = new Vector2(470 * texture.ScaleAdjust, 0);
+            Vector2 cropAt = new Vector2(470, 0) * texture.ScaleAdjust;
             Vector2 textureSize = texture.Size;
+
+            if (cropAt.X >= textureSize.X)
+                return texture;
 
             var cropped = texture.Crop(new RectangleF(cropAt, textureSize - cropAt));
             cropped.ScaleAdjust = texture.ScaleAdjust;
