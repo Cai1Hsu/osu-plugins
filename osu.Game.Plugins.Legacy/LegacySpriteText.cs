@@ -48,23 +48,10 @@ public partial class LegacySpriteText : OsuSpriteText
             glyphStore.Get(fontPrefix, (char)('0' + i));
     }
 
-    protected virtual TextureLookupDelegate CreateTextureLookup(IReadOnlyDependencyContainer dependencies)
-    {
-        var skin = dependencies.Get<ISkinSource>()
-            ?? throw new InvalidOperationException($"No {nameof(ISkinSource)} available in the dependency container.");
-        return skin.GetTexture;
-    }
-
-    protected override TextBuilder CreateTextBuilder(ITexturedGlyphLookupStore _)
-        => base.CreateTextBuilder(glyphStore);
-
     private readonly static char[] defaultFixedWidthExcludeCharacters = new[] { ',', '.', '%', 'x', '/' };
 
     private char fixedWidthReferenceCharacter = '0';
     private char[] fixedWidthExcludeCharacters = defaultFixedWidthExcludeCharacters;
-
-    protected override char FixedWidthReferenceCharacter => FixedWidthReference;
-    protected override char[] FixedWidthExcludeCharacters => FixedWidthExclude;
 
     public char FixedWidthReference
     {
