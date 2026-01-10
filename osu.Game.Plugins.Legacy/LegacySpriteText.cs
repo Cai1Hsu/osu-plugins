@@ -45,31 +45,22 @@ public partial class LegacySpriteText : OsuSpriteText
         base.Font = new FontUsage(fontPrefix, 1, fixedWidth: FixedWidth);
 
         // cache common lookups ahead of time.
-        foreach (char c in FixedWidthExclude)
+        foreach (char c in FixedWidthExcludeCharacters)
             glyphStore.Get(fontPrefix, c);
         for (int i = 0; i < 10; i++)
             glyphStore.Get(fontPrefix, (char)('0' + i));
     }
 
+    protected override char FixedWidthReferenceCharacter => fixedWidthReferenceCharacter;
+
+    protected override char[] FixedWidthExcludeCharacters => defaultFixedWidthExcludeCharacters;
+
+
     private readonly static char[] defaultFixedWidthExcludeCharacters = new[] { ',', '.', '%', 'x', '/' };
 
     private char fixedWidthReferenceCharacter = '0';
-    private char[] fixedWidthExcludeCharacters = defaultFixedWidthExcludeCharacters;
-
     protected override TextBuilder CreateTextBuilder(ITexturedGlyphLookupStore _)
         => base.CreateTextBuilder(glyphStore);
-
-    public char FixedWidthReference
-    {
-        get => fixedWidthReferenceCharacter;
-        set => fixedWidthReferenceCharacter = value;
-    }
-
-    public char[] FixedWidthExclude
-    {
-        get => fixedWidthExcludeCharacters;
-        set => fixedWidthExcludeCharacters = value;
-    }
 
     public float FontOverlap
     {
