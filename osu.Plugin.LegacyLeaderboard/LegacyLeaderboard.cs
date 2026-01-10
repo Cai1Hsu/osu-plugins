@@ -13,7 +13,6 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Utils;
 using osu.Game.Plugins;
-using System.Runtime.CompilerServices;
 
 namespace osu.Plugin.LegacyLeaderboard;
 
