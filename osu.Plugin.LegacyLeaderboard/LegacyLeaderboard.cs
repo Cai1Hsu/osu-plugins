@@ -242,6 +242,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         if (trackingEntry is not null)
             lastTrackingPosition = trackingEntry.ScorePosition.Value;
 
+        int trackingIndex = trackingEntry is null ? -1 : sorted.IndexOf(trackingEntry);
+
         // first invisible after last displayed
         // FIXME: investigate how stable actually handles this case
         int invisibleIndex = displayedEntries.Count;
@@ -252,15 +254,17 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             var entry = sorted[i];
 
             // displayed entries are sorted, safely use binary search to improve performance
-            if (displayedEntries.BinarySearch(entry, comparer) >= 0)
+            int sortedIndex = displayedEntries.BinarySearch(entry, comparer);
+
+            if (sortedIndex >= 0)
                 continue;
 
             bool previouslyInvisible = !entry.VisibleInLeaderboard.Value;
 
             entry.VisibleInLeaderboard.Value = false;
-            int newLeaderboardIndex = entry.ProviderDisplayOrder.Value < trackingEntry?.ProviderDisplayOrder.Value
-                ? 0 // ensure high scores appears from top
-                : invisibleIndex;
+            int newLeaderboardIndex = (trackingIndex < 0 || sortedIndex < trackingIndex)
+                    ? 0 // ensure high scores appears from top
+                    : invisibleIndex;
 
             entry.LeaderboardDisplayIndex.Value = newLeaderboardIndex;
 
