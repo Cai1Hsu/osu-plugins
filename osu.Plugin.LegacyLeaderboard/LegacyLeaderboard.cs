@@ -354,6 +354,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
 
+        // TODO: stable uses `inputCount` thing here to determine transparency curve.
+        // See reference source in #13's description.
+        // However, the following calculation matches my measurements.
         return MathF.Max(0, 0.8f - (index * (0.1f / 3)));
     }
 
