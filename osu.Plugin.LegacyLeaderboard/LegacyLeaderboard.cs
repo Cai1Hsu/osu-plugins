@@ -219,6 +219,10 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         sorted.AddRange(entriesContainer.Children);
 
+        // make higher score look closer to front
+        for (int i = 0; i < sorted.Count; i++)
+            entriesContainer.ChangeChildDepth(sorted[i], i);
+
         var displayedEntries = sortDisplayedEntries(sorted);
 
         // handle entries to be displayed
