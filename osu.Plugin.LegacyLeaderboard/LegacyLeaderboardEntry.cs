@@ -48,7 +48,7 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
 
         InternalChildren = new Drawable[]
         {
-            backgroundSprite= new Sprite
+            backgroundSprite = new Sprite
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.TopLeft,
