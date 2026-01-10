@@ -41,7 +41,7 @@ public partial class LegacySpriteText : OsuSpriteText
         if (TextureLookup is null)
             throw new InvalidOperationException($"{nameof(TextureLookup)} must be provided when creating {nameof(LegacySpriteText)}.");
 
-        glyphStore ??= new LegacyGlyphStore(fontPrefix, TextureLookup, MaxSizePerGlyph, CustomMappings);
+        glyphStore = new LegacyGlyphStore(fontPrefix, TextureLookup, MaxSizePerGlyph, CustomMappings);
         base.Font = new FontUsage(fontPrefix, 1, fixedWidth: FixedWidth);
 
         // cache common lookups ahead of time.
