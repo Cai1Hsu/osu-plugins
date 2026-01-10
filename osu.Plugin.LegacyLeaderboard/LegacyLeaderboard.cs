@@ -271,7 +271,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             // no need to animate if it was already invisible
             if (previouslyInvisible)
             {
-                // Don't set position if still during a fade-out.
+                // Only set position after fully faded out to avoid visual popping.
                 if (Precision.AlmostEquals(entry.Alpha, 0))
                     // if leaderboard's size adjusted, ensure new position is applied.
                     entry.Y = targetY;
