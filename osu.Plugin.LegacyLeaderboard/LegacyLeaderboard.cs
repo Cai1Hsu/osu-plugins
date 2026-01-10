@@ -128,7 +128,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         var displayedEntries = new List<LegacyLeaderboardEntry>();
 
-        if (scoreSorted.FirstOrDefault() is { } firstPlace && firstPlace != trackingEntry)
+        if (scoreSorted.FirstOrDefault() is { } firstPlace && !firstPlace.IsTracking)
             displayedEntries.Add(firstPlace);
 
         if (displayedEntries.Count >= maxEntries)
@@ -149,7 +149,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             while (upfillStart < trackingIndex && displayedEntries.Count < (maxEntries - 1))
             {
                 var entry = scoreSorted[upfillStart++];
-                Debug.Assert(entry != trackingEntry);
+                Debug.Assert(!entry.IsTracking);
                 displayedEntries.Add(entry);
             }
         }
@@ -161,7 +161,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         while (downfillStart < scoreSorted.Count && displayedEntries.Count < maxEntries)
         {
             var entry = scoreSorted[downfillStart++];
-            Debug.Assert(entry != trackingEntry);
+            Debug.Assert(!entry.IsTracking);
             displayedEntries.Add(entry);
         }
 
@@ -274,7 +274,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     {
         entry ??= trackingEntry;
 
-        Debug.Assert(entry is not null);
+        ArgumentNullException.ThrowIfNull(entry);
 
         entry.FlashBackground();
 
