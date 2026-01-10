@@ -5,6 +5,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Textures;
 using osu.Framework.Logging;
 using osu.Framework.Screens;
 using osu.Framework.Threading;
@@ -219,4 +220,15 @@ public static class PluginHelper
             // Note that although usually only one game instance exists, testing environments may have multiple.
             // We leave the choice to the caller to decide how to handle multiple instances.
             .OfType<Framework.Game>();
+
+    public static Texture? GetAutoSized(this TextureStore store, string lookup)
+    {
+        return store.Get($"{lookup}@2x") ?? store.Get(lookup);
+    }
+
+    public static Texture? GetAutoSized(this TextureStore store, string lookup, WrapMode wrapModeS, WrapMode wrapModeT)
+    {
+        return store.Get($"{lookup}@2x", wrapModeS, wrapModeT)
+            ?? store.Get(lookup, wrapModeS, wrapModeT);
+    }
 }
