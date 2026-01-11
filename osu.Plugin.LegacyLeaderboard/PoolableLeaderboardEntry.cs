@@ -56,6 +56,9 @@ internal sealed partial class PoolableLeaderboardEntry : PoolableDrawable
         if (boundScore is not null)
             throw new InvalidOperationException($"This {nameof(PoolableLeaderboardEntry)} is already bound to a {nameof(DisplayScoreItem)}.");
 
+        if (displayScore.Model is not null)
+            throw new InvalidOperationException($"The provided {nameof(DisplayScoreItem)} is already bound to another {nameof(PoolableLeaderboardEntry)}.");
+
         boundScore = displayScore;
 
         displayScore.Model = this;
