@@ -54,6 +54,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     private Container explosionContainer = null!;
     private EntryPool entryPool = null!;
 
+    private DrawablePool<Explosion2> explosion2Pool = null!;
+    private DrawablePool<Explosion1> explosion1Pool = null!;
+
     [BackgroundDependencyLoader]
     private void load()
     {
@@ -62,6 +65,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         InternalChildren = new Drawable[]
         {
             entryPool = new EntryPool(this, MaxEntries.Value),
+            explosion2Pool = new DrawablePool<Explosion2>(1),
+            explosion1Pool = new DrawablePool<Explosion1>(1),
             explosionContainer = new Container
             {
                 Anchor = Anchor.TopLeft,
@@ -334,39 +339,13 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             scale.X = -1;
         }
 
-        Sprite explosion2 = new Sprite
-        {
-            Anchor = Anchor.TopLeft,
-            Origin = Anchor.CentreLeft,
-            Position = position,
-            Scale = scale,
-            Texture = textures.GetAutoSized("UI/scoreboard-explosion-2"),
-            Blending = BlendingParameters.Additive,
-        };
-
+        var explosion2 = explosion2Pool.Get();
         explosionContainer.Add(explosion2);
+        explosion2.Apply(position, scale);
 
-        explosion2
-            .ScaleTo(new Vector2(16, 1.2f), 200, Easing.Out)
-            .FadeOut(400)
-            .Expire();
-
-        Sprite explosion1 = new Sprite
-        {
-            Anchor = Anchor.TopLeft,
-            Origin = Anchor.CentreLeft,
-            Position = position,
-            Scale = scale,
-            Texture = textures.GetAutoSized("UI/scoreboard-explosion-1"),
-            Blending = BlendingParameters.Additive,
-        };
-
+        var explosion1 = explosion1Pool.Get();
         explosionContainer.Add(explosion1);
-
-        explosion1
-            .ScaleTo(new Vector2(1, 1.3f), 200, Easing.Out)
-            .FadeOutFromOne(700)
-            .Expire();
+        explosion1.Apply(position, scale);
     }
 
     public static float CalculateEntryTransparency(int index)
@@ -401,5 +380,55 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         protected override PoolableLeaderboardEntry CreateNewDrawable()
             => new PoolableLeaderboardEntry(leaderboard.CreateEntry());
+    }
+
+    private partial class Explosion2 : PoolableDrawable
+    {
+        [BackgroundDependencyLoader]
+        private void load(TextureStore textures)
+        {
+            InternalChild = new Sprite
+            {
+                Anchor = Anchor.TopLeft,
+                Origin = Anchor.CentreLeft,
+                Texture = textures.GetAutoSized("UI/scoreboard-explosion-2"),
+                Blending = BlendingParameters.Additive,
+            };
+        }
+
+        public void Apply(Vector2 position, Vector2? scale)
+        {
+            Position = position;
+            Scale = scale ?? Vector2.One;
+
+            this.ScaleTo(new Vector2(16, 1.2f), 200, Easing.Out)
+                .FadeOutFromOne(400)
+                .Expire();
+        }
+    }
+
+    private partial class Explosion1 : PoolableDrawable
+    {
+        [BackgroundDependencyLoader]
+        private void load(TextureStore textures)
+        {
+            InternalChild = new Sprite
+            {
+                Anchor = Anchor.TopLeft,
+                Origin = Anchor.CentreLeft,
+                Texture = textures.GetAutoSized("UI/scoreboard-explosion-1"),
+                Blending = BlendingParameters.Additive,
+            };
+        }
+
+        public void Apply(Vector2 position, Vector2? scale)
+        {
+            Position = position;
+            Scale = scale ?? Vector2.One;
+
+            this.ScaleTo(new Vector2(1, 1.3f), 200, Easing.Out)
+                .FadeOutFromOne(700)
+                .Expire();
+        }
     }
 }
