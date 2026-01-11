@@ -169,7 +169,7 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
     private static readonly Color4 first_place_color = new Color4(97, 190, 255, 150);
     private static readonly Color4 normal_color = new Color4(31, 115, 153, 150);
     private static readonly Color4 friend_color = new Color4(255, 97, 175, 180);
-    private static readonly Color4 tracked_color = new Color4(250, 250, 250, 150);
+    private static readonly Color4 tracked_color = new Color4(250, 250, 250, 100);
 
     // this color exists in stable but the purpose is undetermined since the code is heavily obfuscated.
     [SuppressMessage("Style", "IDE0052", Justification = "Mimicking stable behaviour")]
