@@ -247,17 +247,22 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         int trackingIndex = trackingScore is null ? -1 : displayScores.IndexOf(trackingScore);
 
+        if (trackingIndex > 0 && trackingIndex < lastTrackingPosition)
+        {
+            var tracking = displayScores[trackingIndex];
+
+            // tracking's model is always expected to be present here
+            Debug.Assert(tracking.Model is not null);
+
+            FlashExplosionAt(tracking);
+        }
+
+        lastTrackingPosition = trackingIndex;
+
         // handle entries to be displayed
         for (int i = 0; i < displayedScores.Count; i++)
         {
             var score = displayedScores[i];
-
-            if (score.GameplayScore.Tracked &&
-                // negative lastTrackingPosition indicates first sort after reset
-                // we don't want to flash in this case
-                lastTrackingPosition > 0 &&
-                trackingIndex < lastTrackingPosition)
-                FlashExplosionAt(score);
 
             if (score.Model is not PoolableLeaderboardEntry pooledEntry)
             {
@@ -286,9 +291,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
                 .FadeTo(CalculateEntryTransparency(i), transition_duration)
                 .MoveToY(targetY, transition_duration, Easing.Out);
         }
-
-        if (trackingScore is not null)
-            lastTrackingPosition = trackingIndex;
 
         // first invisible after last displayed
         // FIXME: investigate how stable actually handles this case
