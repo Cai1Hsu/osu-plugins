@@ -13,6 +13,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Utils;
 using osu.Game.Plugins;
+using osu.Framework.Graphics.Pooling;
 
 namespace osu.Plugin.LegacyLeaderboard;
 
@@ -40,7 +41,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     private readonly IBindableList<GameplayLeaderboardScore> scores = new BindableList<GameplayLeaderboardScore>();
 
-    private Container<LegacyLeaderboardEntry> entriesContainer = null!;
+    private readonly SortedList<DisplayScoreItem> displayScores = new SortedList<DisplayScoreItem>(comparer);
+
+    private Container<PoolableLeaderboardEntry> entriesContainer = null!;
 
     public LegacyLeaderboard()
     {
@@ -49,6 +52,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     }
 
     private Container explosionContainer = null!;
+    private EntryPool entryPool = null!;
 
     [BackgroundDependencyLoader]
     private void load()
@@ -57,12 +61,13 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         InternalChildren = new Drawable[]
         {
+            entryPool = new EntryPool(this, MaxEntries.Value),
             explosionContainer = new Container
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.TopLeft,
             },
-            entriesContainer = new Container<LegacyLeaderboardEntry>
+            entriesContainer = new Container<PoolableLeaderboardEntry>
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.TopLeft,
@@ -93,9 +98,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         scores.BindCollectionChanged((_, _) =>
         {
-            trackingEntry = null;
-            lastTrackingPosition = -1;
-
+            clearScores();
             entriesContainer.Clear();
 
             foreach (var score in scores)
@@ -103,40 +106,50 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         }, true);
     }
 
-    private LegacyLeaderboardEntry? trackingEntry;
+    private void clearScores()
+    {
+        trackingScore = null;
+        lastTrackingPosition = -1;
+
+        foreach (var displayScore in displayScores)
+            displayScore.Dispose();
+
+        displayScores.Clear();
+    }
+
+    private DisplayScoreItem? trackingScore;
     private int lastTrackingPosition;
 
-    public void AddScore(GameplayLeaderboardScore score)
+    public void AddScore(GameplayLeaderboardScore providerScore)
     {
-        var entry = CreateEntry(score);
+        var displayScore = new DisplayScoreItem(providerScore);
 
-        if (score.Tracked)
+        displayScores.Add(displayScore);
+
+        if (providerScore.Tracked)
             // multiple tracking score is not expected.
             // but in case it happens, prefer the first one.
-            trackingEntry ??= entry;
+            trackingScore ??= displayScore;
 
-        entriesContainer.Add(entry);
-        entry.Y = -entry_height; // start above the visible area
-        entry.Alpha = 0;
-        entry.VisibleInLeaderboard.Value = false;
+        displayScore.YPosition = -entry_height; // start above the visible area
 
         // Don't display immediately, position info is still unavailable.
         // Provider will trigger event when ready.
-        entry.ScorePosition.BindValueChanged(_ => Scheduler.AddOnce(sort));
-        entry.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort));
+        displayScore.ScorePosition.BindValueChanged(_ => Scheduler.AddOnce(sort));
+        displayScore.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort));
     }
 
-    private List<LegacyLeaderboardEntry> sortDisplayedEntries(SortedList<LegacyLeaderboardEntry> scoreSorted)
+    private List<DisplayScoreItem> sortDisplayedEntries(SortedList<DisplayScoreItem> scoreSorted)
     {
         var maxEntries = Math.Max(1, MaxEntries.Value);
 
         int capacity = Math.Min(scoreSorted.Count, maxEntries);
-        var displayedEntries = new List<LegacyLeaderboardEntry>(capacity);
+        var displayedEntries = new List<DisplayScoreItem>(capacity);
 
         // always add first place, but if we only have one slot, ensure tracking is prioritised
         if (scoreSorted.FirstOrDefault() is { } firstPlace && (
-            firstPlace.IsTracking || // first place is tracking
-            trackingEntry is null || // tracking not present
+            firstPlace.GameplayScore.Tracked || // first place is tracking
+            trackingScore is null || // tracking not present
             maxEntries > 1 // has enough slot for tracking
         ))
         {
@@ -147,7 +160,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         }
 
         // try fill the reset from tracking entry upwards
-        int trackingIndex = trackingEntry is null ? -1 : scoreSorted.IndexOf(trackingEntry);
+        int trackingIndex = trackingScore is null ? -1 : scoreSorted.IndexOf(trackingScore);
         int fillStartIndex = displayedEntries.Count; // start from where we left off
 
         // if tracking is the first place, we have already added it.
@@ -169,13 +182,13 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         }
 
         Debug.Assert(displayedEntries.Count <= maxEntries);
-        Debug.Assert(trackingEntry is null || displayedEntries.Contains(trackingEntry));
+        Debug.Assert(trackingScore is null || displayedEntries.Contains(trackingScore));
         Debug.Assert(scoreSorted.Count <= maxEntries || displayedEntries.Count == maxEntries);
 
         return displayedEntries;
     }
 
-    private static int CompareEntries(LegacyLeaderboardEntry x, LegacyLeaderboardEntry y)
+    private static int CompareEntries(DisplayScoreItem x, DisplayScoreItem y)
     {
         if (x.ScorePosition.Value.HasValue && y.ScorePosition.Value.HasValue)
         {
@@ -184,121 +197,133 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
                 return positionComparison;
         }
 
-        int scoreComparison = y.TotalScore.Value.CompareTo(x.TotalScore.Value);
+        GameplayLeaderboardScore a = x.GameplayScore;
+        GameplayLeaderboardScore b = y.GameplayScore;
+
+        int scoreComparison = b.TotalScore.Value.CompareTo(a.TotalScore.Value);
         if (scoreComparison != 0)
             return scoreComparison;
 
         // quitters go to the bottom
-        int quitComparison = x.HasQuit.Value.CompareTo(y.HasQuit.Value);
+        int quitComparison = a.HasQuit.Value.CompareTo(b.HasQuit.Value);
         if (quitComparison != 0)
             return quitComparison;
 
         // tracking should have priority when all else is equal
-        int trackingComparison = y.IsTracking.CompareTo(x.IsTracking);
+        int trackingComparison = b.Tracked.CompareTo(a.Tracked);
         if (trackingComparison != 0)
             return trackingComparison;
 
         // Don't compare ProviderDisplayOrder as tracking's may be 0
 
-        return x.TieBreaker.CompareTo(y.TieBreaker);
+        return a.TotalScoreTiebreaker.CompareTo(b.TotalScoreTiebreaker);
     }
 
     private const float transition_duration = 600;
 
-    private static readonly IComparer<LegacyLeaderboardEntry> comparer = Comparer<LegacyLeaderboardEntry>.Create(CompareEntries);
+    private static readonly IComparer<DisplayScoreItem> comparer = Comparer<DisplayScoreItem>.Create(CompareEntries);
 
     // make higher score look closer to front
-    private void updateEntryDepth(LegacyLeaderboardEntry entry, float? depth = null)
-        => entriesContainer.ChangeChildDepth(entry, depth ??= entry.LeaderboardDisplayIndex.Value);
+    private void updateEntryDepth(DisplayScoreItem scoreItem, float? depth = null)
+    {
+        if (scoreItem.Model is not PoolableLeaderboardEntry entry)
+            return;
+
+        entriesContainer.ChangeChildDepth(entry, depth ?? scoreItem.LeaderboardDisplayIndex.Value);
+    }
 
     private void sort()
     {
-        var sorted = new SortedList<LegacyLeaderboardEntry>(comparer);
+        displayScores.Sort();
 
-        sorted.AddRange(entriesContainer.Children);
+        var displayedScores = sortDisplayedEntries(displayScores);
 
-        var displayedEntries = sortDisplayedEntries(sorted);
-
-        int trackingIndex = trackingEntry is null ? -1 : sorted.IndexOf(trackingEntry);
+        int trackingIndex = trackingScore is null ? -1 : displayScores.IndexOf(trackingScore);
 
         // handle entries to be displayed
-        for (int i = 0; i < displayedEntries.Count; i++)
+        for (int i = 0; i < displayedScores.Count; i++)
         {
-            var entry = displayedEntries[i];
+            var score = displayedScores[i];
 
-            if (entry.IsTracking &&
+            if (score.GameplayScore.Tracked &&
                 // negative lastTrackingPosition indicates first sort after reset
                 // we don't want to flash in this case
                 lastTrackingPosition > 0 &&
                 trackingIndex < lastTrackingPosition)
-                FlashExplosionAt(entry);
+                FlashExplosionAt(score);
 
-            entry.VisibleInLeaderboard.Value = true;
-            entry.LeaderboardDisplayIndex.Value = i;
+            if (score.Model is not PoolableLeaderboardEntry pooledEntry)
+            {
+                pooledEntry = entryPool.Get();
 
-            updateEntryDepth(entry);
+                entriesContainer.Add(pooledEntry);
+                pooledEntry.BindScoreItem(score);
+            }
 
-            entry.FadeTo(CalculateEntryTransparency(i), transition_duration)
+            score.VisibleInLeaderboard.Value = true;
+            score.LeaderboardDisplayIndex.Value = i;
+
+            updateEntryDepth(score);
+
+            pooledEntry
+                .FadeTo(CalculateEntryTransparency(i), transition_duration)
                 .MoveToY(i * entry_height, transition_duration, Easing.Out);
         }
 
-        if (trackingEntry is not null)
+        if (trackingScore is not null)
             lastTrackingPosition = trackingIndex;
 
         // first invisible after last displayed
         // FIXME: investigate how stable actually handles this case
-        int invisibleIndex = displayedEntries.Count;
+        int invisibleIndex = displayedScores.Count;
 
         // handle entries to be hidden
-        for (int i = 0; i < sorted.Count; i++)
+        for (int i = 0; i < displayScores.Count; i++)
         {
-            var entry = sorted[i];
-
-            bool previouslyInvisible = !entry.VisibleInLeaderboard.Value;
+            var score = displayScores[i];
 
             // displayed entries are sorted, safely use binary search to improve performance
-            int sortedIndex = displayedEntries.BinarySearch(entry, comparer);
+            int displayIndex = displayedScores.BinarySearch(score, comparer);
 
-            if (sortedIndex >= 0)
+            if (displayIndex >= 0)
                 continue;
 
-            entry.VisibleInLeaderboard.Value = false;
-            int newLeaderboardIndex = (trackingIndex < 0 || i < trackingIndex)
+            score.VisibleInLeaderboard.Value = false;
+            int newLeaderboardIndex = ((-displayIndex) < invisibleIndex)
                     ? 0 // ensure high scores appears from top
                     : invisibleIndex;
 
-            entry.LeaderboardDisplayIndex.Value = newLeaderboardIndex;
+            score.LeaderboardDisplayIndex.Value = newLeaderboardIndex;
 
             float targetY = newLeaderboardIndex * entry_height;
+            score.YPosition = targetY;
 
-            if (previouslyInvisible)
-            {
-                // Only set position after fully faded out to avoid visual popping.
-                if (Precision.AlmostEquals(entry.Alpha, 0))
-                    // if leaderboard's size adjusted, ensure new position is applied.
-                    entry.Y = targetY;
-            }
-            else
-            {
-                // update depth to make animation smoother
-                // make fading out entries appear at bottom of any existing ones
-                updateEntryDepth(entry, sorted.Count + 1024); // very large depth to ensure it's at the back
+            if (score.Model is not PoolableDrawable model)
+                continue;
 
-                entry.FadeOut(transition_duration)
-                    .MoveToY(targetY, transition_duration, Easing.Out);
-            }
+            // update depth to make animation smoother
+            // make fading out entries appear at bottom of any existing ones
+            updateEntryDepth(score, displayScores.Count + 1024); // very large depth to ensure it's at the back
+
+            model
+                .FadeOut(transition_duration)
+                .MoveToY(targetY, transition_duration, Easing.Out)
+                .Expire();
         }
     }
 
     private bool IsRightSideLayout => Anchor.HasFlagFast(Anchor.x2);
 
-    public void FlashExplosionAt(LegacyLeaderboardEntry? entry = null)
+    internal void FlashExplosionAt(DisplayScoreItem? score = null)
     {
-        entry ??= trackingEntry;
+        score ??= trackingScore;
 
-        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(score);
 
-        entry.FlashBackground();
+        if (score.Model is not PoolableLeaderboardEntry entry)
+            return;
+
+        entry.Drawable.FlashBackground();
 
         var position = entry.Position + new Vector2(0, entry.Height / 2);
         var scale = Vector2.One;
@@ -354,6 +379,27 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         return MathF.Max(0, 0.8f - (index * (0.1f / 3)));
     }
 
-    protected virtual LegacyLeaderboardEntry CreateEntry(GameplayLeaderboardScore score)
-        => new LegacyLeaderboardEntry(score);
+    protected virtual LegacyLeaderboardEntry CreateEntry()
+        => new LegacyLeaderboardEntry();
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        // ensure bound events cleared to avoid memory leaks
+        clearScores();
+    }
+
+    private partial class EntryPool : DrawablePool<PoolableLeaderboardEntry>
+    {
+        private LegacyLeaderboard leaderboard;
+        public EntryPool(LegacyLeaderboard leaderboard, int initialSize, int? maximumSize = null)
+            : base(initialSize, maximumSize)
+        {
+            this.leaderboard = leaderboard;
+        }
+
+        protected override PoolableLeaderboardEntry CreateNewDrawable()
+            => new PoolableLeaderboardEntry(leaderboard.CreateEntry());
+    }
 }
