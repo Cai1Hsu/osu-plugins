@@ -268,11 +268,14 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             score.VisibleInLeaderboard.Value = true;
             score.LeaderboardDisplayIndex.Value = i;
 
+            float targetY = i * entry_height;
+            score.YPosition = targetY;
+
             updateEntryDepth(score);
 
             pooledEntry
                 .FadeTo(CalculateEntryTransparency(i), transition_duration)
-                .MoveToY(i * entry_height, transition_duration, Easing.Out);
+                .MoveToY(targetY, transition_duration, Easing.Out);
         }
 
         if (trackingScore is not null)
