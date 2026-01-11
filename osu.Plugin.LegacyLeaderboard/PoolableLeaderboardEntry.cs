@@ -34,8 +34,6 @@ internal partial class PoolableLeaderboardEntry : PoolableDrawable
         Drawable.Accuracy.UnbindBindings();
         Drawable.Combo.UnbindBindings();
         Drawable.HasQuit.UnbindBindings();
-        Drawable.ScorePosition.UnbindBindings();
-        Drawable.ProviderDisplayOrder.UnbindBindings();
         Drawable.GetDisplayScore = null!;
         Drawable.IsTracking = false;
 
@@ -47,6 +45,7 @@ internal partial class PoolableLeaderboardEntry : PoolableDrawable
             boundScore = null;
         }
 
+        this.FadeOut();
         ClearTransforms(true);
     }
 
@@ -78,6 +77,5 @@ internal partial class PoolableLeaderboardEntry : PoolableDrawable
         // sync states with display score
         Drawable.UpdatePanelState();
         Y = displayScore.YPosition;
-        this.FadeOut();
     }
 }
