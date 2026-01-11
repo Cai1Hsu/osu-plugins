@@ -11,7 +11,6 @@ using osu.Game.Configuration;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Extensions.EnumExtensions;
-using osu.Framework.Utils;
 using osu.Game.Plugins;
 using osu.Framework.Graphics.Pooling;
 
@@ -26,9 +25,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     [Resolved]
     private IGameplayLeaderboardProvider leaderboardProvider { get; set; } = null!;
-
-    [Resolved]
-    private TextureStore textures { get; set; } = null!;
 
     [SettingSource("Max Entries", "The maximum number of entries to show on the leaderboard.")]
     public Bindable<int> MaxEntries { get; private set; } = new BindableInt(6)
