@@ -134,7 +134,6 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
     [Resolved]
     private IAPIProvider api { get; set; } = null!;
 
-    public long TieBreaker { get; set; }
     public BindableLong TotalScore { get; } = new BindableLong();
     public BindableDouble Accuracy { get; } = new BindableDouble(1); // accuracy is not displayed in legacy leaderboard
     public BindableInt Combo { get; } = new BindableInt();

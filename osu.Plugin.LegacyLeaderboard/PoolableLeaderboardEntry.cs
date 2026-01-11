@@ -67,7 +67,6 @@ internal partial class PoolableLeaderboardEntry : PoolableDrawable
         // bind bindable states
         Drawable.User = score.User;
         Drawable.IsTracking = score.Tracked;
-        Drawable.TieBreaker = score.TotalScoreTiebreaker;
         Drawable.TotalScore.BindTo(score.TotalScore);
         Drawable.Accuracy.BindTo(score.Accuracy);
         Drawable.Combo.BindTo(score.Combo);
