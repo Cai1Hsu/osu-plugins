@@ -382,7 +382,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     private partial class EntryPool : DrawablePool<PoolableLeaderboardEntry>
     {
-        private LegacyLeaderboard leaderboard;
+        private readonly LegacyLeaderboard leaderboard;
         public EntryPool(LegacyLeaderboard leaderboard, int initialSize, int? maximumSize = null)
             : base(initialSize, maximumSize)
         {
