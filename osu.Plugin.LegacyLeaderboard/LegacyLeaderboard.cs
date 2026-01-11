@@ -311,7 +311,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             float targetY = newLeaderboardIndex * entry_height;
             score.YPosition = targetY;
 
-            if (score.Model is not PoolableDrawable model)
+            if (score.Model is not PoolableLeaderboardEntry model)
                 continue;
 
             // update depth to make animation smoother

@@ -4,7 +4,7 @@ using osu.Framework.Graphics.Pooling;
 
 namespace osu.Plugin.LegacyLeaderboard;
 
-internal partial class PoolableLeaderboardEntry : PoolableDrawable
+internal sealed partial class PoolableLeaderboardEntry : PoolableDrawable
 {
     [Obsolete("Use the constructor with parameters.", true)]
     public PoolableLeaderboardEntry()
