@@ -293,7 +293,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
                 continue;
 
             score.VisibleInLeaderboard.Value = false;
-            int newLeaderboardIndex = ((-displayIndex) < invisibleIndex)
+            int newLeaderboardIndex = ((~displayIndex) < invisibleIndex)
                     ? 0 // ensure high scores appears from top
                     : invisibleIndex;
 
