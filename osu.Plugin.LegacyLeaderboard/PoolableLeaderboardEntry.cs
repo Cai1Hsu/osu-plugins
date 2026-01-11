@@ -49,7 +49,7 @@ internal sealed partial class PoolableLeaderboardEntry : PoolableDrawable
         ClearTransforms(true);
     }
 
-    private DisplayScoreItem? boundScore = null!;
+    private DisplayScoreItem? boundScore;
 
     public void BindScoreItem(DisplayScoreItem displayScore)
     {
