@@ -198,13 +198,13 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
             nameColour = quit_name_color;
             backgroundColour = quit_color;
         }
+        if (IsTracking)
+        {
+            backgroundColour = tracked_color;
+        }
         else if (ScorePosition.Value == 1)
         {
             backgroundColour = first_place_color;
-        }
-        else if (IsTracking)
-        {
-            backgroundColour = tracked_color;
         }
         else if (isFriend)
         {
