@@ -10,7 +10,6 @@ using osu.Game.Configuration;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API;
 using osu.Game.Rulesets.Scoring;
-using osu.Game.Screens.Select.Leaderboards;
 using osu.Game.Skinning;
 using osu.Game.Users;
 using osuTK;
@@ -37,26 +36,15 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
     private LegacySpriteText rankSprite = null!;
     private Sprite backgroundSprite = null!;
 
-    public LegacyLeaderboardEntry(GameplayLeaderboardScore score)
+    public LegacyLeaderboardEntry()
     {
         Anchor = Anchor.TopLeft;
         Origin = Anchor.TopLeft;
         Size = new Vector2(WIDTH, HEIGHT);
-
-        User = score.User;
-        IsTracking = score.Tracked;
-        TotalScore.BindTo(score.TotalScore);
-        TieBreaker = score.TotalScoreTiebreaker;
-        Accuracy.BindTo(score.Accuracy);
-        Combo.BindTo(score.Combo);
-        HasQuit.BindTo(score.HasQuit);
-        ScorePosition.BindTo(score.Position);
-        ProviderDisplayOrder.BindTo(score.DisplayOrder);
-        GetDisplayScore = score.GetDisplayScore;
     }
 
     [BackgroundDependencyLoader]
-    private void load(ISkinSource skin)
+    private void load(ISkinSource skin, OsuConfigManager config)
     {
         InternalChildren = new Drawable[]
         {
@@ -132,29 +120,26 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
 
         backgroundSprite.Texture = getCroppedBackground();
 
-        if (User is not null)
-            nameSprite.Text = User.Username;
-    }
+        scoreDisplayMode = config.GetBindable<ScoringMode>(OsuSetting.ScoreDisplayMode);
 
-    [Resolved]
-    private OsuConfigManager config { get; set; } = null!;
+        scoreDisplayMode.BindValueChanged(v => updateScore());
+        TotalScore.BindValueChanged(_ => updateScore());
+
+        HasQuit.BindValueChanged(_ => updatePanelState());
+        ScorePosition.BindValueChanged(_ => updatePanelState());
+
+        Combo.BindValueChanged(v => comboSprite.Text = $@"{v.NewValue:N0}x");
+    }
 
     [Resolved]
     private IAPIProvider api { get; set; } = null!;
 
-    public long TieBreaker { get; }
     public BindableLong TotalScore { get; } = new BindableLong();
     public BindableDouble Accuracy { get; } = new BindableDouble(1); // accuracy is not displayed in legacy leaderboard
     public BindableInt Combo { get; } = new BindableInt();
     public BindableBool HasQuit { get; } = new BindableBool();
     public Bindable<int?> ScorePosition { get; } = new Bindable<int?>();
     public Bindable<long> ProviderDisplayOrder { get; } = new Bindable<long>();
-
-    /// <summary>
-    /// The 0-based index of this entry in the leaderboard display.
-    /// </summary>
-    public Bindable<int> LeaderboardDisplayIndex { get; } = new Bindable<int>();
-    public BindableBool VisibleInLeaderboard { get; } = new BindableBool(false);
 
     private Func<ScoringMode, long>? getDisplayScoreFunction;
 
@@ -163,29 +148,17 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
         set => getDisplayScoreFunction = value;
     }
 
-    public IUser? User { get; }
+    public IUser? User { get; set; }
 
     private IBindable<ScoringMode> scoreDisplayMode = null!;
 
     private bool isFriend;
 
-    public readonly bool IsTracking;
+    public bool IsTracking { get; set; }
 
     protected override void LoadComplete()
     {
         base.LoadComplete();
-
-        isFriend = User != null && api.LocalUserState.Friends.Any(u => User.OnlineID == u.TargetID);
-
-        scoreDisplayMode = config.GetBindable<ScoringMode>(OsuSetting.ScoreDisplayMode);
-        scoreDisplayMode.BindValueChanged(v => updateScore());
-        TotalScore.BindValueChanged(_ => updateScore(), true);
-
-        HasQuit.BindValueChanged(_ => updatePanelState());
-        LeaderboardDisplayIndex.BindValueChanged(_ => updatePanelState());
-        ScorePosition.BindValueChanged(_ => updatePanelState(), true);
-
-        Combo.BindValueChanged(v => comboSprite.Text = $@"{v.NewValue:N0}x", true);
 
         FinishTransforms(true);
     }
@@ -207,8 +180,6 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
     private static readonly Color4 quit_name_color = new Color4(236, 39, 81, 150);
 
     private const float rank_fade_duration = 200;
-
-    private const float fade_in_duration = 400;
 
     private void updatePanelState()
     {
@@ -242,6 +213,17 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
 
         nameSprite.FadeColour(nameColour, 150);
         backgroundSprite.FadeColour(backgroundColour, 50);
+    }
+
+    public void UpdatePanelState()
+    {
+        isFriend = User != null && api.LocalUserState.Friends.Any(u => User.OnlineID == u.TargetID);
+
+        updateScore();
+        Combo.TriggerChange();
+        updatePanelState();
+
+        nameSprite.Text = User?.Username ?? string.Empty;
     }
 
     public void FlashBackground()
