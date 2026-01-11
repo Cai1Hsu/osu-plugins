@@ -223,8 +223,7 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
         Combo.TriggerChange();
         updatePanelState();
 
-        if (User is not null)
-            nameSprite.Text = User.Username;
+        nameSprite.Text = User?.Username ?? string.Empty;
     }
 
     public void FlashBackground()
