@@ -36,7 +36,7 @@ public partial class TestSceneLegacyLeaderboardEntry : OsuTestScene, IStorageRes
 
     private readonly BindableInt Combo = new BindableInt();
 
-    private LegacyLeaderboardEntry entry = null!;
+    private LegacyLeaderboardEntry? entry;
 
     [BackgroundDependencyLoader]
     private void load()
