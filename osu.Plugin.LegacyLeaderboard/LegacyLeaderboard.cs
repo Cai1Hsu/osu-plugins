@@ -225,17 +225,19 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     private static readonly IComparer<DisplayScoreItem> comparer = Comparer<DisplayScoreItem>.Create(CompareEntries);
 
     // make higher score look closer to front
-    private void updateEntryDepth(DisplayScoreItem scoreItem, float? depth = null)
+    private void updateEntryDepth(DisplayScoreItem scoreItem, float depth)
     {
         if (scoreItem.Model is not PoolableLeaderboardEntry entry)
             return;
 
-        entriesContainer.ChangeChildDepth(entry, depth ?? scoreItem.LeaderboardDisplayIndex.Value);
+        entriesContainer.ChangeChildDepth(entry, depth);
     }
 
     private void sort()
     {
         displayScores.Sort();
+
+        const int very_large_depth = 1024; // we never have so many entries displayed
 
         var displayedScores = sortDisplayedEntries(displayScores);
 
@@ -267,7 +269,14 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             float targetY = i * entry_height;
             score.YPosition = targetY;
 
-            updateEntryDepth(score);
+            // we want to make first place appear on top
+            // tracking at second to make sure it's visible
+            // Then, we want to make LOWER scores appear above higher scores
+            float newDepth = i == 0 ? -2 : // first place
+                            (score.GameplayScore.Tracked ? -1 : // tracking
+                            (displayedScores.Count - i)); // lower scores above higher scores
+
+            updateEntryDepth(score, newDepth);
 
             pooledEntry
                 .FadeTo(CalculateEntryTransparency(i), transition_duration)
@@ -307,7 +316,10 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
             // update depth to make animation smoother
             // make fading out entries appear at bottom of any existing ones
-            updateEntryDepth(score, displayScores.Count + 1024); // very large depth to ensure it's at the back
+            updateEntryDepth(score, very_large_depth - displayScores.Count); // very large depth to ensure it's at the back
+                                                                             // revert depth to make a smoother animation.
+                                                                             // since the destination is the same, lower scores look move slower,
+                                                                             // if they are covered by faster moving higher scores it looks jarring.
 
             model
                 .FadeOut(transition_duration)
