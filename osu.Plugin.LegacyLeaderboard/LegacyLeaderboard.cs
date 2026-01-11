@@ -100,7 +100,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         scores.BindCollectionChanged((_, _) =>
         {
             clearScores();
-            entriesContainer.Clear();
+            entriesContainer.Clear(false); // don't dispose poolables, return to pool instead
 
             foreach (var score in scores)
                 AddScore(score);
