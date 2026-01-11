@@ -138,6 +138,10 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         // Provider will trigger event when ready.
         displayScore.ScorePosition.BindValueChanged(_ => Scheduler.AddOnce(sort));
         displayScore.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort));
+
+        // in case position is already available, sort immediately.
+        if (displayScore.ScorePosition.Value.HasValue)
+            Scheduler.AddOnce(sort);
     }
 
     private List<DisplayScoreItem> sortDisplayedEntries(SortedList<DisplayScoreItem> scoreSorted)
