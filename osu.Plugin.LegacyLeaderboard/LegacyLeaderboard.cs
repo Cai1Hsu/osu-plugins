@@ -189,7 +189,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         return displayedEntries;
     }
 
-    private static int CompareEntries(DisplayScoreItem x, DisplayScoreItem y)
+    private static int CompareScoreItem(DisplayScoreItem x, DisplayScoreItem y)
     {
         if (x.ScorePosition.Value.HasValue && y.ScorePosition.Value.HasValue)
         {
@@ -222,7 +222,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     private const float transition_duration = 600;
 
-    private static readonly IComparer<DisplayScoreItem> comparer = Comparer<DisplayScoreItem>.Create(CompareEntries);
+    private static readonly IComparer<DisplayScoreItem> comparer = Comparer<DisplayScoreItem>.Create(CompareScoreItem);
 
     // make higher score look closer to front
     private void updateEntryDepth(DisplayScoreItem scoreItem, float depth)
