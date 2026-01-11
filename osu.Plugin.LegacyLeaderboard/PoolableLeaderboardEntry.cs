@@ -46,6 +46,8 @@ internal partial class PoolableLeaderboardEntry : PoolableDrawable
             boundScore.Model = null;
             boundScore = null;
         }
+
+        ClearTransforms(true);
     }
 
     private DisplayScoreItem? boundScore = null!;
