@@ -16,6 +16,8 @@ public sealed class LegacyExperiencePlugin : OsuPlugin
 {
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
+        gameBase.EnsureLegacyResources();
+
         if (gameBase is not OsuGame game)
             return;
 
