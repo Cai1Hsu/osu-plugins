@@ -17,9 +17,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Plugin.StableIntegratio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Game.Plugins.Skins", "osu.Game.Plugins.Skins\osu.Game.Plugins.Skins.csproj", "{53662FA1-2391-4BC3-8205-E6F486F294A6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Plugin.Legacy", "osu.Plugin.Legacy\osu.Plugin.Legacy.csproj", "{2C022889-17C4-47E8-9D6A-2B98DE62A81C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Plugin.LegacyExperience", "osu.Plugin.LegacyExperience\osu.Plugin.LegacyExperience.csproj", "{2C022889-17C4-47E8-9D6A-2B98DE62A81C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Plugin.Legacy.Tests", "osu.Plugin.Legacy.Tests\osu.Plugin.Legacy.Tests.csproj", "{5C906155-C333-4937-A673-0BF12FD5193C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Plugin.LegacyExperience.Tests", "osu.Plugin.LegacyExperience.Tests\osu.Plugin.LegacyExperience.Tests.csproj", "{5C906155-C333-4937-A673-0BF12FD5193C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
