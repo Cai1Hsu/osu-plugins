@@ -210,10 +210,10 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     private void handleInvisibleScore(DisplayScoreItem score, int displayIndex, int invisibleIndex)
     {
-        score.VisibleInLeaderboard.Value = false;
-        score.LeaderboardDisplayIndex.Value = -1;
-
         Debug.Assert(displayIndex < 0);
+
+        
+        score.VisibleInLeaderboard.Value = false;
 
         int newLeaderboardIndex = displayIndex == -1
                 ? 0 // ensure high scores appears from top
