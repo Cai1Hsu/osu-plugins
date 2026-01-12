@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 public static class LegacyResources
 {

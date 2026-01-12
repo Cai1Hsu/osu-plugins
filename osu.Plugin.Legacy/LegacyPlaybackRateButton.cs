@@ -4,9 +4,9 @@ using osu.Framework.Graphics;
 using osu.Framework.Utils;
 using osu.Game.Screens.Play;
 using osu.Game.Skinning;
-using static osu.Game.Plugins.Legacy.LegacyPlaybackRateButton;
+using static osu.Plugin.Legacy.LegacyPlaybackRateButton;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 public partial class LegacyPlaybackRateButton : LegacySpriteStatedButton<LegacyPlaybackRate>, ISerialisableDrawable
 {

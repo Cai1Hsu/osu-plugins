@@ -12,11 +12,11 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Platform;
 using osu.Framework.Timing;
 using osu.Framework.Utils;
-using osu.Game.Plugins.Legacy;
+using osu.Plugin.Legacy;
 using osuTK;
 using osuTK.Graphics;
-using static osu.Game.Plugins.Legacy.LegacySpriteText;
-using LegacySpriteTextContainer = osu.Game.Plugins.Legacy.LegacySpriteTextContainer;
+using static osu.Plugin.Legacy.LegacySpriteText;
+using LegacySpriteTextContainer = osu.Plugin.Legacy.LegacySpriteTextContainer;
 using ISerialisableDrawable = osu.Game.Skinning.ISerialisableDrawable;
 using osu.Game.Plugins;
 

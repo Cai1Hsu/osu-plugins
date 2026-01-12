@@ -10,7 +10,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Skinning;
 using osuTK;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 /// <summary>
 /// A sprite text which uses legacy osu! font textures.

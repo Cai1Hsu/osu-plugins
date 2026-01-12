@@ -1,7 +1,7 @@
 using osu.Framework.Graphics;
 using osu.Game.Skinning;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 public partial class LegacyDiscussionButton : LegacySpriteButton, ISerialisableDrawable
 {

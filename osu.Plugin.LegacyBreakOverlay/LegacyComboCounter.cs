@@ -2,7 +2,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Game.Beatmaps.Timing;
-using osu.Game.Plugins.Legacy;
+using osu.Plugin.Legacy;
 using osu.Game.Skinning;
 using LazerLegacyCombo = osu.Game.Skinning.LegacyDefaultComboCounter;
 

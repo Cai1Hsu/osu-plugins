@@ -14,7 +14,7 @@ using osu.Game.Skinning;
 using osu.Game.Users;
 using osuTK;
 using osuTK.Graphics;
-using LegacySpriteText = osu.Game.Plugins.Legacy.LegacySpriteText;
+using LegacySpriteText = osu.Plugin.Legacy.LegacySpriteText;
 
 namespace osu.Plugin.LegacyLeaderboard;
 

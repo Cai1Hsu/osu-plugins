@@ -3,9 +3,9 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Localisation;
 using osu.Game.Skinning;
-using static osu.Game.Plugins.Legacy.LegacySpriteText;
+using static osu.Plugin.Legacy.LegacySpriteText;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 /// <summary>
 /// A size maintaining container for <see cref="LegacySpriteText"/>.

@@ -1,6 +1,6 @@
 using osu.Framework.Graphics;
 using osu.Game.Skinning;
-using osu.Game.Plugins.Legacy;
+using osu.Plugin.Legacy;
 using osu.Framework.Allocation;
 using osu.Game.Beatmaps.Timing;
 using osu.Framework.Graphics.Containers;

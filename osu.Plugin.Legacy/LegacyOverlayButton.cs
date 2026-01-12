@@ -4,7 +4,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Game.Screens.Play;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 public abstract partial class LegacyOverlayButton : LegacySpriteStatedButton<Visibility>
 {

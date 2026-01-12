@@ -1,4 +1,4 @@
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 public static class GameExtensions
 {

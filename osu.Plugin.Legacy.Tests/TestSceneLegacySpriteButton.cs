@@ -11,7 +11,7 @@ using osu.Game.IO;
 using osu.Game.Skinning;
 using osu.Game.Tests.Visual;
 
-namespace osu.Game.Plugins.Legacy.Tests;
+namespace osu.Plugin.Legacy.Tests;
 
 public partial class TestSceneLegacySpriteButton : OsuTestScene, IStorageResourceProvider
 {

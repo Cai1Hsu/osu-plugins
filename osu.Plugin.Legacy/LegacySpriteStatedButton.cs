@@ -2,7 +2,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Input.Events;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 public abstract partial class LegacySpriteStatedButton<TState> : LegacySpriteButton
     where TState : struct

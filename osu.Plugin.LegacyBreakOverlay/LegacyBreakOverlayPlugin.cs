@@ -3,7 +3,7 @@ using osu.Framework.Threading;
 using osu.Game;
 using osu.Game.Overlays.SkinEditor;
 using osu.Game.Plugins;
-using osu.Game.Plugins.Legacy;
+using osu.Plugin.Legacy;
 using osu.Game.Plugins.Skins;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;

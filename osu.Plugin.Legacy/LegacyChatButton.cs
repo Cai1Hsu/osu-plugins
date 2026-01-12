@@ -2,7 +2,7 @@ using osu.Framework.Allocation;
 using osu.Game.Overlays;
 using osu.Game.Skinning;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 public partial class LegacyChatButton : LegacyOverlayButton, ISerialisableDrawable
 {

@@ -7,7 +7,7 @@ using osu.Framework.Input.Events;
 using osu.Game.Audio;
 using osu.Game.Skinning;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 public partial class LegacySpriteButton : Button
 {

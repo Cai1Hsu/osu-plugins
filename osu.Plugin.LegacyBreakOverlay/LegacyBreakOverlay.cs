@@ -8,7 +8,7 @@ using osu.Game.Screens.Play;
 using osu.Game.Skinning;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets;
-using osu.Game.Plugins.Legacy;
+using osu.Plugin.Legacy;
 using osu.Framework.Graphics;
 using osu.Game.Utils;
 

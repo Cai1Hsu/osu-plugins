@@ -1,5 +1,5 @@
 using System.Collections.Frozen;
-using osu.Game.Plugins.Legacy;
+using osu.Plugin.Legacy;
 
 namespace osu.Plugin.LegacyLeaderboard;
 

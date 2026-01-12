@@ -10,7 +10,7 @@
     <ProjectReference Include="..\osu.Game.Plugins\osu.Game.Plugins.csproj" />
     <ProjectReference Include="..\osu.Game.Plugins.Skins\osu.Game.Plugins.Skins.csproj" />
     <!-- Legacy resources should be shared between plugins -->
-    <ProjectReference Include="..\osu.Game.Plugins.Legacy\osu.Game.Plugins.Legacy.csproj" />
+    <ProjectReference Include="..\osu.Plugin.Legacy\osu.Plugin.Legacy.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -5,7 +5,7 @@ using osu.Game.Overlays;
 using osu.Game.Skinning;
 using osuTK.Graphics;
 
-namespace osu.Game.Plugins.Legacy;
+namespace osu.Plugin.Legacy;
 
 public partial class LegacyDashboardButton : LegacyOverlayButton, ISerialisableDrawable
 {
