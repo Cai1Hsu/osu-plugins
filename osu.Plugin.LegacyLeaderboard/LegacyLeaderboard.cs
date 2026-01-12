@@ -35,9 +35,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         Default = 6, // stable's default
     };
 
-    private readonly IBindableList<GameplayLeaderboardScore> scores = new BindableList<GameplayLeaderboardScore>();
+    private readonly IBindableList<GameplayLeaderboardScore> scoresList = new BindableList<GameplayLeaderboardScore>();
 
-    private readonly SortedList<DisplayScoreItem> displayScores = new SortedList<DisplayScoreItem>(comparer);
+    private readonly List<DisplayScoreItem> scores = new List<DisplayScoreItem>();
 
     private Container<PoolableLeaderboardEntry> entriesContainer = null!;
 
@@ -56,7 +56,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     [BackgroundDependencyLoader]
     private void load()
     {
-        scores.BindTo(leaderboardProvider.Scores);
+        scoresList.BindTo(leaderboardProvider.Scores);
 
         InternalChildren = new Drawable[]
         {
@@ -97,13 +97,15 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         updateSize();
 
-        scores.BindCollectionChanged((_, _) =>
+        scoresList.BindCollectionChanged((_, _) =>
         {
             clearScores();
             entriesContainer.Clear(false); // don't dispose poolables, return to pool instead
 
-            foreach (var score in scores)
+            foreach (var score in scoresList)
                 AddScore(score);
+
+            trackingScore?.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.Add(handleTrackingExplosion));
         }, true);
     }
 
@@ -112,20 +114,20 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         trackingScore = null;
         lastTrackingPosition = -1;
 
-        foreach (var displayScore in displayScores)
+        foreach (var displayScore in scores)
             displayScore.Dispose();
 
-        displayScores.Clear();
+        scores.Clear();
     }
 
     private DisplayScoreItem? trackingScore;
-    private int lastTrackingPosition;
+    private long lastTrackingPosition;
 
     public void AddScore(GameplayLeaderboardScore providerScore)
     {
         var displayScore = new DisplayScoreItem(providerScore);
 
-        displayScores.Add(displayScore);
+        scores.Add(displayScore);
 
         if (providerScore.Tracked)
             // multiple tracking score is not expected.
@@ -140,7 +142,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         displayScore.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort));
 
         // in case position is already available, sort immediately.
-        if (displayScore.ScorePosition.Value.HasValue)
+        if (displayScore.ProviderDisplayOrder.Value is not 0) // 0 is default uninitialised value, the order is 1-based.
             Scheduler.AddOnce(sort);
     }
 
@@ -237,100 +239,158 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         entriesContainer.ChangeChildDepth(entry, depth);
     }
 
-    private void sort()
+    /// <summary>
+    /// Get the display index of a score item.
+    /// Returns -1 indicating the score is to high to be displayed.
+    /// Other negative values indicating to low to be displayed, the magnitude is the would-be index.
+    /// </summary>
+    /// <param name="score">The score item to get index for.</param>
+    /// <param name="displayCount">The maximum number of entries to be displayed.</param>
+    /// <returns>The display index, negative value indicates not displayed.</returns>
+    private int GetScoreDisplayIndex(DisplayScoreItem score, int displayCount)
     {
-        displayScores.Sort();
+        var providerDisplayOrderIndex = score.ProviderDisplayOrder.Value - 1;
 
-        const int very_large_depth = 1024; // we never have so many entries displayed
+        if (providerDisplayOrderIndex < 0)
+            return -1; // uninitialized
 
-        var displayedScores = sortDisplayedEntries(displayScores);
-
-        int trackingIndex = trackingScore is null ? -1 : displayScores.IndexOf(trackingScore);
-
-        if (trackingIndex > 0 && trackingIndex < lastTrackingPosition)
+        if (displayCount > 1)
         {
-            var tracking = displayScores[trackingIndex];
+            if (providerDisplayOrderIndex is 0)
+                return 0; // first place
 
-            // tracking's model is always expected to be present here
-            Debug.Assert(tracking.Model is not null);
+            long cutoffBegin = 1; // if no tracking, display higher scores as possible
+            long remainingSlot = displayCount - 1; // first place already taken
 
-            FlashExplosionAt(tracking);
-        }
-
-        lastTrackingPosition = trackingIndex;
-
-        // handle entries to be displayed
-        for (int i = 0; i < displayedScores.Count; i++)
-        {
-            var score = displayedScores[i];
-
-            if (score.Model is not PoolableLeaderboardEntry pooledEntry)
+            if (trackingScore is not null)
             {
-                pooledEntry = entryPool.Get();
+                // ensure tracking is always displayed, so cutoff index is based on its position
+                long trackingIndex = trackingScore.ProviderDisplayOrder.Value - 1;
 
-                entriesContainer.Add(pooledEntry);
-                pooledEntry.BindScoreItem(score);
+                Debug.Assert(trackingIndex >= 0); // don't call this method when tracking is uninitialised
+
+                cutoffBegin = Math.Max(cutoffBegin, trackingIndex - remainingSlot + 1);
             }
 
-            score.VisibleInLeaderboard.Value = true;
-            score.LeaderboardDisplayIndex.Value = i;
+            if (providerDisplayOrderIndex < cutoffBegin)
+                return -1; // too high to be displayed yet
 
-            float targetY = i * entry_height;
-            score.YPosition = targetY;
+            int displayIndex = (int)(providerDisplayOrderIndex - cutoffBegin) + 1; // +1 for first places
 
-            // we want to make first place appear on top
-            // tracking at second to make sure it's visible
-            // Then, we want to make LOWER scores appear above higher scores
-            float newDepth = i == 0 ? -2 : // first place
-                            (score.GameplayScore.Tracked ? -1 : // tracking
-                            (displayedScores.Count - i)); // lower scores above higher scores
+            if (displayIndex < displayCount)
+                return displayIndex;
 
-            updateEntryDepth(score, newDepth);
-
-            pooledEntry
-                .FadeTo(CalculateEntryTransparency(i), transition_duration)
-                .MoveToY(targetY, transition_duration, Easing.Out);
+            return -displayIndex; // too low to be displayed
         }
 
-        // first invisible after last displayed
-        // FIXME: investigate how stable actually handles this case
-        int invisibleIndex = displayedScores.Count;
+        return score.GameplayScore.Tracked
+            ? 0
+            : -1; // semantic value is unnecessary, as only one entry is shown, and always the tracking one.
+    }
 
-        // handle entries to be hidden
-        for (int i = 0; i < displayScores.Count; i++)
+    const int very_large_depth = 1024; // we never have so many entries displayed
+
+    private void handleInvisibleScore(DisplayScoreItem score, int displayIndex, int invisibleIndex)
+    {
+        score.VisibleInLeaderboard.Value = false;
+        score.LeaderboardDisplayIndex.Value = -1;
+
+        int newLeaderboardIndex = ((-displayIndex) < invisibleIndex)
+                ? 0 // ensure high scores appears from top
+                : invisibleIndex;
+
+        score.LeaderboardDisplayIndex.Value = newLeaderboardIndex;
+
+        float targetY = newLeaderboardIndex * entry_height;
+        score.YPosition = targetY;
+
+        if (score.Model is PoolableLeaderboardEntry model)
         {
-            var score = displayScores[i];
-
-            // displayed entries are sorted, safely use binary search to improve performance
-            int displayIndex = displayedScores.BinarySearch(score, comparer);
-
-            if (displayIndex >= 0)
-                continue;
-
-            score.VisibleInLeaderboard.Value = false;
-            int newLeaderboardIndex = ((~displayIndex) < invisibleIndex)
-                    ? 0 // ensure high scores appears from top
-                    : invisibleIndex;
-
-            score.LeaderboardDisplayIndex.Value = newLeaderboardIndex;
-
-            float targetY = newLeaderboardIndex * entry_height;
-            score.YPosition = targetY;
-
-            if (score.Model is not PoolableLeaderboardEntry model)
-                continue;
-
             // update depth to make animation smoother
             // make fading out entries appear at bottom of any existing ones
-            updateEntryDepth(score, very_large_depth - displayScores.Count); // very large depth to ensure it's at the back
-                                                                             // revert depth to make a smoother animation.
-                                                                             // since the destination is the same, lower scores look move slower,
-                                                                             // if they are covered by faster moving higher scores it looks jarring.
+            updateEntryDepth(score, very_large_depth - scores.Count); // very large depth to ensure it's at the back
+                                                                      // revert depth to make a smoother animation.
+                                                                      // since the destination is the same, lower scores look move slower,
+                                                                      // if they are covered by faster moving higher scores it looks jarring.
 
             model
                 .FadeOut(transition_duration)
                 .MoveToY(targetY, transition_duration, Easing.Out)
                 .Expire();
+        }
+    }
+
+    private void handleVisibleScore(DisplayScoreItem score, int displayIndex, int displayCount)
+    {
+        if (score.Model is not PoolableLeaderboardEntry pooledEntry)
+        {
+            pooledEntry = entryPool.Get();
+
+            entriesContainer.Add(pooledEntry);
+            pooledEntry.BindScoreItem(score);
+        }
+
+        score.VisibleInLeaderboard.Value = true;
+        score.LeaderboardDisplayIndex.Value = displayIndex;
+
+        float targetY = displayIndex * entry_height;
+        score.YPosition = targetY;
+
+        // we want to make first place appear on top
+        // tracking at second to make sure it's visible
+        // Then, we want to make LOWER scores appear above higher scores
+        float newDepth = displayIndex == 0 ? -2 : // first place
+                        (score.GameplayScore.Tracked ? -1 : // tracking
+                        (displayCount - displayIndex)); // lower scores above higher scores
+
+        updateEntryDepth(score, newDepth);
+
+        pooledEntry
+            .FadeTo(CalculateEntryTransparency(displayIndex), transition_duration)
+            .MoveToY(targetY, transition_duration, Easing.Out);
+    }
+
+    private void handleTrackingExplosion()
+    {
+        Debug.Assert(trackingScore is not null);
+        Debug.Assert(trackingScore.Model is not null);
+
+        var trackingPosition = trackingScore.ProviderDisplayOrder.Value - 1;
+
+        if (trackingPosition < lastTrackingPosition)
+            FlashExplosionAt(trackingScore);
+
+        lastTrackingPosition = trackingPosition;
+    }
+
+    private void sort()
+    {
+        int displayCount = Math.Max(1, MaxEntries.Value);
+
+        // Bindable should never be less than 1 due to min value restriction.
+        Debug.Assert(displayCount >= 1);
+
+        // skip this sort, leaderboard not ready yet
+        if (trackingScore?.ProviderDisplayOrder.Value is 0)
+            return;
+
+        // first invisible after last displayed
+        // FIXME: investigate how stable actually handles this case
+        int invisibleIndex = displayCount;
+
+        for (int i = 0; i < scores.Count; i++)
+        {
+            var score = scores[i];
+            int displayIndex = GetScoreDisplayIndex(score, displayCount);
+
+            if (displayIndex < 0)
+            {
+                handleInvisibleScore(score, displayIndex, invisibleIndex);
+            }
+            else
+            {
+                handleVisibleScore(score, displayIndex, displayCount);
+            }
         }
     }
 
