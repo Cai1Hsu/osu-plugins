@@ -163,7 +163,12 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
     private void updateSectionRankingTexture(Texture? texture)
     {
         if (texture is not null)
+        {
             SectionRankingSprite.Texture = texture;
+
+            // size won't auto-update
+            SectionRankingSprite.Size = texture.DisplaySize;
+        }
         else
             // Hide to avoid showing old texture
             SectionRankingSprite.Alpha = 0;
