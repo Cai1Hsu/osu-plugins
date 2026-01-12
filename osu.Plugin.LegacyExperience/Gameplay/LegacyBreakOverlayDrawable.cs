@@ -213,7 +213,14 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
                 ?? skin.GetTexture("arrow-pause");
 
             if (texture is not null)
+            {
                 Texture = texture;
+            }
+            else if (skin.GetTexture("play-warningarrow") is Texture legacyTexture)
+            {
+                Texture = legacyTexture;
+                Colour = Colour4.Red;
+            }
         }
     }
 }
