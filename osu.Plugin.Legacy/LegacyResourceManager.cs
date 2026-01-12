@@ -1,6 +1,7 @@
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.IO.Stores;
+using osu.Game;
 
 namespace osu.Plugin.Legacy;
 

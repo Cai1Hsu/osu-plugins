@@ -10,6 +10,7 @@ using osu.Game.Database;
 using osu.Game.IO;
 using osu.Game.Skinning;
 using osu.Game.Tests.Visual;
+using osu.Plugin.Legacy.Buttons;
 
 namespace osu.Plugin.Legacy.Tests;
 
