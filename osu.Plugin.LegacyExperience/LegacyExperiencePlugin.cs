@@ -51,6 +51,7 @@ public sealed class LegacyExperiencePlugin : OsuPlugin
         {
             typeof(LegacyChatButton),
             typeof(LegacyDashboardButton),
+            typeof(LegacyFpsDisplay),
         }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.SongSelect));
     }
 }
