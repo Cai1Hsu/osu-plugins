@@ -21,9 +21,9 @@ public partial class TestSceneLegacyBreakOverlayDrawable : OsuTestScene, IStorag
     private LegacyBreakOverlayDrawable legacyBreakOverlay = null!;
     private int animationLoopCount = 1;
 
-    public string LocalSkinPath
+    public string? LocalSkinPath
         // TODO: Set this to a valid local skin path to test with a specific skin.
-        => null!;
+        => null;
 
     [SetUpSteps]
     public virtual void SetUpSteps()
