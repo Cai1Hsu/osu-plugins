@@ -16,7 +16,8 @@ public sealed class LegacyExperiencePlugin : OsuPlugin
 {
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
-        var game = (OsuGame)gameBase;
+        if (gameBase is not OsuGame game)
+            return;
 
         SkinEditorOverlay? skinEditor = game.Dependencies.Get<SkinEditorOverlay?>();
         if (skinEditor is null)
