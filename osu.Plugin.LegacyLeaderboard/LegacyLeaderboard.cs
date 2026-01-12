@@ -201,9 +201,10 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             return -displayIndex; // too low to be displayed
         }
 
-        return score.GameplayScore.Tracked
-            ? 0
-            : -1; // semantic value is unnecessary, as only one entry is shown, and always the tracking one.
+        if ((trackingScore is null && providerDisplayOrderIndex is 0) || (trackingScore == score))
+            return 0;
+
+        return -1; // semantic value is unnecessary, as only one entry is shown, and always the tracking one.
     }
 
     private const int very_large_depth = 1024; // we never have so many entries displayed
