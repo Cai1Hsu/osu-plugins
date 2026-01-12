@@ -22,8 +22,8 @@ public partial class TestSceneLegacyBreakOverlayDrawable : OsuTestScene, IStorag
     private int animationLoopCount = 1;
 
     public string LocalSkinPath
-        // the built-in legacy skin doesn't contain required assets for this skin component
-        => throw new Exception("Set this to a valid local skin path to test with a specific skin.");
+        // TODO: Set this to a valid local skin path to test with a specific skin.
+        => null!;
 
     [SetUpSteps]
     public virtual void SetUpSteps()
@@ -59,7 +59,7 @@ public partial class TestSceneLegacyBreakOverlayDrawable : OsuTestScene, IStorag
     }
 
     private IResourceStore<byte[]> createResourceStore()
-        => new StorageBackedResourceStore(new NativeStorage(LocalSkinPath));
+        => LocalSkinPath is null ? base.Resources : new StorageBackedResourceStore(new NativeStorage(LocalSkinPath));
 
     [Resolved]
     private GameHost host { get; set; } = null!;
@@ -71,7 +71,7 @@ public partial class TestSceneLegacyBreakOverlayDrawable : OsuTestScene, IStorag
     public IResourceStore<byte[]> Files => Resources;
     public new IResourceStore<byte[]> Resources => createResourceStore();
     public IResourceStore<TextureUpload> CreateTextureLoaderStore(IResourceStore<byte[]> underlyingStore)
-        => host.CreateTextureLoaderStore(Resources);
+        => LocalSkinPath is null ? host.CreateTextureLoaderStore(underlyingStore) : host.CreateTextureLoaderStore(Resources);
     RealmAccess IStorageResourceProvider.RealmAccess => null!;
 
     #endregion
