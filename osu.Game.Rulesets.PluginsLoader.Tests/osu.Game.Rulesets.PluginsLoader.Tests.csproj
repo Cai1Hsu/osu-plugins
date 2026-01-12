@@ -14,10 +14,7 @@
     <ProjectReference Include="..\osu.Plugin.Template\osu.Plugin.Template.csproj" />
     <ProjectReference Include="..\osu.Plugin.MainMenuPlayer\osu.Plugin.MainMenuPlayer.csproj" />
     <ProjectReference Include="..\osu.Plugin.StableIntegration\osu.Plugin.StableIntegration.csproj" />
-    <ProjectReference Include="..\osu.Plugin.LegacyExperienceBreakOverlay\osu.Plugin.LegacyExperienceBreakOverlay.csproj" />
-    <ProjectReference Include="..\osu.Plugin.LegacyExperienceErrorMeter\osu.Plugin.LegacyExperienceErrorMeter.csproj" />
-    <ProjectReference Include="..\osu.Plugin.LegacyExperienceFpsDisplay\osu.Plugin.LegacyExperienceFpsDisplay.csproj" />
-    <ProjectReference Include="..\osu.Plugin.LegacyExperienceLeaderboard\osu.Plugin.LegacyExperienceLeaderboard.csproj" />
+    <ProjectReference Include="..\osu.Plugin.LegacyExperience\osu.Plugin.LegacyExperience.csproj" />
   </ItemGroup>
 
   <ItemGroup>
