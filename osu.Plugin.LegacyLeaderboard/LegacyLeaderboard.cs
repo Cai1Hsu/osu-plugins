@@ -169,7 +169,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     /// <param name="score">The score item to get index for.</param>
     /// <param name="displayCount">The maximum number of entries to be displayed.</param>
     /// <returns>The display index, negative value indicates not displayed.</returns>
-    private int GetScoreDisplayIndex(DisplayScoreItem score, int displayCount)
+    private long GetScoreDisplayIndex(DisplayScoreItem score, int displayCount)
     {
         var providerDisplayOrderIndex = score.ProviderDisplayOrder.Value - 1;
 
@@ -197,7 +197,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             if (providerDisplayOrderIndex < cutoffBegin)
                 return -1; // too high to be displayed yet
 
-            int displayIndex = (int)(providerDisplayOrderIndex - cutoffBegin) + 1; // +1 for first places
+            long displayIndex = providerDisplayOrderIndex - cutoffBegin + 1; // +1 for first places
 
             if (displayIndex < displayCount)
                 return displayIndex;
@@ -213,7 +213,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     private const int very_large_depth = 1024; // we never have so many entries displayed
 
-    private void handleInvisibleScore(DisplayScoreItem score, int displayIndex, int invisibleIndex)
+    private void handleInvisibleScore(DisplayScoreItem score, long displayIndex, int invisibleIndex)
     {
         Debug.Assert(displayIndex < 0);
 
@@ -245,7 +245,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         }
     }
 
-    private void handleVisibleScore(DisplayScoreItem score, int displayIndex, int displayCount)
+    private void handleVisibleScore(DisplayScoreItem score, long displayIndex, int displayCount)
     {
         if (score.Model is not PoolableLeaderboardEntry pooledEntry)
         {
@@ -306,10 +306,11 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         for (int i = 0; i < scores.Count; i++)
         {
             var score = scores[i];
-            int displayIndex = GetScoreDisplayIndex(score, displayCount);
+            long displayIndex = GetScoreDisplayIndex(score, displayCount);
 
             if (displayIndex < 0)
             {
+                // cast to int is safe here, as up to 24 entries are supported
                 handleInvisibleScore(score, displayIndex, invisibleIndex);
             }
             else
@@ -350,7 +351,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         explosion1.Apply(position, scale);
     }
 
-    public static float CalculateEntryTransparency(int index)
+    public static float CalculateEntryTransparency(long index)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
 
