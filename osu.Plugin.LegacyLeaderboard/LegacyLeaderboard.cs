@@ -241,7 +241,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
     /// <summary>
     /// Get the display index of a score item.
-    /// Returns -1 indicating the score is to high to be displayed.
+    /// Returns -1 indicating the score is too high too be displayed.
     /// Other negative values indicating to low to be displayed, the magnitude is the would-be index.
     /// </summary>
     /// <param name="score">The score item to get index for.</param>
