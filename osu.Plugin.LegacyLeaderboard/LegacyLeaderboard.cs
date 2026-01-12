@@ -295,7 +295,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         score.VisibleInLeaderboard.Value = false;
         score.LeaderboardDisplayIndex.Value = -1;
 
-        int newLeaderboardIndex = ((-displayIndex) < invisibleIndex)
+        Debug.Assert(displayIndex < 0);
+
+        int newLeaderboardIndex = displayIndex == -1
                 ? 0 // ensure high scores appears from top
                 : invisibleIndex;
 
