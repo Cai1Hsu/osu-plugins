@@ -146,37 +146,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             Scheduler.AddOnce(sort);
     }
 
-    private static int CompareScoreItem(DisplayScoreItem x, DisplayScoreItem y)
-    {
-        if (x.ScorePosition.Value.HasValue && y.ScorePosition.Value.HasValue)
-        {
-            int positionComparison = x.ScorePosition.Value.Value.CompareTo(y.ScorePosition.Value.Value);
-            if (positionComparison != 0)
-                return positionComparison;
-        }
-
-        GameplayLeaderboardScore a = x.GameplayScore;
-        GameplayLeaderboardScore b = y.GameplayScore;
-
-        int scoreComparison = b.TotalScore.Value.CompareTo(a.TotalScore.Value);
-        if (scoreComparison != 0)
-            return scoreComparison;
-
-        // quitters go to the bottom
-        int quitComparison = a.HasQuit.Value.CompareTo(b.HasQuit.Value);
-        if (quitComparison != 0)
-            return quitComparison;
-
-        // tracking should have priority when all else is equal
-        int trackingComparison = b.Tracked.CompareTo(a.Tracked);
-        if (trackingComparison != 0)
-            return trackingComparison;
-
-        // Don't compare ProviderDisplayOrder as tracking's may be 0
-
-        return a.TotalScoreTiebreaker.CompareTo(b.TotalScoreTiebreaker);
-    }
-
     private const float transition_duration = 600;
 
     // make higher score look closer to front
