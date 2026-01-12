@@ -6,11 +6,11 @@ using osu.Game.Skinning;
 
 namespace osu.Plugin.LegacyExperience.Buttons;
 
-public partial class LegacyEndReplayButtons : LegacySpriteButton, ISerialisableDrawable
+public partial class LegacyEndReplayButton : LegacySpriteButton, ISerialisableDrawable
 {
     public bool UsesFixedAnchor { get; set; } = true;
 
-    public LegacyEndReplayButtons()
+    public LegacyEndReplayButton()
     {
         Texture = "UI/overlay-endreplay";
 
