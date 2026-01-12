@@ -1,4 +1,4 @@
-namespace osu.Plugin.Legacy;
+namespace osu.Plugin.Legacy.Buttons;
 
 public partial class LegacySpriteToggleButton : LegacySpriteStatedButton<bool>
 {
