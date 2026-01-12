@@ -1,13 +1,12 @@
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Lists;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Timing;
 using osu.Game.Screens.Play;
 using osu.Game.Utils;
 
-namespace osu.Plugin.Legacy;
+namespace osu.Plugin.Legacy.Gameplay;
 
 public abstract partial class BreakTrackingContainer : CompositeDrawable
 {

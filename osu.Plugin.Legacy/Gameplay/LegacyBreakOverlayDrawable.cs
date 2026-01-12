@@ -8,7 +8,7 @@ using osu.Game.Audio;
 using osu.Game.Skinning;
 using osuTK;
 
-namespace osu.Plugin.LegacyBreakOverlay;
+namespace osu.Plugin.Legacy.Gameplay;
 
 /// <summary>
 /// The base skin component of legacy break overlay, usually used for testing purposes.

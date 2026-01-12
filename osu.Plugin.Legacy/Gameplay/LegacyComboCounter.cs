@@ -1,12 +1,10 @@
-using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Game.Beatmaps.Timing;
-using osu.Plugin.Legacy;
 using osu.Game.Skinning;
 using LazerLegacyCombo = osu.Game.Skinning.LegacyDefaultComboCounter;
 
-namespace osu.Plugin.LegacyBreakOverlay;
+namespace osu.Plugin.Legacy.Gameplay;
 
 public partial class LegacyComboCounter : BreakTrackingContainer, ISerialisableDrawable
 {

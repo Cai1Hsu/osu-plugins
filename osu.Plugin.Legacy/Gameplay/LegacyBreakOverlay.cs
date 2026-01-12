@@ -8,11 +8,10 @@ using osu.Game.Screens.Play;
 using osu.Game.Skinning;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets;
-using osu.Plugin.Legacy;
 using osu.Framework.Graphics;
 using osu.Game.Utils;
 
-namespace osu.Plugin.LegacyBreakOverlay;
+namespace osu.Plugin.Legacy.Gameplay;
 
 /// <summary>
 /// The skin component that provides full legacy break overlay experience.
