@@ -12,15 +12,13 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Platform;
 using osu.Framework.Timing;
 using osu.Framework.Utils;
-using osu.Plugin.Legacy;
 using osuTK;
 using osuTK.Graphics;
 using static osu.Plugin.Legacy.LegacySpriteText;
-using LegacySpriteTextContainer = osu.Plugin.Legacy.LegacySpriteTextContainer;
 using ISerialisableDrawable = osu.Game.Skinning.ISerialisableDrawable;
 using osu.Game.Plugins;
 
-namespace osu.Plugin.LegacyFpsDisplay;
+namespace osu.Plugin.Legacy;
 
 public partial class LegacyFpsDisplay : CompositeDrawable, ISerialisableDrawable
 {

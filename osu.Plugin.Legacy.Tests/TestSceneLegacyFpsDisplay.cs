@@ -3,7 +3,7 @@ using osu.Framework.Testing;
 using osu.Game.Tests.Visual;
 using osuTK;
 
-namespace osu.Plugin.LegacyFpsDisplay.Tests;
+namespace osu.Plugin.Legacy.Tests;
 
 public partial class TestSceneLegacyFpsDisplay : OsuTestScene
 {
