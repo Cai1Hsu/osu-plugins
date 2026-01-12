@@ -13,7 +13,7 @@ internal partial class DisplayScoreItem : IDisposable
     public Bindable<int?> ScorePosition { get; private set; } = new Bindable<int?>();
     public Bindable<long> ProviderDisplayOrder { get; private set; } = new Bindable<long>();
 
-    public Bindable<int> LeaderboardDisplayIndex { get; } = new Bindable<int>();
+    public Bindable<long> LeaderboardDisplayIndex { get; } = new Bindable<long>();
     public BindableBool VisibleInLeaderboard { get; } = new BindableBool(false);
 
     public float YPosition { get; set; }
