@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Game.Plugins.Skins", "o
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Plugin.Legacy", "osu.Plugin.Legacy\osu.Plugin.Legacy.csproj", "{2C022889-17C4-47E8-9D6A-2B98DE62A81C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osu.Plugin.Legacy.Tests", "osu.Plugin.Legacy.Tests\osu.Plugin.Legacy.Tests.csproj", "{5C906155-C333-4937-A673-0BF12FD5193C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{2C022889-17C4-47E8-9D6A-2B98DE62A81C}.Release|x64.Build.0 = Release|Any CPU
 		{2C022889-17C4-47E8-9D6A-2B98DE62A81C}.Release|x86.ActiveCfg = Release|Any CPU
 		{2C022889-17C4-47E8-9D6A-2B98DE62A81C}.Release|x86.Build.0 = Release|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Debug|x64.Build.0 = Debug|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Debug|x86.Build.0 = Debug|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Release|x64.ActiveCfg = Release|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Release|x64.Build.0 = Release|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Release|x86.ActiveCfg = Release|Any CPU
+		{5C906155-C333-4937-A673-0BF12FD5193C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
