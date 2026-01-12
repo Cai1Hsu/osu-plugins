@@ -355,7 +355,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     private void handleTrackingExplosion()
     {
         Debug.Assert(trackingScore is not null);
-        Debug.Assert(trackingScore.Model is not null);
 
         var trackingPosition = trackingScore.ProviderDisplayOrder.Value - 1;
 
