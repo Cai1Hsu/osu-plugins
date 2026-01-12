@@ -213,14 +213,14 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     {
         Debug.Assert(displayIndex < 0);
 
-        
         score.VisibleInLeaderboard.Value = false;
 
         int newLeaderboardIndex = displayIndex == -1
                 ? 0 // ensure high scores appears from top
                 : invisibleIndex;
 
-        score.LeaderboardDisplayIndex.Value = newLeaderboardIndex;
+        // use a negative index to indicate invisible
+        score.LeaderboardDisplayIndex.Value = -newLeaderboardIndex;
 
         float targetY = newLeaderboardIndex * entry_height;
         score.YPosition = targetY;
