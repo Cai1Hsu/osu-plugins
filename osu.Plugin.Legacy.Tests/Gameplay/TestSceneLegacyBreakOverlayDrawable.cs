@@ -11,9 +11,10 @@ using osu.Game.Database;
 using osu.Game.IO;
 using osu.Game.Skinning;
 using osu.Game.Tests.Visual;
+using osu.Plugin.Legacy.Gameplay;
 using osuTK.Graphics;
 
-namespace osu.Plugin.LegacyBreakOverlay.Tests;
+namespace osu.Plugin.Legacy.Tests.Gameplay;
 
 public partial class TestSceneLegacyBreakOverlayDrawable : OsuTestScene, IStorageResourceProvider
 {

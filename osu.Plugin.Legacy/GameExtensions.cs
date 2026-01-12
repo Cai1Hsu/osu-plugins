@@ -1,3 +1,6 @@
+using osu.Game;
+using osu.Game.Plugins;
+
 namespace osu.Plugin.Legacy;
 
 public static class GameExtensions
