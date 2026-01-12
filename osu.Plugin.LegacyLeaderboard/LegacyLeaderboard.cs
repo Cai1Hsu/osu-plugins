@@ -237,7 +237,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             : -1; // semantic value is unnecessary, as only one entry is shown, and always the tracking one.
     }
 
-    const int very_large_depth = 1024; // we never have so many entries displayed
+    private const int very_large_depth = 1024; // we never have so many entries displayed
 
     private void handleInvisibleScore(DisplayScoreItem score, int displayIndex, int invisibleIndex)
     {
