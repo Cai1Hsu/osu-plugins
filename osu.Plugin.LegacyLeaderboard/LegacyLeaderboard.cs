@@ -105,14 +105,18 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             foreach (var score in scoresList)
                 AddScore(score);
 
-            trackingScore?.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.Add(handleTrackingExplosion));
+            if (trackingScore is not null)
+                trackingDisplayOrder.BindTo(trackingScore.ProviderDisplayOrder);
         }, true);
+
+        trackingDisplayOrder.BindValueChanged(handleTrackingExplosion);
     }
 
     private void clearScores()
     {
         trackingScore = null;
-        lastTrackingPosition = -1;
+        trackingDisplayOrder.UnbindBindings();
+        trackingDisplayOrder.Value = -1;
 
         foreach (var displayScore in scores)
             displayScore.Dispose();
@@ -121,7 +125,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     }
 
     private DisplayScoreItem? trackingScore;
-    private long lastTrackingPosition;
+    private readonly BindableLong trackingDisplayOrder = new BindableLong();
 
     public void AddScore(GameplayLeaderboardScore providerScore)
     {
@@ -271,16 +275,17 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             .MoveToY(targetY, transition_duration, Easing.Out);
     }
 
-    private void handleTrackingExplosion()
+    private void handleTrackingExplosion(ValueChangedEvent<long> @event)
     {
-        Debug.Assert(trackingScore is not null);
+        if (trackingScore is null)
+            return;
 
-        var trackingPosition = trackingScore.ProviderDisplayOrder.Value - 1;
+        // uninitialized
+        if (@event.OldValue < 0 || @event.NewValue < 0)
+            return;
 
-        if (trackingPosition < lastTrackingPosition)
-            FlashExplosionAt(trackingScore);
-
-        lastTrackingPosition = trackingPosition;
+        if (@event.NewValue < @event.OldValue)
+            Scheduler.Add(() => FlashExplosionAt(trackingScore));
     }
 
     private void sort()
