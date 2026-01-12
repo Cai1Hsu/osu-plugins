@@ -11,6 +11,6 @@ public partial class LegacyResourceManager : Drawable
     private void load(OsuGameBase game)
     {
         var resources = game.Resources;
-        resources.AddStore(new DllResourceStore(typeof(LegacyResources).Assembly));
+        resources.AddStore(new DllResourceStore(LegacyResources.ResourceAssembly));
     }
 }
