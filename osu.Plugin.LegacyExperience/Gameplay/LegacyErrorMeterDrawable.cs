@@ -208,12 +208,12 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
             });
         }
 
-        public void Apply(Colour4 colour, float taregtPosition)
+        public void Apply(Colour4 colour, float targetPosition)
         {
             ClearTransforms();
 
             Alpha = 0.4f;
-            X = taregtPosition;
+            X = targetPosition;
             box.Colour = colour;
 
             this.FadeOut(10000)
