@@ -5,7 +5,6 @@ using osu.Framework.Graphics.Containers;
 using osu.Game.Screens.Select.Leaderboards;
 using osu.Game.Skinning;
 using System.Diagnostics;
-using osu.Framework.Lists;
 using osuTK;
 using osu.Game.Configuration;
 using osu.Framework.Graphics.Textures;
@@ -14,7 +13,7 @@ using osu.Framework.Extensions.EnumExtensions;
 using osu.Game.Plugins;
 using osu.Framework.Graphics.Pooling;
 
-namespace osu.Plugin.LegacyLeaderboard;
+namespace osu.Plugin.Legacy.Leaderboards;
 
 public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawable
 {

@@ -1,7 +1,6 @@
 using System.Collections.Frozen;
-using osu.Plugin.Legacy;
 
-namespace osu.Plugin.LegacyLeaderboard;
+namespace osu.Plugin.Legacy.Leaderboards;
 
 public partial class ScoreEntrySpriteText : LegacySpriteText
 {

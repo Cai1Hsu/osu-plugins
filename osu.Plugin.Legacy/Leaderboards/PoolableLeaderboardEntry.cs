@@ -2,7 +2,7 @@ using System.Diagnostics;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Pooling;
 
-namespace osu.Plugin.LegacyLeaderboard;
+namespace osu.Plugin.Legacy.Leaderboards;
 
 internal sealed partial class PoolableLeaderboardEntry : PoolableDrawable
 {

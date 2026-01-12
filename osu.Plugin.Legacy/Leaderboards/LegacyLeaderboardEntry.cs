@@ -14,9 +14,8 @@ using osu.Game.Skinning;
 using osu.Game.Users;
 using osuTK;
 using osuTK.Graphics;
-using LegacySpriteText = osu.Plugin.Legacy.LegacySpriteText;
 
-namespace osu.Plugin.LegacyLeaderboard;
+namespace osu.Plugin.Legacy.Leaderboards;
 
 public partial class LegacyLeaderboardEntry : CompositeDrawable
 {

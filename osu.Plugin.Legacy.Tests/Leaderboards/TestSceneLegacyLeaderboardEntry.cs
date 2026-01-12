@@ -13,8 +13,9 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Skinning;
 using osu.Game.Tests.Visual;
+using osu.Plugin.Legacy.Leaderboards;
 
-namespace osu.Plugin.LegacyLeaderboard.Tests;
+namespace osu.Plugin.Legacy.Tests.Leaderboards;
 
 public partial class TestSceneLegacyLeaderboardEntry : OsuTestScene, IStorageResourceProvider
 {

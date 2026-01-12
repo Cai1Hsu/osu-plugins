@@ -2,7 +2,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics.Pooling;
 using osu.Game.Screens.Select.Leaderboards;
 
-namespace osu.Plugin.LegacyLeaderboard;
+namespace osu.Plugin.Legacy.Leaderboards;
 
 internal partial class DisplayScoreItem : IDisposable
 {
