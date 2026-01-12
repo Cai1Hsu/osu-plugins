@@ -4,10 +4,9 @@ using osu.Framework.Graphics;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Scoring;
-using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Play.HUD.HitErrorMeters;
 
-namespace osu.Plugin.LegacyErrorMeter;
+namespace osu.Plugin.Legacy.Gameplay;
 
 public partial class LegacyErrorMeter : HitErrorMeter
 {

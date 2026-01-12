@@ -7,7 +7,7 @@ using osu.Game.Graphics;
 using osu.Game.Rulesets.Scoring;
 using osuTK;
 
-namespace osu.Plugin.LegacyErrorMeter;
+namespace osu.Plugin.Legacy.Gameplay;
 
 public partial class LegacyErrorMeterDrawable : CompositeDrawable
 {

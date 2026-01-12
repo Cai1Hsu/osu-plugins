@@ -12,9 +12,10 @@ using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.Scoring;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Tests.Visual;
+using osu.Plugin.Legacy.Gameplay;
 using osuTK;
 
-namespace osu.Plugin.LegacyErrorMeter.Tests;
+namespace osu.Plugin.Legacy.Tests.Gameplay;
 
 public partial class TestSceneLegacyErrorMeter : OsuTestScene
 {
