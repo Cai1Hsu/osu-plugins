@@ -146,55 +146,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             Scheduler.AddOnce(sort);
     }
 
-    private List<DisplayScoreItem> sortDisplayedEntries(SortedList<DisplayScoreItem> scoreSorted)
-    {
-        var maxEntries = Math.Max(1, MaxEntries.Value);
-
-        int capacity = Math.Min(scoreSorted.Count, maxEntries);
-        var displayedEntries = new List<DisplayScoreItem>(capacity);
-
-        // always add first place, but if we only have one slot, ensure tracking is prioritised
-        if (scoreSorted.FirstOrDefault() is { } firstPlace && (
-            firstPlace.GameplayScore.Tracked || // first place is tracking
-            trackingScore is null || // tracking not present
-            maxEntries > 1 // has enough slot for tracking
-        ))
-        {
-            displayedEntries.Add(firstPlace);
-
-            if (displayedEntries.Count >= maxEntries)
-                return displayedEntries;
-        }
-
-        // try fill the reset from tracking entry upwards
-        int trackingIndex = trackingScore is null ? -1 : scoreSorted.IndexOf(trackingScore);
-        int fillStartIndex = displayedEntries.Count; // start from where we left off
-
-        // if tracking is the first place, we have already added it.
-        // Start filling from index 1 as normal.
-        if (trackingIndex > 0)
-        {
-            int remainingSlots = maxEntries - displayedEntries.Count;
-
-            // Ensure tracking entry is always shown.
-            fillStartIndex = Math.Max(fillStartIndex, trackingIndex - remainingSlots + 1);
-        }
-
-        // Sequentially add entries to ensure stable ordering.
-        // This should keep place ordering consistent with the sorted list.
-        while (fillStartIndex < scoreSorted.Count && displayedEntries.Count < maxEntries)
-        {
-            var entry = scoreSorted[fillStartIndex++];
-            displayedEntries.Add(entry);
-        }
-
-        Debug.Assert(displayedEntries.Count <= maxEntries);
-        Debug.Assert(trackingScore is null || displayedEntries.Contains(trackingScore));
-        Debug.Assert(scoreSorted.Count <= maxEntries || displayedEntries.Count == maxEntries);
-
-        return displayedEntries;
-    }
-
     private static int CompareScoreItem(DisplayScoreItem x, DisplayScoreItem y)
     {
         if (x.ScorePosition.Value.HasValue && y.ScorePosition.Value.HasValue)
@@ -227,8 +178,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     }
 
     private const float transition_duration = 600;
-
-    private static readonly IComparer<DisplayScoreItem> comparer = Comparer<DisplayScoreItem>.Create(CompareScoreItem);
 
     // make higher score look closer to front
     private void updateEntryDepth(DisplayScoreItem scoreItem, float depth)
