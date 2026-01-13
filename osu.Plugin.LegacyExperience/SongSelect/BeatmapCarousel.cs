@@ -14,21 +14,28 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     [Resolved]
     private ISkinSource? skin { get; set; }
 
+    [Cached]
+    private LegacyPanelColors panelColors { get; set; } = LegacyPanelColors.CreateDefault();
+
     protected override void LoadComplete()
     {
         base.LoadComplete();
 
         if (skin is not null)
-        {
             skin.SourceChanged += onSkinSourceChanged;
 
-            onSkinSourceChanged();
-        }
+        onSkinSourceChanged();
     }
 
     private float panelHeight = 103 * 0.6f;
 
     private void onSkinSourceChanged()
+    {
+        panelColors.SyncFromSkin(skin);
+        updatePanelBackground();
+    }
+
+    void updatePanelBackground()
     {
         var backgroundTexture = skin?.GetTexture("menu-button-background");
 
