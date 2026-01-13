@@ -143,4 +143,12 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         // TODO: pool and select corresponding LegacyPanel type based on item's model
         return new LegacyPanel();
     }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        if (skin is not null)
+            skin.SourceChanged -= onSkinSourceChanged;
+    }
 }

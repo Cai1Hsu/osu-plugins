@@ -33,12 +33,15 @@ public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
 
     public override bool HandlePositionalInput => true;
 
+    [Resolved]
+    private ISkinSource? skin { get; set; }
+
+    private Sprite backgroundSprite = null!;
+
     [BackgroundDependencyLoader]
-    private void load(ISkinSource? skin)
+    private void load()
     {
         AutoSizeAxes = Axes.Both;
-
-        Sprite backgroundSprite;
 
         AddInternal(backgroundSprite = new Sprite()
         {
@@ -52,23 +55,31 @@ public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
             skin.SourceChanged += updateTexture;
             updateTexture();
         }
+    }
 
-        void updateTexture()
-        {
-            // TODO: Song select requires dynamic textures loading when skin changes
-            // SkinnableSprite doestn't scale with @2x, so we manually retrieve the texture here.
-            // This is a temporary workaround to make size correct.
-            var texture = skin?.GetTexture("menu-button-background");
+    void updateTexture()
+    {
+        // TODO: Song select requires dynamic textures loading when skin changes
+        // SkinnableSprite doestn't scale with @2x, so we manually retrieve the texture here.
+        // This is a temporary workaround to make size correct.
+        var texture = skin?.GetTexture("menu-button-background");
 
-            if (texture is null)
-                return;
+        if (texture is null)
+            return;
 
-            backgroundSprite.Texture = texture;
-            backgroundSprite.Size = texture.DisplaySize;
-        }
+        backgroundSprite.Texture = texture;
+        backgroundSprite.Size = texture.DisplaySize;
     }
 
     public virtual void Activated()
     {
+    }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        if (skin is not null)
+            skin.SourceChanged -= updateTexture;
     }
 }
