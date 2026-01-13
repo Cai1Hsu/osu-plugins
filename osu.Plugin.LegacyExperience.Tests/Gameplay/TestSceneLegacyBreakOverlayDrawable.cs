@@ -16,14 +16,10 @@ using osuTK.Graphics;
 
 namespace osu.Plugin.LegacyExperience.Tests.Gameplay;
 
-public partial class TestSceneLegacyBreakOverlayDrawable : OsuTestScene, IStorageResourceProvider
+public partial class TestSceneLegacyBreakOverlayDrawable : LocalSkinTestScene
 {
     private LegacyBreakOverlayDrawable legacyBreakOverlay = null!;
     private int animationLoopCount = 1;
-
-    public string? LocalSkinPath
-        // TODO: Set this to a valid local skin path to test with a specific skin.
-        => null;
 
     [SetUpSteps]
     public virtual void SetUpSteps()
@@ -57,22 +53,4 @@ public partial class TestSceneLegacyBreakOverlayDrawable : OsuTestScene, IStorag
             }
         };
     }
-
-    private IResourceStore<byte[]> createResourceStore()
-        => LocalSkinPath is null ? base.Resources : new StorageBackedResourceStore(new NativeStorage(LocalSkinPath));
-
-    [Resolved]
-    private GameHost host { get; set; } = null!;
-
-    #region IResourceStorageProvider
-
-    public IRenderer Renderer => host.Renderer;
-    public AudioManager AudioManager => Audio;
-    public IResourceStore<byte[]> Files => Resources;
-    public new IResourceStore<byte[]> Resources => createResourceStore();
-    public IResourceStore<TextureUpload> CreateTextureLoaderStore(IResourceStore<byte[]> underlyingStore)
-        => LocalSkinPath is null ? host.CreateTextureLoaderStore(underlyingStore) : host.CreateTextureLoaderStore(Resources);
-    RealmAccess IStorageResourceProvider.RealmAccess => null!;
-
-    #endregion
 }
