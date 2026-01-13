@@ -36,11 +36,15 @@ public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
     [Resolved]
     private ISkinSource? skin { get; set; }
 
+    protected LegacyPanelColors PanelColors { get; set; } = null!;
+
     private Sprite backgroundSprite = null!;
 
     [BackgroundDependencyLoader]
-    private void load()
+    private void load(LegacyPanelColors colours)
     {
+        PanelColors = colours;
+
         AutoSizeAxes = Axes.Both;
 
         AddInternal(backgroundSprite = new Sprite()
@@ -48,27 +52,35 @@ public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
             Anchor = Anchor.CentreLeft,
             Origin = Anchor.CentreLeft,
             Scale = new Vector2(TextureScale),
+            // TODO: investigate how background's color is determined
         });
 
+        skinChanged();
+
         if (skin is not null)
-        {
-            skin.SourceChanged += updateTexture;
-            updateTexture();
-        }
+            skin.SourceChanged += skinChanged;
     }
 
-    void updateTexture()
+    void skinChanged()
     {
         // TODO: Song select requires dynamic textures loading when skin changes
         // SkinnableSprite doestn't scale with @2x, so we manually retrieve the texture here.
         // This is a temporary workaround to make size correct.
         var texture = skin?.GetTexture("menu-button-background");
 
-        if (texture is null)
-            return;
+        const float background_fade_duration = 100;
 
-        backgroundSprite.Texture = texture;
-        backgroundSprite.Size = texture.DisplaySize;
+        if (texture is not null)
+        {
+            backgroundSprite.FadeIn(background_fade_duration);
+            backgroundSprite.Texture = texture;
+            backgroundSprite.Size = texture.DisplaySize;
+        }
+        else // will this happen? we have a default texture right?
+        {
+            backgroundSprite.FadeOut(background_fade_duration);
+            backgroundSprite.Size = new Vector2(799, 103) * TextureScale; // default texture size
+        }
     }
 
     public virtual void Activated()
@@ -80,6 +92,6 @@ public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
         base.Dispose(isDisposing);
 
         if (skin is not null)
-            skin.SourceChanged -= updateTexture;
+            skin.SourceChanged -= skinChanged;
     }
 }
