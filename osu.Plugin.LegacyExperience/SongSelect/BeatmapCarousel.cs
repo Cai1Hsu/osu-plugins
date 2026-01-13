@@ -4,6 +4,7 @@ using osu.Framework.Caching;
 using osu.Framework.Graphics;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
+using osu.Game.Screens.SelectV2;
 using osu.Game.Skinning;
 using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
 
@@ -148,7 +149,20 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     protected override Drawable GetDrawableForDisplay(CarouselItem item)
     {
         // TODO: pool and select corresponding LegacyPanel type based on item's model
-        return new LegacyPanel();
+        switch (item.Model)
+        {
+            case RankedStatusGroupDefinition:
+            case StarDifficultyGroupDefinition:
+            case RankDisplayGroupDefinition:
+            case GroupDefinition:
+                return new LegacyGroupPanel();
+
+            case GroupedBeatmap:
+            case GroupedBeatmapSet:
+                return new LegacyBeatmapPanel();
+        }
+
+        throw new InvalidOperationException($"Unsupported model type: {item.Model?.GetType()}");
     }
 
     protected override void Dispose(bool isDisposing)
