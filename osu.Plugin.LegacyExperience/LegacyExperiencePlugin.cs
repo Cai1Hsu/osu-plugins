@@ -12,7 +12,7 @@ using osu.Plugin.LegacyExperience.Leaderboards;
 
 namespace osu.Plugin.LegacyExperience;
 
-public sealed class LegacyExperiencePlugin : OsuPlugin
+public sealed partial class LegacyExperiencePlugin : OsuPlugin
 {
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
@@ -53,5 +53,7 @@ public sealed class LegacyExperiencePlugin : OsuPlugin
             typeof(LegacyDashboardButton),
             typeof(LegacyFpsDisplay),
         }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.SongSelect));
+
+        hookSongSelectScreen(game);
     }
 }
