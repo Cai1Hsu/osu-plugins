@@ -1,16 +1,18 @@
 using System.Diagnostics;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Graphics.UserInterface;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
 using osuTK;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
-public partial class StarDifficultyDisplay : PoolableDrawable
+public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<double>
 {
     [Resolved]
     private ISkinSource? skin { get; set; }
@@ -24,6 +26,8 @@ public partial class StarDifficultyDisplay : PoolableDrawable
 
     public ReadOnlySpan<Star> Stars => stars;
 
+    public Bindable<double> Current { get; set; } = new BindableDouble();
+
     [BackgroundDependencyLoader]
     private void load()
     {
@@ -36,7 +40,7 @@ public partial class StarDifficultyDisplay : PoolableDrawable
                 Anchor = Anchor.CentreLeft,
                 Origin = Anchor.CentreLeft,
                 Position = new Vector2(i * 12, 0), // TODO: spacing
-                Scale = new Vector2(0.35f), // TODO: investigate scale?
+                Scale = deafult_scale, // TODO: investigate scale?
                 Blending = BlendingParameters.Additive,
             };
 
@@ -49,6 +53,48 @@ public partial class StarDifficultyDisplay : PoolableDrawable
             skin.SourceChanged += onSkinChanged;
 
         onSkinChanged(); // update textures initially
+    }
+
+    private static readonly Vector2 deafult_scale = new Vector2(0.35f);
+
+    private static readonly Colour4 active_colour = Colour4.White;
+    private static readonly Colour4 inactive_colour = Colour4.White.Opacity(30 / 255f);
+
+    private const float fade_duration = 600;
+    private const float scale_duration = 500;
+
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        Current.BindValueChanged(v =>
+        {
+            double value = v.NewValue;
+
+            // TODO: this animation is not exactly faithful to the stable's implementation.
+            for (int i = 0; i < stars.Length; i++)
+            {
+                var star = stars[i];
+
+                // fully displayed star
+                Colour4 target_colour;
+                Vector2 target_scale;
+
+                if (i < value)
+                {
+                    target_colour = active_colour;
+                    target_scale = deafult_scale;
+                }
+                else
+                {
+                    target_colour = inactive_colour;
+                    target_scale = deafult_scale * 0.6f;
+                }
+
+                star.FadeColour(target_colour, fade_duration)
+                    .ScaleTo(target_scale, scale_duration, Easing.OutBack);
+            }
+        }, true);
     }
 
     private void onSkinChanged()
