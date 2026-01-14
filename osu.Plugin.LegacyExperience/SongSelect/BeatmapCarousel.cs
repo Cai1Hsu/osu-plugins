@@ -188,7 +188,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         delayedScheduler.Update();
     }
 
-    private void makePanelsAppearFromEdge()
+    private void makePanelsAppearFromScreenRightEdge()
     {
         var scrollChildren = Scroll.Panels.Children;
 
@@ -218,7 +218,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         // trigger recalculation of items' Y positions
         // x position calculation requires proper Y positions
         get_selection_valid(this).Invalidate();
-        delayedScheduler.Add(makePanelsAppearFromEdge);
+        delayedScheduler.Add(makePanelsAppearFromScreenRightEdge);
 
         return items;
     }
@@ -281,17 +281,18 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     }
 
     // Set a initial x position for newly created panels so that panels are visible when rapidly scrolling.
+    // FIXME: this broke "makePanelsAppearFromScreenRightEdge"
     private void setupPanel(LegacyPanel p)
     {
         // TODO: this is a approximation, we assume all new panels appears from the edge of the screen.
         // but this is not always true, e.g. when expand a beatmap set, new beatmaps appear from where the set was.
         // This tries to restore stable's behaviour, but there're still some panels popping in certain cases.
-        p.X = ScreenHorizontalEdgePanelOffsetX();
+        p.X = PanelOffsetXAtScreenHorizontalEdge();
     }
 
     private float visibleHalfHeight;
 
-    private float ScreenHorizontalEdgePanelOffsetX()
+    private float PanelOffsetXAtScreenHorizontalEdge()
     {
         return offsetX(1, visibleHalfHeight);
     }
