@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -13,6 +12,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Screens.SelectV2;
 using osu.Game.Skinning;
+using osuTK;
 using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
 using PanelV2 = osu.Game.Screens.SelectV2.Panel;
 
@@ -96,7 +96,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         onSkinSourceChanged();
     }
 
-    private float panelHeight = 103 * 0.6f;
+    private Vector2 panelSize = new Vector2(799, 103) * LegacyPanel.TextureScale;
 
     private void onSkinSourceChanged()
     {
@@ -111,7 +111,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         // texture should be non-null since we've packed a default one.
         Debug.Assert(backgroundTexture is not null);
 
-        panelHeight = backgroundTexture.DisplayHeight * LegacyPanel.TextureScale;
+        panelSize = backgroundTexture.DisplaySize * LegacyPanel.TextureScale;
 
         var filterAfterItemsChanged = get_filter_after_items_changed(this);
         filterAfterItemsChanged.Invalidate();
@@ -197,7 +197,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             if (child is not LegacyPanel panel)
                 continue;
 
-            panel.X = GetUndampedPanelXOffset(panel) + panel.DrawWidth;
+            panel.X = GetUndampedPanelXOffset(panel) + panelSize.X;
         }
     }
 
@@ -211,7 +211,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         var items = await base.FilterAsync(clearExistingPanels);
 
         foreach (var item in items)
-            item.DrawHeight = panelHeight;
+            item.DrawHeight = panelSize.Y;
 
         // trigger recalculation of items' Y positions
         // x position calculation requires proper Y positions
