@@ -1,14 +1,18 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using osu.Framework.Allocation;
 using osu.Framework.Caching;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Screens.SelectV2;
 using osu.Game.Skinning;
 using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
+using PanelV2 = osu.Game.Screens.SelectV2.Panel;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
@@ -22,6 +26,38 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     [Cached]
     private LegacyPanelColors panelColors { get; set; } = LegacyPanelColors.CreateDefault();
+
+    [BackgroundDependencyLoader]
+    private void load()
+    {
+        disposePanelV2Pools();
+    }
+
+    // These pools are used for SongSelectV2 panels, we don't need them anymore.
+    private static readonly ImmutableArray<FieldInfo> poolFields = typeof(BeatmapCarouselV2)
+        .GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+        .Where(f => typeof(IDrawablePool).IsAssignableFrom(f.FieldType) &&
+            f.FieldType.IsGenericType &&
+            f.FieldType.GetGenericTypeDefinition() == typeof(DrawablePool<>) &&
+            f.FieldType.GetGenericArguments()[0].IsSubclassOf(typeof(PanelV2)))
+        .ToImmutableArray();
+
+    private void disposePanelV2Pools()
+    {
+        foreach (var pool in poolFields)
+            dispose(pool);
+
+        void dispose(FieldInfo? fieldInfo)
+        {
+            Debug.Assert(fieldInfo is not null);
+
+            if (fieldInfo.GetValue(this) is not Drawable pool)
+                return;
+
+            RemoveInternal(pool, true); // dispose immediately to release resources
+            fieldInfo.SetValue(this, null); // remove reference
+        }
+    }
 
     protected override void LoadComplete()
     {
