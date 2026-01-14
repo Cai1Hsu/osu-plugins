@@ -16,6 +16,7 @@ using PanelV2 = osu.Game.Screens.SelectV2.Panel;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
+[Cached]
 public partial class BeatmapCarousel : BeatmapCarouselV2
 {
     [Resolved]

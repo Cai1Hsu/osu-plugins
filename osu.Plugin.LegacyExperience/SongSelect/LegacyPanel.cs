@@ -8,6 +8,7 @@ using osuTK;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Plugins;
+using osu.Framework.Input.Events;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
@@ -40,6 +41,9 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
 
     [Resolved]
     private TextureStore? textures { get; set; }
+
+    [Resolved]
+    private BeatmapCarousel? carousel { get; set; }
 
     protected LegacyPanelColors PanelColors { get; set; } = null!;
 
@@ -93,6 +97,12 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
         return skin?.GetTexture("menu-button-background")
             // Argon/Triangle skins don't look up legacy textures, so we make a copy and retrieve from the texture store.
             ?? textures?.GetAutoSized("UI/menu-button-background");
+    }
+
+    protected override bool OnClick(ClickEvent e)
+    {
+        carousel?.Activate(Item!);
+        return true;
     }
 
     public virtual void Activated()
