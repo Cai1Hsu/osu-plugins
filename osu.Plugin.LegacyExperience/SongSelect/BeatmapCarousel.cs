@@ -37,6 +37,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     // Although V2's panels are more varied, I think 100 is enough.
     private const int pool_capacity = 100;
 
+    public new GroupedBeatmapSet? ExpandedBeatmapSet => base.ExpandedBeatmapSet;
+
     private BeatmapCarouselFilterGrouping grouping = null!;
 
     public BeatmapCarousel()

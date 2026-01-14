@@ -43,17 +43,17 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
     [Resolved]
     private TextureStore? textures { get; set; }
 
-    [Resolved]
-    private BeatmapCarousel? carousel { get; set; }
+    protected BeatmapCarousel? Carousel { get; private set; }
 
     protected LegacyPanelColors PanelColors { get; set; } = null!;
 
     private Sprite backgroundSprite = null!;
 
     [BackgroundDependencyLoader]
-    private void load(LegacyPanelColors colours)
+    private void load(LegacyPanelColors colours, BeatmapCarousel? carousel)
     {
         PanelColors = colours;
+        Carousel = carousel;
 
         AutoSizeAxes = Axes.Both;
 
@@ -102,7 +102,7 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
 
     protected override bool OnClick(ClickEvent e)
     {
-        carousel?.Activate(Item!);
+        Carousel?.Activate(Item!);
         return true;
     }
 
