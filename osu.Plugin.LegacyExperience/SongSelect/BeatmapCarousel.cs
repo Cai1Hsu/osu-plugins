@@ -35,10 +35,15 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     // Although V2's panels are more varied, I think 100 is enough.
     private const int pool_capacity = 100;
 
+    private BeatmapCarouselFilterGrouping grouping = null!;
+
     public BeatmapCarousel()
     {
         AddInternal(starDifficultyPool);
     }
+
+    private static readonly FieldInfo groupingField = typeof(BeatmapCarouselV2)
+        .GetField("grouping", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
     [BackgroundDependencyLoader]
     private void load()
@@ -47,6 +52,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         AddInternal(groupPanelPool = new DrawablePool<LegacyGroupPanel>(pool_capacity));
         AddInternal(beatmapPanelPool = new DrawablePool<LegacyBeatmapPanel>(pool_capacity));
+
+        grouping = (BeatmapCarouselFilterGrouping)groupingField.GetValue(this)!;
+
+        Debug.Assert(grouping is not null);
     }
 
     // These pools are used for SongSelectV2 panels, we don't need them anymore.
@@ -223,6 +232,63 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
 
         throw new InvalidOperationException($"Unsupported model type: {item.Model?.GetType()}");
+    }
+
+    protected override void HandleItemActivated(CarouselItem item)
+    {
+        base.HandleItemActivated(item);
+
+        switch (item.Model)
+        {
+            case GroupDefinition group:
+                if (grouping.GroupItems.TryGetValue(group, out var items))
+                {
+                    foreach (var i in items.Where(i => i.Model is GroupedBeatmapSet))
+                        i.IsVisible &= !i.IsExpanded;
+                }
+                break;
+
+
+            case GroupedBeatmapSet:
+                item.IsVisible = false;
+                break;
+            default:
+                break;
+        }
+    }
+
+    protected override void HandleItemSelected(object? model)
+    {
+        // align with stable's behaviour:
+        // Hide beatmap set item when one of its beatmaps is selected(set expanded).
+        // TODO: there's still one difference: if a beatmap set has only one beatmap,
+        // stable treats the single beatmap directly as a set item, thus no hiding occurs.
+        bool handleBeatmapSetExpansion = grouping.BeatmapSetsGroupedTogether && model is GroupedBeatmap;
+
+        // restore visibility of previous 
+        if (handleBeatmapSetExpansion && ExpandedBeatmapSet is not null)
+        {
+            bool isInSameGroup = (model as GroupedBeatmap)?.Group == ExpandedBeatmapSet.Group;
+            setVisibilityOfSetItem(ExpandedBeatmapSet, i => i.IsVisible |= i.IsExpanded && isInSameGroup);
+        }
+
+        base.HandleItemSelected(model);
+
+        // hide newly expanded set item
+        if (handleBeatmapSetExpansion && ExpandedBeatmapSet is not null)
+            setVisibilityOfSetItem(ExpandedBeatmapSet, static i => i.IsVisible = false);
+    }
+
+    private void setVisibilityOfSetItem(GroupedBeatmapSet set, Action<CarouselItem> action)
+    {
+        if (grouping.SetItems.TryGetValue(set, out var items))
+        {
+            foreach (var item in items)
+            {
+                if (item.Model is GroupedBeatmapSet)
+                    action(item);
+            }
+        }
     }
 
     protected override void Dispose(bool isDisposing)
