@@ -11,7 +11,7 @@ using osu.Game.Plugins;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
-public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
+public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
 {
     internal const float TextureScale = 0.6f * 1.6f;
 
