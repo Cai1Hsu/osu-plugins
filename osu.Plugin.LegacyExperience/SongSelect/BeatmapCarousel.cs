@@ -27,9 +27,17 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     [Cached]
     private LegacyPanelColors panelColors { get; set; } = LegacyPanelColors.CreateDefault();
 
+    [Cached]
+    private DrawablePool<StarDifficultyDisplay> starDifficultyPool { get; set; } = new DrawablePool<StarDifficultyDisplay>(20);
+
     // SongSelectV2's capacity is 100 foreach panel type.
     // Although V2's panels are more varied, I think 100 is enough.
     private const int pool_capacity = 100;
+
+    public BeatmapCarousel()
+    {
+        AddInternal(starDifficultyPool);
+    }
 
     [BackgroundDependencyLoader]
     private void load()
