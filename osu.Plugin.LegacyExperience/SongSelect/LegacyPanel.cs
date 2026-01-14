@@ -108,6 +108,7 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
 
     public virtual void Activated()
     {
+        backgroundSprite.FlashColour(PanelColors.White, 200, Easing.Out);
     }
 
     protected override void PrepareForUse()
