@@ -23,7 +23,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     private OsuSpriteText difficultyText = null!;
     private StarDifficultyDisplay? starDisplay = null!;
 
-    private PanelBeatmapCover cover = null!;
+    private PanelBeatmapCoverContainer cover = null!;
     private Container playInfoContainer = null!;
     private Container beatmapInfoContainer = null!;
 
@@ -67,7 +67,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
                 new Drawable[]
                 {
                     // container used to display the cover image
-                    cover = new PanelBeatmapCover
+                    cover = new PanelBeatmapCoverContainer
                     {
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
@@ -304,14 +304,22 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
     public record PanelDisplayPolicy(RomanisableString Title, RomanisableString Artist, string? DifficultyName, string? Mapper, BeatmapInfo? Beatmap, bool HasStarRating);
 
-    private partial class PanelBeatmapCover : Container
+    private partial class PanelBeatmapCoverContainer : Container
     {
-        private Sprite sprite = null!;
-
-        [BackgroundDependencyLoader]
-        private void load()
+        public void ClearBackground()
         {
-            AddInternal(sprite = new Sprite
+            Clear(true);
+            loadCancellationSource?.Cancel();
+        }
+
+        private CancellationTokenSource? loadCancellationSource;
+
+        public void UpdateBackground(WorkingBeatmap working)
+        {
+            ClearBackground();
+            loadCancellationSource = new CancellationTokenSource();
+
+            LoadComponentAsync(new BeatmapCoverSprite(working)
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
@@ -319,19 +327,28 @@ public partial class LegacyBeatmapPanel : LegacyPanel
                 RelativeSizeAxes = Axes.Both,
                 Size = Vector2.One,
                 Alpha = 0,
-            });
+            }, s =>
+            {
+                AddInternal(s);
+                s.FadeIn(200, Easing.Out);
+            }, loadCancellationSource.Token);
         }
 
-        public void ClearBackground()
+        private partial class BeatmapCoverSprite : Sprite
         {
-            sprite.Texture = null;
-            sprite.FadeOut(200);
-        }
+            private WorkingBeatmap? working;
 
-        public void UpdateBackground(WorkingBeatmap working)
-        {
-            sprite.FadeIn(200);
-            sprite.Texture = working.GetBackground();
+            public BeatmapCoverSprite(WorkingBeatmap working)
+            {
+                this.working = working;
+            }
+
+            [BackgroundDependencyLoader]
+            private void load()
+            {
+                if (working is not null)
+                    Texture = working.GetBackground();
+            }
         }
     }
 }
