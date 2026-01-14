@@ -11,6 +11,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     private OsuSpriteText titleText = null!;
     private OsuSpriteText artistText = null!;
     private OsuSpriteText difficultyText = null!;
+    private StarDifficultyDisplay starDisplay = null!;
 
     [BackgroundDependencyLoader]
     private void load()
@@ -46,6 +47,14 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             // Text = "Difficulty Name",
         });
 
-        // TODO: add star difficulty displays
+        // TODO: pool it, beapmap sets panel don't need it
+        AddInternal(starDisplay = new StarDifficultyDisplay
+        {
+            Anchor = Anchor.CentreLeft,
+            Origin = Anchor.TopLeft,
+            // stable uses 7 as Y offset.
+            // We tweaked it to 12 for better visual alignment in lazer
+            Position = new Vector2(75f, 12f) * LegacyExperiencePlugin.StableRatio,
+        });
     }
 }
