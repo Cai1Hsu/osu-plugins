@@ -33,8 +33,18 @@ public partial class LegacyGroupPanel : LegacyPanel
 
         Debug.Assert(Item is not null);
 
-        titleText.Text = GetGroupTitle(Item.Model) ?? string.Empty;
+        titleText.Text = FormatGroupTitle(Item.Model) ?? string.Empty;
         titleText.Colour = PanelColors.InactiveText;
+    }
+
+    protected virtual LocalisableString? FormatGroupTitle(object? model)
+    {
+        var title = GetGroupTitle(model);
+
+        if (title is null)
+            return null;
+
+        return LocalisableString.Format("{0} ({1} maps)", title, Item?.NestedItemCount ?? 0);
     }
 
     protected virtual LocalisableString? GetGroupTitle(object? model)
