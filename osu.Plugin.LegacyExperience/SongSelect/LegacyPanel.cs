@@ -24,7 +24,7 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
     // Legacy carousel managed, used for bypass Carousel's damping
     public double DrawYPosition { get; set; }
 
-    public double OsuDrawYPosition
+    public double SelectV2DrawYPosition
     {
         get => ((ICarouselPanel)this).DrawYPosition;
         set => ((ICarouselPanel)this).DrawYPosition = value;

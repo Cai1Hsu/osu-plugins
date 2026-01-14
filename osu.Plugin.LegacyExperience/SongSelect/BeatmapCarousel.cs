@@ -157,15 +157,15 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                     targetY -= hover_expand_amount_y;
             }
 
-            double currentY = panel.OsuDrawYPosition == item.CarouselYPosition
-                ? panel.OsuDrawYPosition // newly added panels
+            double currentY = panel.SelectV2DrawYPosition == item.CarouselYPosition
+                ? panel.SelectV2DrawYPosition // newly added panels
                 : panel.DrawYPosition; // our managed Y position, used to bypass Carousel's damping
 
             double offsetY = targetY - currentY;
             offsetY *= dampingFactor;
 
-            panel.OsuDrawYPosition = targetY - offsetY;
-            panel.DrawYPosition = panel.OsuDrawYPosition;
+            panel.SelectV2DrawYPosition = targetY - offsetY;
+            panel.DrawYPosition = panel.SelectV2DrawYPosition;
         }
     }
 
