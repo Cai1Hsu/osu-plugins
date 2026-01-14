@@ -30,6 +30,13 @@ public partial class LegacyGroupPanel : LegacyPanel
         Expanded.BindValueChanged(_ => updatePanelState(), true);
     }
 
+    protected override void SkinChanged()
+    {
+        base.SkinChanged();
+
+        updatePanelState();
+    }
+
     private void updatePanelState()
     {
         titleText.Colour = Expanded.Value || Selected.Value ? PanelColors.ActiveText : PanelColors.InactiveText;

@@ -135,6 +135,12 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         Expanded.BindValueChanged(_ => updatePanelState(), true);
     }
 
+    protected override void SkinChanged()
+    {
+        base.SkinChanged();
+
+        updatePanelState();
+    }
 
     private void updatePanelState()
     {

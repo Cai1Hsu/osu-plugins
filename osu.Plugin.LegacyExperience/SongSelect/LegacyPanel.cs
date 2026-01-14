@@ -65,13 +65,13 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
             // TODO: investigate how background's color is determined
         });
 
-        skinChanged();
+        SkinChanged();
 
         if (skin is not null)
-            skin.SourceChanged += skinChanged;
+            skin.SourceChanged += SkinChanged;
     }
 
-    void skinChanged()
+    protected virtual void SkinChanged()
     {
         // TODO: Song select requires dynamic textures loading when skin changes
         // SkinnableSprite doestn't scale with @2x, so we manually retrieve the texture here.
@@ -127,6 +127,6 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
         base.Dispose(isDisposing);
 
         if (skin is not null)
-            skin.SourceChanged -= skinChanged;
+            skin.SourceChanged -= SkinChanged;
     }
 }
