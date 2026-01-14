@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -7,6 +8,7 @@ using osu.Framework.Caching;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Screens.SelectV2;
@@ -115,6 +117,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         filterAfterItemsChanged.Invalidate();
     }
 
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "selectionValid")]
+    private static extern ref Cached get_selection_valid(Carousel<BeatmapInfo> carousel);
+
     // FIXME: POC stage temporarily uses unsafe accessor
     // use reflection as some deploy platforms do not support UnsafeAccessor
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "filterAfterItemsChanged")]
@@ -122,7 +127,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private const float hover_expand_amount_y = 10;
 
-    private const float hover_expand_amount_x = 50;
+    private const float hover_expand_amount_x = 30;
 
     protected override void Update()
     {
@@ -177,7 +182,26 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             panel.SelectV2DrawYPosition = targetY - offsetY;
             panel.DrawYPosition = panel.SelectV2DrawYPosition;
         }
+
+        delayedScheduler.Update();
     }
+
+    private void makePanelsAppearFromEdge()
+    {
+        var scrollChildren = Scroll.Panels.Children;
+
+        for (int i = 0; i < scrollChildren.Count; i++)
+        {
+            var child = scrollChildren[i];
+
+            if (child is not LegacyPanel panel)
+                continue;
+
+            panel.X = GetUndampedPanelXOffset(panel) + panel.DrawWidth;
+        }
+    }
+
+    private Scheduler delayedScheduler = new Scheduler();
 
     protected override float GetSpacingBetweenPanels(CarouselItem previousVisible, CarouselItem bottom)
         => 0; // seems good enough, maybe reference for stable later
@@ -189,27 +213,44 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         foreach (var item in items)
             item.DrawHeight = panelHeight;
 
+        // trigger recalculation of items' Y positions
+        // x position calculation requires proper Y positions
+        get_selection_valid(this).Invalidate();
+        delayedScheduler.Add(makePanelsAppearFromEdge);
+
         return items;
+    }
+
+    public float GetUndampedPanelXOffset(LegacyPanel panel)
+    {
+        var xPosition = base.GetPanelXOffset(panel);
+
+        if (panel.IsHovered)
+            xPosition -= hover_expand_amount_x;
+
+        return xPosition;
+    }
+
+    public float GetPanelXOffset(LegacyPanel panel)
+    {
+        var xPosition = GetUndampedPanelXOffset(panel);
+
+        float currentX = panel.X;
+        double frameRatio = Time.Elapsed / (1000 / 60f);
+        float offsetX = xPosition - currentX;
+        offsetX *= (float)Math.Pow(0.95, frameRatio);
+
+        xPosition -= offsetX;
+
+        return xPosition;
     }
 
     protected override float GetPanelXOffset(Drawable panel)
     {
-        var xPosition = base.GetPanelXOffset(panel);
-
         if (panel is LegacyPanel legacyPanel)
-        {
-            if (panel.IsHovered)
-                xPosition -= hover_expand_amount_x;
+            return GetPanelXOffset(legacyPanel);
 
-            float currentX = legacyPanel.X;
-            double frameRatio = Time.Elapsed / (1000 / 60f);
-            float offsetX = xPosition - currentX;
-            offsetX *= (float)Math.Pow(0.95, frameRatio);
-
-            xPosition -= offsetX;
-        }
-
-        return xPosition;
+        return base.GetPanelXOffset(panel);
     }
 
     private DrawablePool<LegacyGroupPanel> groupPanelPool = null!;

@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Plugins;
 using osu.Framework.Input.Events;
+using System.Diagnostics;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
@@ -113,6 +114,11 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
     {
         // returning to pool makes it invisible, so fade in on next use.
         this.FadeIn();
+
+        Debug.Assert(Item is not null);
+
+        // TODO: calculate a proper X position
+        Y = (float)(DrawYPosition = Item.CarouselYPosition);
     }
 
     protected override void Dispose(bool isDisposing)
