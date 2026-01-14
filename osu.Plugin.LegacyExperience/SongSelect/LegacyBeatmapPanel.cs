@@ -153,7 +153,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         artistText.Colour = textColor;
         difficultyText.Colour = textColor;
 
-        var coverColor = isActivated ? PanelColors.White : PanelColors.InactiveCover;
+        var coverColor = isActivated || activatedBySet ? PanelColors.White : PanelColors.InactiveCover;
 
         cover.FadeColour(coverColor, 300);
     }
