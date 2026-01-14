@@ -199,7 +199,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         background_update_task = null;
     }
 
-    private const float background_update_debounce = 500; // will this be too long?
+    private const float background_update_debounce = 350;
     private ScheduledDelegate? background_update_task;
 
     protected override void PrepareForUse()
