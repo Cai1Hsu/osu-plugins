@@ -1,10 +1,11 @@
 using osu.Framework.Graphics;
 using osu.Framework.Testing;
+using osu.Game.Graphics.Carousel;
 using osu.Game.Skinning;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
-public partial class TestSceneLegacyPanel : LocalSkinTestScene
+public partial class TestSceneLegacyGroupPanel : LocalSkinTestScene
 {
     private SkinProvidingContainer skinProvidingContainer = null!;
     private LegacyPanel? panel = null;
@@ -22,10 +23,11 @@ public partial class TestSceneLegacyPanel : LocalSkinTestScene
         {
             skinProvidingContainer.Clear();
 
-            skinProvidingContainer.Add(panel = new LegacyPanel
+            skinProvidingContainer.Add(panel = new LegacyGroupPanel
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
+                Item = new CarouselItem("Test group")
             });
         });
     }
