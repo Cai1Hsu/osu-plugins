@@ -99,6 +99,12 @@ public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
     {
     }
 
+    protected override void PrepareForUse()
+    {
+        // returning to pool makes it invisible, so fade in on next use.
+        this.FadeIn();
+    }
+
     protected override void Dispose(bool isDisposing)
     {
         base.Dispose(isDisposing);
