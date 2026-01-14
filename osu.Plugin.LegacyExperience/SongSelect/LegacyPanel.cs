@@ -6,6 +6,8 @@ using osu.Game.Graphics.Carousel;
 using osu.Game.Skinning;
 using osuTK;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.Textures;
+using osu.Game.Plugins;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
@@ -35,6 +37,9 @@ public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
 
     [Resolved]
     private ISkinSource? skin { get; set; }
+
+    [Resolved]
+    private TextureStore? textures { get; set; }
 
     protected LegacyPanelColors PanelColors { get; set; } = null!;
 
@@ -66,7 +71,7 @@ public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
         // TODO: Song select requires dynamic textures loading when skin changes
         // SkinnableSprite doestn't scale with @2x, so we manually retrieve the texture here.
         // This is a temporary workaround to make size correct.
-        var texture = skin?.GetTexture("menu-button-background");
+        var texture = GetBackgroundTexture(skin, textures);
 
         const float background_fade_duration = 100;
 
@@ -81,6 +86,13 @@ public partial class LegacyPanel : PoolableDrawable, ICarouselPanel
             backgroundSprite.FadeOut(background_fade_duration);
             backgroundSprite.Size = new Vector2(799, 103) * TextureScale; // default texture size
         }
+    }
+
+    public static Texture? GetBackgroundTexture(ISkinSource? skin, TextureStore? textures)
+    {
+        return skin?.GetTexture("menu-button-background")
+            // Argon/Triangle skins don't look up legacy textures, so we make a copy and retrieve from the texture store.
+            ?? textures?.GetAutoSized("UI/menu-button-background");
     }
 
     public virtual void Activated()

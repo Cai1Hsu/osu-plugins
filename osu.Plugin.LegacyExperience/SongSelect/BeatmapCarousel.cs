@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using osu.Framework.Allocation;
 using osu.Framework.Caching;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Textures;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Screens.SelectV2;
@@ -14,6 +16,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 {
     [Resolved]
     private ISkinSource? skin { get; set; }
+
+    [Resolved]
+    private TextureStore? textures { get; set; }
 
     [Cached]
     private LegacyPanelColors panelColors { get; set; } = LegacyPanelColors.CreateDefault();
@@ -38,10 +43,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     void updatePanelBackground()
     {
-        var backgroundTexture = skin?.GetTexture("menu-button-background");
+        var backgroundTexture = LegacyPanel.GetBackgroundTexture(skin, textures);
 
-        if (backgroundTexture is null)
-            return;
+        // texture should be non-null since we've packed a default one.
+        Debug.Assert(backgroundTexture is not null);
 
         panelHeight = backgroundTexture.DisplayHeight * LegacyPanel.TextureScale;
 
