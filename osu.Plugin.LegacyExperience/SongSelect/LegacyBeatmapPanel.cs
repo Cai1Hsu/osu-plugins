@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -136,13 +137,17 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
     private void updatePanelState()
     {
-        bool isActivated = Expanded.Value || Selected.Value ||
+        bool isActivated = Expanded.Value || Selected.Value;
+        bool activatedBySet = !isActivated &&
             // FIXME:
             // When not grouped, only beatmaps from expanded set are displayed.
             // However, when beatmaps are grouped, this is unable to determine if the beatmap is from an expanded set.
-            (Item?.Model is GroupedBeatmap grouped && grouped.Group is null);
+            Item?.Model is GroupedBeatmap grouped && grouped.Group is null;
 
-        var textColor = isActivated ? PanelColors.ActiveText : PanelColors.InactiveText;
+        // match stable's behavior:
+        // // panels from expanded set but not selected looks darker than even inactive panels.
+        var textColor = isActivated ? PanelColors.ActiveText :
+                        activatedBySet ? PanelColors.InactiveTextFaded : PanelColors.InactiveText;
 
         titleText.Colour = textColor;
         artistText.Colour = textColor;
