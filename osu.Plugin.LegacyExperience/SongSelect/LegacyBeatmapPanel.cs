@@ -139,7 +139,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     {
         base.SkinChanged();
 
-        updatePanelState();
+        Scheduler.Add(updatePanelState);
     }
 
     private void updatePanelState()

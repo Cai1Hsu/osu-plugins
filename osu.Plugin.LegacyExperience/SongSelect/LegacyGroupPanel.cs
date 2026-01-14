@@ -34,7 +34,7 @@ public partial class LegacyGroupPanel : LegacyPanel
     {
         base.SkinChanged();
 
-        updatePanelState();
+        Scheduler.Add(updatePanelState);
     }
 
     private void updatePanelState()
