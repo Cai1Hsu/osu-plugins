@@ -32,6 +32,7 @@ public class LegacyPanelColors
     private static readonly Color4 Colour_LightBlue = Lighten2(Colour_Blue, 0.3f);
     private static readonly Color4 Colour_White = new Color4(255, 255, 255, 220);
     private static readonly Color4 Colour_NewBeatmap = Color4.MediumSlateBlue.Opacity(240 / 255f);
+    private static readonly Color4 Colour_InactiveCover = new Color4(50, 50, 50, 255);
 
     public Color4 Active => Colour_Active;
     public Color4 Inactive => Colour_Inactive;
@@ -42,6 +43,7 @@ public class LegacyPanelColors
     public Color4 LightBlue => Colour_LightBlue;
     public Color4 White => Colour_White;
     public Color4 NewBeatmap => Colour_NewBeatmap;
+    public Color4 InactiveCover => Colour_InactiveCover;
     public Color4 ActiveText { get; private set; }
     public Color4 InactiveText { get; private set; }
     public Color4 InactiveTextFaded { get; private set; }

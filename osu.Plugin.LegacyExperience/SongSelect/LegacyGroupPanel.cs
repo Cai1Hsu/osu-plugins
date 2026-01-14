@@ -25,6 +25,14 @@ public partial class LegacyGroupPanel : LegacyPanel
             Position = new Vector2(15f, 0f) * LegacyExperiencePlugin.StableRatio,
             AllowMultiline = false,
         });
+
+        Selected.BindValueChanged(_ => updatePanelState());
+        Expanded.BindValueChanged(_ => updatePanelState(), true);
+    }
+
+    private void updatePanelState()
+    {
+        titleText.Colour = Expanded.Value || Selected.Value ? PanelColors.ActiveText : PanelColors.InactiveText;
     }
 
     protected override void PrepareForUse()

@@ -128,6 +128,29 @@ public partial class LegacyBeatmapPanel : LegacyPanel
                 }
             }
         });
+
+        Selected.BindValueChanged(_ => updatePanelState());
+        Expanded.BindValueChanged(_ => updatePanelState(), true);
+    }
+
+
+    private void updatePanelState()
+    {
+        bool isActivated = Expanded.Value || Selected.Value ||
+            // FIXME:
+            // When not grouped, only beatmaps from expanded set are displayed.
+            // However, when beatmaps are grouped, this is unable to determine if the beatmap is from an expanded set.
+            (Item?.Model is GroupedBeatmap grouped && grouped.Group is null);
+
+        var textColor = isActivated ? PanelColors.ActiveText : PanelColors.InactiveText;
+
+        titleText.Colour = textColor;
+        artistText.Colour = textColor;
+        difficultyText.Colour = textColor;
+
+        var coverColor = isActivated ? PanelColors.White : PanelColors.InactiveCover;
+
+        cover.FadeColour(coverColor, 300);
     }
 
     private void clearStarDifficultyDisplay()
@@ -190,6 +213,9 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         }
 
         // TODO: update play info
+        updatePanelState();
+
+        FinishTransforms(true);
     }
 
     private IBindable<StarDifficulty>? starDifficultyBindable;
