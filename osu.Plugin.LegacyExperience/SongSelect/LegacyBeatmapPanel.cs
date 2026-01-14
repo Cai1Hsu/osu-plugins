@@ -7,6 +7,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
+using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
@@ -188,7 +189,12 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         clearStarDifficultyComputation();
         clearStarDifficultyDisplay();
         cover.ClearBackground();
+        background_update_task?.Cancel();
+        background_update_task = null;
     }
+
+    private const float background_update_debounce = 500; // will this be too long?
+    private ScheduledDelegate? background_update_task;
 
     protected override void PrepareForUse()
     {
@@ -214,7 +220,10 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
         if (displayPolicy.Beatmap is not null && beatmaps is not null)
         {
-            Scheduler.AddDelayed(s => cover.UpdateBackground(beatmaps.GetWorkingBeatmap(s)), displayPolicy.Beatmap, 50);
+            background_update_task = Scheduler.AddDelayed(
+                s => cover.UpdateBackground(beatmaps.GetWorkingBeatmap(s)),
+                displayPolicy.Beatmap,
+                background_update_debounce);
         }
 
         // TODO: update play info
@@ -311,17 +320,32 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
     private partial class PanelBeatmapCoverContainer : Container
     {
+        private WorkingBeatmap? working;
+
         public void ClearBackground()
         {
             Clear(true);
             loadCancellationSource?.Cancel();
+            working = null;
         }
 
         private CancellationTokenSource? loadCancellationSource;
 
         public void UpdateBackground(WorkingBeatmap working)
         {
+            // same background, no need to update
+            if ((this.working is not null || working is not null) &&
+                // SongSelectV2 use this simple way to determine if using the same background
+                (getBackgroundFileHash(this.working) == getBackgroundFileHash(working)))
+                return;
+
+            this.working = working;
+
             ClearBackground();
+
+            if (working is null)
+                return;
+
             loadCancellationSource = new CancellationTokenSource();
 
             LoadComponentAsync(new BeatmapCoverSprite(working)
@@ -331,12 +355,16 @@ public partial class LegacyBeatmapPanel : LegacyPanel
                 FillMode = FillMode.Fill,
                 RelativeSizeAxes = Axes.Both,
                 Size = Vector2.One,
-                Alpha = 0,
             }, s =>
             {
                 AddInternal(s);
-                s.FadeIn(200, Easing.Out);
+                s.FadeInFromZero(400);
             }, loadCancellationSource.Token);
+        }
+
+        private static string? getBackgroundFileHash(WorkingBeatmap? working)
+        {
+            return working?.BeatmapSetInfo.GetFile(working.Metadata.BackgroundFile)?.File.Hash;
         }
 
         private partial class BeatmapCoverSprite : Sprite
