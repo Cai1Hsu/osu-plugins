@@ -27,10 +27,17 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     [Cached]
     private LegacyPanelColors panelColors { get; set; } = LegacyPanelColors.CreateDefault();
 
+    // SongSelectV2's capacity is 100 foreach panel type.
+    // Although V2's panels are more varied, I think 100 is enough.
+    private const int pool_capacity = 100;
+
     [BackgroundDependencyLoader]
     private void load()
     {
         disposePanelV2Pools();
+
+        AddInternal(groupPanelPool = new DrawablePool<LegacyGroupPanel>(pool_capacity));
+        AddInternal(beatmapPanelPool = new DrawablePool<LegacyBeatmapPanel>(pool_capacity));
     }
 
     // These pools are used for SongSelectV2 panels, we don't need them anymore.
@@ -187,20 +194,23 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         return xPosition;
     }
 
+    private DrawablePool<LegacyGroupPanel> groupPanelPool = null!;
+    private DrawablePool<LegacyBeatmapPanel> beatmapPanelPool = null!;
+
     protected override Drawable GetDrawableForDisplay(CarouselItem item)
     {
-        // TODO: pool and select corresponding LegacyPanel type based on item's model
+        // TODO: reset state when reusing from pool
         switch (item.Model)
         {
             case RankedStatusGroupDefinition:
             case StarDifficultyGroupDefinition:
             case RankDisplayGroupDefinition:
             case GroupDefinition:
-                return new LegacyGroupPanel();
+                return groupPanelPool.Get();
 
             case GroupedBeatmap:
             case GroupedBeatmapSet:
-                return new LegacyBeatmapPanel();
+                return beatmapPanelPool.Get();
         }
 
         throw new InvalidOperationException($"Unsupported model type: {item.Model?.GetType()}");
