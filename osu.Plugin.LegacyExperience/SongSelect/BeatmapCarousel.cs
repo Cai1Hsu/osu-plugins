@@ -227,12 +227,22 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     public float GetUndampedPanelXOffset(LegacyPanel panel)
     {
-        var xPosition = base.GetPanelXOffset(panel);
+        Vector2 posInScroll = Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre);
+        var xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop);
 
         if (panel.IsHovered)
             xPosition -= hover_expand_amount_x;
 
-        return xPosition;
+        return (float)xPosition;
+    }
+
+    private double itemXOffsetByYPosition(double yPosition)
+    {
+        // The following model from stable assume panels anchor and origin is Left-sided,
+        // But in lazer, we've set panels to TopRight anchor and origin.
+        double stable_panel_offset = (640 - panelSize.X) * LegacyExperiencePlugin.StableRatio;
+
+        return Math.Min(200.0, Math.Abs((1f - yPosition / visibleHalfHeight) * 75.0)) - stable_panel_offset;
     }
 
     private double frameRatio;
@@ -265,6 +275,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     protected override Drawable GetDrawableForDisplay(CarouselItem item)
     {
+        float panelInitialXPosition = (float)itemXOffsetByYPosition(item.CarouselYPosition + BleedTop);
+
+        void setup(Drawable d) => d.X = panelInitialXPosition;
+
         // TODO: reset state when reusing from pool
         switch (item.Model)
         {
@@ -272,41 +286,17 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             case StarDifficultyGroupDefinition:
             case RankDisplayGroupDefinition:
             case GroupDefinition:
-                return groupPanelPool.Get(setupPanel);
+                return groupPanelPool.Get(setup);
 
             case GroupedBeatmap:
             case GroupedBeatmapSet:
-                return beatmapPanelPool.Get(setupPanel);
+                return beatmapPanelPool.Get(setup);
         }
 
         throw new InvalidOperationException($"Unsupported model type: {item.Model?.GetType()}");
     }
 
-    // Set a initial x position for newly created panels so that panels are visible when rapidly scrolling.
-    // FIXME: this broke "makePanelsAppearFromScreenRightEdge"
-    private void setupPanel(LegacyPanel p)
-    {
-        // TODO: this is a approximation, we assume all new panels appears from the edge of the screen.
-        // but this is not always true, e.g. when expand a beatmap set, new beatmaps appear from where the set was.
-        // This tries to restore stable's behaviour, but there're still some panels popping in certain cases.
-        p.X = PanelOffsetXAtScreenHorizontalEdge();
-    }
-
     private float visibleHalfHeight;
-
-    private float PanelOffsetXAtScreenHorizontalEdge()
-    {
-        return offsetX(1, visibleHalfHeight);
-    }
-
-    // Carousel<T>'s internal positioning model
-    private static float offsetX(float dist, float halfHeight)
-    {
-        // The radius of the circle the carousel moves on.
-        const float circle_radius = 3;
-        float discriminant = MathF.Max(0, circle_radius * circle_radius - dist * dist);
-        return (circle_radius - MathF.Sqrt(discriminant)) * halfHeight;
-    }
 
     protected override void HandleItemActivated(CarouselItem item)
     {
