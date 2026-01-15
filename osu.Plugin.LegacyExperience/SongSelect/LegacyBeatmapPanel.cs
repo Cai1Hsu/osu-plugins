@@ -145,7 +145,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     private void updatePanelState()
     {
         bool isActivated = Expanded.Value || Selected.Value;
-        bool activatedBySet = !isActivated && isFromExpandedBeatmapSet();
+        bool activatedBySet = !isActivated && (Carousel?.IsBeatmapPanelFromExpandedSet(this) ?? false);
 
         // match stable's behavior:
         // panels from expanded set but not selected looks darker than even inactive panels.
@@ -159,22 +159,6 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         var coverColor = isActivated || activatedBySet ? PanelColors.White : PanelColors.InactiveCover;
 
         cover.FadeColour(coverColor, 300);
-    }
-
-    private bool isFromExpandedBeatmapSet()
-    {
-        if (Item?.Model is not GroupedBeatmap groupedBeatmap)
-            return false;
-
-        // When not grouped, only beatmaps from expanded set are displayed.
-        if (groupedBeatmap.Group is null)
-            return true;
-
-        if (groupedBeatmap.Beatmap.BeatmapSet is null)
-            return false;
-
-        // reference equals is enough
-        return groupedBeatmap.Beatmap.BeatmapSet.Equals(Carousel?.ExpandedBeatmapSet?.BeatmapSet);
     }
 
     private void clearStarDifficultyDisplay()

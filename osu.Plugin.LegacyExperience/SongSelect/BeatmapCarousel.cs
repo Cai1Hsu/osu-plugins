@@ -37,8 +37,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     // Although V2's panels are more varied, I think 100 is enough.
     private const int pool_capacity = 100;
 
-    public new GroupedBeatmapSet? ExpandedBeatmapSet => base.ExpandedBeatmapSet;
-
     private BeatmapCarouselFilterGrouping grouping = null!;
 
     public BeatmapCarousel()
@@ -377,6 +375,24 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             default:
                 break;
         }
+    }
+
+    public bool IsBeatmapPanelFromExpandedSet(LegacyBeatmapPanel panel)
+    {
+        if (panel.Item is not CarouselItem item)
+            return false;
+
+        if (item.Model is not GroupedBeatmap beatmap)
+            return false;
+
+        // When not grouped, only beatmaps from expanded set are displayed.
+        if (beatmap.Group is null)
+            return true;
+
+        if (ExpandedBeatmapSet is null)
+            return false;
+
+        return ExpandedBeatmapSet.BeatmapSet.Equals(beatmap.Beatmap.BeatmapSet);
     }
 
     protected override void HandleItemSelected(object? model)
