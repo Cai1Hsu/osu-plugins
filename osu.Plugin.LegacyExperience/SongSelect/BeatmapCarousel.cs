@@ -186,6 +186,18 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             panel.SelectV2DrawYPosition = targetY - offsetY;
             panel.DrawYPosition = panel.SelectV2DrawYPosition;
         }
+    }
+
+    protected override void HandleFilterCompleted()
+    {
+        base.HandleFilterCompleted();
+
+        Scheduler.Add(() => delayedScheduler.Add(makePanelsAppearFromScreenRightEdge));
+    }
+
+    protected override void UpdateAfterChildren()
+    {
+        base.UpdateAfterChildren();
 
         delayedScheduler.Update();
     }
@@ -201,11 +213,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             if (child is not LegacyPanel panel)
                 continue;
 
-            panel.X = GetUndampedPanelXOffset(panel) + panelSize.X;
+            panel.X += panelSize.X;
         }
     }
 
-    private Scheduler delayedScheduler = new Scheduler();
+    private readonly Scheduler delayedScheduler = new Scheduler();
 
     protected override float GetSpacingBetweenPanels(CarouselItem previousVisible, CarouselItem bottom)
         => 0; // seems good enough, maybe reference for stable later
@@ -220,7 +232,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         // trigger recalculation of items' Y positions
         // x position calculation requires proper Y positions
         get_selection_valid(this).Invalidate();
-        delayedScheduler.Add(makePanelsAppearFromScreenRightEdge);
 
         return items;
     }
@@ -286,10 +297,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                     : tryGetGroupItemYPosition();
             }
 
-            float initialXPosition = (float)itemXOffsetByYPosition(initialYPosition ?? visibleHalfHeight);
             initialYPosition ??= item.CarouselYPosition;
+            float initialXPosition = (float)itemXOffsetByYPosition(initialYPosition.Value);
             p.SelectV2DrawYPosition = p.DrawYPosition = initialYPosition.Value;
-            p.Position = new Vector2(initialXPosition, (float)initialYPosition.Value);
+            delayedScheduler.Add(() => p.Position = new Vector2(initialXPosition, (float)initialYPosition.Value));
 
             return p;
 
