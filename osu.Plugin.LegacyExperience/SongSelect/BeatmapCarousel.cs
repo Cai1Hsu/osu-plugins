@@ -275,9 +275,49 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     protected override Drawable GetDrawableForDisplay(CarouselItem item)
     {
-        float panelInitialXPosition = (float)itemXOffsetByYPosition(item.CarouselYPosition + BleedTop);
+        LegacyPanel setup(LegacyPanel p)
+        {
+            double? initialYPosition = null;
 
-        void setup(Drawable d) => d.X = panelInitialXPosition;
+            if (item.Model is GroupedBeatmap grouped)
+            {
+                // if the beatmap is from a set or a group, make it appear from the group/set item.
+                initialYPosition = grouped.Group is null ? tryGetBeatmapSetItemYPosition()
+                    : tryGetGroupItemYPosition();
+            }
+
+            float initialXPosition = (float)itemXOffsetByYPosition(initialYPosition ?? visibleHalfHeight);
+            initialYPosition ??= item.CarouselYPosition;
+            p.SelectV2DrawYPosition = p.DrawYPosition = initialYPosition.Value;
+            p.Position = new Vector2(initialXPosition, (float)initialYPosition.Value);
+
+            return p;
+
+            double? tryGetBeatmapSetItemYPosition()
+            {
+                if (ExpandedBeatmapSet is not null &&
+                    ReferenceEquals(grouped.Beatmap.BeatmapSet, ExpandedBeatmapSet.BeatmapSet) &&
+                    grouping.SetItems.TryGetValue(ExpandedBeatmapSet, out var items))
+                {
+                    return items.FirstOrDefault(i => i.Model is GroupedBeatmapSet)?.CarouselYPosition;
+                }
+
+                return null;
+            }
+
+            double? tryGetGroupItemYPosition()
+            {
+                if (grouped.Group is not null &&
+                    ExpandedGroup is not null &&
+                    grouped.Group == ExpandedGroup &&
+                    grouping.GroupItems.TryGetValue(ExpandedGroup, out var items))
+                {
+                    return items.FirstOrDefault(i => i.Model is GroupDefinition)?.CarouselYPosition;
+                }
+
+                return null;
+            }
+        }
 
         // TODO: reset state when reusing from pool
         switch (item.Model)
@@ -286,11 +326,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             case StarDifficultyGroupDefinition:
             case RankDisplayGroupDefinition:
             case GroupDefinition:
-                return groupPanelPool.Get(setup);
+                return setup(groupPanelPool.Get());
 
             case GroupedBeatmap:
             case GroupedBeatmapSet:
-                return beatmapPanelPool.Get(setup);
+                return setup(beatmapPanelPool.Get());
         }
 
         throw new InvalidOperationException($"Unsupported model type: {item.Model?.GetType()}");
