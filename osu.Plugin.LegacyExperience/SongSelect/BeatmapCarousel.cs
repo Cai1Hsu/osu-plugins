@@ -300,6 +300,12 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             initialYPosition ??= item.CarouselYPosition;
             float initialXPosition = (float)itemXOffsetByYPosition(initialYPosition.Value);
             p.SelectV2DrawYPosition = p.DrawYPosition = initialYPosition.Value;
+
+            // FIXME: this generally looks correct, but there's two issue caused by using delayedScheduler:
+            // 1. delayedScheduler runs after ALL chindren, including the scroll container,
+            //    so draw info may delay a frame, causing some panels invisible when rapidly scrolling.
+            // 2. HandleFilterCompleted requires to reset positions again, however, the follwing line
+            //    runs after that, causing `HandleFilterCompleted`'s position reset ineffective.
             delayedScheduler.Add(() => p.Position = new Vector2(initialXPosition, (float)initialYPosition.Value));
 
             return p;
