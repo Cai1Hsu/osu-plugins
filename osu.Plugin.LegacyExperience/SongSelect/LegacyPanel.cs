@@ -25,6 +25,7 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
 
     // Legacy carousel managed, used for bypass Carousel's damping
     public double DrawYPosition { get; set; }
+    public double? InitialXPosition { get; set; }
 
     public double SelectV2DrawYPosition
     {
@@ -120,6 +121,9 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
     {
         // returning to pool makes it invisible, so fade in on next use.
         this.FadeIn();
+
+        if (InitialXPosition is double xPos)
+            X = (float)xPos;
     }
 
     protected override void Dispose(bool isDisposing)

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -249,9 +250,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     {
         // The following model from stable assume panels anchor and origin is Left-sided,
         // But in lazer, we've set panels to TopRight anchor and origin.
-        double stable_panel_offset = (640 - panelSize.X) * LegacyExperiencePlugin.StableRatio;
+        double stable_panel_offset = 640 - panelSize.X;
 
-        return Math.Min(200.0, Math.Abs((1f - yPosition / visibleHalfHeight) * 75.0)) - stable_panel_offset;
+        return (Math.Min(200.0, Math.Abs((yPosition / visibleHalfHeight - 1) * 75.0)) - stable_panel_offset)
+            * LegacyExperiencePlugin.StableRatio;
     }
 
     private double frameRatio;
@@ -284,69 +286,40 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     protected override Drawable GetDrawableForDisplay(CarouselItem item)
     {
-        LegacyPanel setup(LegacyPanel p)
+        LegacyPanel setupLegacyPanel(LegacyPanel panel)
         {
-            double? initialYPosition = null;
+            double initialX = 200 * LegacyExperiencePlugin.StableRatio;
 
-            if (item.Model is GroupedBeatmap grouped)
+            if (spawnedItems.TryGetValue(item, out var source))
             {
-                // if the beatmap is from a set or a group, make it appear from the group/set item.
-                initialYPosition = grouped.Group is null ? tryGetBeatmapSetItemYPosition()
-                    : tryGetGroupItemYPosition();
-            }
+                // Set position to the group/set panel's position
+                Vector2? initialPosition = source.PanelPosition;
 
-            float initialXPosition = (float)itemXOffsetByYPosition(initialYPosition ?? item.CarouselYPosition);
+                spawnedItems.Remove(item);
 
-            if (initialYPosition.HasValue)
-                p.SelectV2DrawYPosition = p.DrawYPosition = initialYPosition.Value;
-
-            // FIXME: this generally looks correct, but there's two issue caused by using delayedScheduler:
-            // 1. delayedScheduler runs after ALL chindren, including the scroll container,
-            //    so draw info may delay a frame, causing some panels invisible when rapidly scrolling.
-            // 2. HandleFilterCompleted requires to reset positions again, however, the follwing line
-            //    runs after that, causing `HandleFilterCompleted`'s position reset ineffective.
-            delayedScheduler.Add(() => p.X = initialXPosition);
-
-            return p;
-
-            double? tryGetBeatmapSetItemYPosition()
-            {
-                if (ExpandedBeatmapSet is not null &&
-                    ExpandedBeatmapSet.BeatmapSet.Equals(grouped.Beatmap.BeatmapSet) &&
-                    grouping.SetItems.TryGetValue(ExpandedBeatmapSet, out var items))
+                if (initialPosition.HasValue)
                 {
-                    return items.FirstOrDefault(i => i.Model is GroupedBeatmapSet)?.CarouselYPosition;
+                    initialX = initialPosition.Value.X;
+                    panel.DrawYPosition = initialPosition.Value.Y;
+                    panel.SelectV2DrawYPosition = initialPosition.Value.Y;
                 }
-
-                return null;
             }
 
-            double? tryGetGroupItemYPosition()
-            {
-                if (grouped.Group is not null &&
-                    ExpandedGroup is not null &&
-                    grouped.Group == ExpandedGroup &&
-                    grouping.GroupItems.TryGetValue(ExpandedGroup, out var items))
-                {
-                    return items.FirstOrDefault(i => i.Model is GroupDefinition)?.CarouselYPosition;
-                }
-
-                return null;
-            }
+            panel.InitialXPosition = initialX;
+            return panel;
         }
 
-        // TODO: reset state when reusing from pool
         switch (item.Model)
         {
             case RankedStatusGroupDefinition:
             case StarDifficultyGroupDefinition:
             case RankDisplayGroupDefinition:
             case GroupDefinition:
-                return setup(groupPanelPool.Get());
+                return setupLegacyPanel(groupPanelPool.Get());
 
             case GroupedBeatmap:
             case GroupedBeatmapSet:
-                return setup(beatmapPanelPool.Get());
+                return setupLegacyPanel(beatmapPanelPool.Get());
         }
 
         throw new InvalidOperationException($"Unsupported model type: {item.Model?.GetType()}");
@@ -354,23 +327,96 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private float visibleHalfHeight;
 
+    private enum SpawnReasonKind
+    {
+        SetExpanded,
+        GroupExpanded,
+    }
+
+    protected override bool HandleItemsChanged(NotifyCollectionChangedEventArgs args)
+    {
+        switch (args.Action)
+        {
+            case NotifyCollectionChangedAction.Reset:
+                spawnedItems.Clear();
+                break;
+
+            case NotifyCollectionChangedAction.Remove:
+                if (args.OldItems is not null)
+                {
+                    foreach (var oldItem in args.OldItems.OfType<CarouselItem>())
+                        spawnedItems.Remove(oldItem);
+                }
+                break;
+        }
+
+        return base.HandleItemsChanged(args);
+    }
+
+    private struct SpawnSource
+    {
+        public Vector2? PanelPosition;
+        public CarouselItem? Item;
+        public SpawnReasonKind Reason;
+    }
+
+    private Dictionary<CarouselItem, SpawnSource> spawnedItems = new();
+
     protected override void HandleItemActivated(CarouselItem item)
     {
         base.HandleItemActivated(item);
+
+
+        LegacyPanel? retrieveActivatedPanel() => Scroll.Panels.Children
+            .OfType<LegacyPanel>()
+            .FirstOrDefault(p => p.Item == item);
+
+        LegacyPanel? panel = null;
+
+        void addSpawnedItemsForExpandedGroup(CarouselItem i, SpawnReasonKind reason)
+        {
+            spawnedItems[i] = new SpawnSource
+            {
+                Item = item,
+                PanelPosition = panel is not null ? new Vector2(panel.X, (float)panel.DrawYPosition) : null,
+                Reason = reason
+            };
+        }
 
         switch (item.Model)
         {
             case GroupDefinition group:
                 if (grouping.GroupItems.TryGetValue(group, out var items))
                 {
-                    foreach (var i in items.Where(i => i.Model is GroupedBeatmapSet))
-                        i.IsVisible &= !i.IsExpanded;
+                    panel = retrieveActivatedPanel();
+
+                    foreach (var i in items)
+                    {
+                        if (i.Model is GroupedBeatmapSet)
+                            i.IsVisible &= !i.IsExpanded;
+
+                        if (!ReferenceEquals(i, item) && i.IsVisible)
+                        {
+                            addSpawnedItemsForExpandedGroup(i, SpawnReasonKind.GroupExpanded);
+                        }
+                    }
                 }
                 break;
 
-
             case GroupedBeatmapSet:
                 item.IsVisible = false;
+                if (grouping.SetItems.TryGetValue((GroupedBeatmapSet)item.Model, out var setItems))
+                {
+                    panel = retrieveActivatedPanel();
+
+                    foreach (var i in setItems)
+                    {
+                        if (!ReferenceEquals(i, item) && i.IsVisible)
+                        {
+                            addSpawnedItemsForExpandedGroup(i, SpawnReasonKind.SetExpanded);
+                        }
+                    }
+                }
                 break;
             default:
                 break;
