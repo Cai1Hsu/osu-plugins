@@ -104,7 +104,10 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
 
     protected override bool OnClick(ClickEvent e)
     {
-        Carousel?.Activate(Item!);
+        if (Item is null || Carousel is null)
+            return base.OnClick(e);
+
+        Carousel?.Activate(Item);
         return true;
     }
 
