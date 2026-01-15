@@ -296,7 +296,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             double? tryGetBeatmapSetItemYPosition()
             {
                 if (ExpandedBeatmapSet is not null &&
-                    ReferenceEquals(grouped.Beatmap.BeatmapSet, ExpandedBeatmapSet.BeatmapSet) &&
+                    ExpandedBeatmapSet.BeatmapSet.Equals(grouped.Beatmap.BeatmapSet) &&
                     grouping.SetItems.TryGetValue(ExpandedBeatmapSet, out var items))
                 {
                     return items.FirstOrDefault(i => i.Model is GroupedBeatmapSet)?.CarouselYPosition;
