@@ -55,6 +55,8 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel
         PanelColors = colours;
         Carousel = carousel;
 
+        Anchor = Anchor.TopRight;
+        Origin = Anchor.TopRight;
         AutoSizeAxes = Axes.Both;
 
         AddInternal(backgroundSprite = new Sprite()
