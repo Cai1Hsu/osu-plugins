@@ -420,14 +420,26 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 }
                 break;
 
-            case GroupedBeatmapSet:
-                item.IsVisible = false;
-                if (grouping.SetItems.TryGetValue((GroupedBeatmapSet)item.Model, out var setItems))
+            case GroupedBeatmapSet groupedBeatmapSet:
+                int beatmapsCount = groupedBeatmapSet.BeatmapSet.Beatmaps.Count;
+
+                // Use the beatmap set as beatmap directly when it has single beatmap.
+                item.IsVisible = beatmapsCount < 2;
+
+                if (grouping.SetItems.TryGetValue(groupedBeatmapSet, out var setItems))
                 {
                     panel = retrieveActivatedPanel();
 
                     foreach (var i in setItems)
                     {
+                        // beatmap set with only one beatmap is handled as beatmap directly in stable.
+                        if (beatmapsCount is 1)
+                        {
+                            if (i.Model is GroupedBeatmap)
+                                // Simply hide the beatmap item and use the set item as the beatmap item.
+                                i.IsVisible = false;
+                        }
+
                         addSpawnedItemsForExpandedGroup(i, SpawnReasonKind.SetExpanded);
                     }
                 }

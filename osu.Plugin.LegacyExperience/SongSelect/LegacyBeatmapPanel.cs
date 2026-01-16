@@ -308,6 +308,10 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     {
         var metadata = beatmapSetInfo.Metadata;
 
+        // treat the beatmap set as a single beatmap if it only contains one beatmap.
+        if (beatmapSetInfo.Beatmaps.Count == 1)
+            return CreateDisplayPolicy(beatmapSetInfo.Beatmaps[0]);
+
         return new PanelDisplayPolicy(
             new RomanisableString(metadata.TitleUnicode, metadata.Title),
             new RomanisableString(metadata.ArtistUnicode, metadata.Artist),
