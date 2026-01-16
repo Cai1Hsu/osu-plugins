@@ -38,7 +38,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     [Resolved]
     private BeatmapManager? beatmaps { get; set; } = null!;
 
-    private static readonly Vector2 cover_position = new Vector2(5.2f, 0.25f) * LegacyExperiencePlugin.StableRatio;
+    private static readonly Vector2 cover_position = new Vector2(5.2f, 0.25f);
     private static readonly Vector2 cover_size = new Vector2(80, 60) * 1.425f;
 
     private static readonly float info_padding = 75 * LegacyExperiencePlugin.StableRatio - cover_size.X;
