@@ -62,6 +62,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         grouping = (BeatmapCarouselFilterGrouping)groupingField.GetValue(this)!;
 
         Debug.Assert(grouping is not null);
+
+        if (skin is not null)
+            skin.SourceChanged += onSkinSourceChanged;
+
+        onSkinSourceChanged();
     }
 
     // These pools are used for SongSelectV2 panels, we don't need them anymore.
@@ -88,16 +93,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             RemoveInternal(pool, true); // dispose immediately to release resources
             fieldInfo.SetValue(this, null); // remove reference
         }
-    }
-
-    protected override void LoadComplete()
-    {
-        base.LoadComplete();
-
-        if (skin is not null)
-            skin.SourceChanged += onSkinSourceChanged;
-
-        onSkinSourceChanged();
     }
 
     private Vector2 panelSize = new Vector2(799, 103) * LegacyPanel.TextureScale;
