@@ -9,7 +9,8 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Plugins;
 using osu.Framework.Input.Events;
-using System.Diagnostics;
+using osu.Framework.Audio.Sample;
+using osu.Game.Audio;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
@@ -74,8 +75,13 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
             skin.SourceChanged += SkinChanged;
     }
 
+    private ISample? hoverSample;
+    private static readonly SampleInfo menu_click_sample_info = new SampleInfo("menuclick");
+
     protected virtual void SkinChanged()
     {
+        hoverSample = skin?.GetSample(menu_click_sample_info);
+
         // TODO: Song select requires dynamic textures loading when skin changes
         // SkinnableSprite doestn't scale with @2x, so we manually retrieve the texture here.
         // This is a temporary workaround to make size correct.
@@ -101,6 +107,12 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
         return skin?.GetTexture("menu-button-background")
             // Argon/Triangle skins don't look up legacy textures, so we make a copy and retrieve from the texture store.
             ?? textures?.GetAutoSized("UI/menu-button-background");
+    }
+
+    protected override bool OnHover(HoverEvent e)
+    {
+        hoverSample?.Play();
+        return base.OnHover(e);
     }
 
     protected override bool OnClick(ClickEvent e)

@@ -1,14 +1,17 @@
+using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using osu.Framework.Allocation;
+using osu.Framework.Audio.Sample;
 using osu.Framework.Caching;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Threading;
+using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Screens.SelectV2;
@@ -99,10 +102,48 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private Vector2 panelSize = new Vector2(799, 103) * LegacyPanel.TextureScale;
 
+    private static readonly SampleInfo select_expand_sample_info = new SampleInfo("select-expand");
+    private static readonly SampleInfo select_difficulty_sample_info = new SampleInfo("select-difficulty");
+    private static readonly SampleInfo menu_click_sample_info = new SampleInfo("menuclick");
+    private static readonly SampleInfo click_short_confirm_sample_info = new SampleInfo("click-short-confirm");
+
     private void onSkinSourceChanged()
     {
+        var selectExpandSample = skin?.GetSample(select_expand_sample_info);
+        var selectDifficultySample = skin?.GetSample(select_difficulty_sample_info);
+        var menuClickSample = skin?.GetSample(menu_click_sample_info);
+        var randomSelectSample = skin?.GetSample(click_short_confirm_sample_info);
+
+        updateSamples(
+            sampleChangeDifficulty: selectDifficultySample,
+            sampleChangeSet: selectExpandSample,
+            sampleToggleGroup: selectExpandSample,
+            spinSample: menuClickSample, // TODO: stable repeatedly plays this sample until you release the button
+            randomSelectSample: randomSelectSample
+        );
+
         panelColors.SyncFromSkin(skin);
         updatePanelBackground();
+    }
+
+    private static readonly FrozenDictionary<string, FieldInfo> sampleFields = typeof(BeatmapCarouselV2)
+        .GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+        .Where(f => f.FieldType == typeof(Sample))
+        .ToFrozenDictionary(f => f.Name, f => f);
+
+    private void updateSamples(ISample? sampleChangeDifficulty, ISample? sampleChangeSet, ISample? sampleToggleGroup, ISample? spinSample, ISample? randomSelectSample)
+    {
+        void updateSample(ISample? sample, [CallerArgumentExpression(nameof(sample))] string filedName = "")
+        {
+            if (sampleFields.TryGetValue(filedName, out var fieldInfo))
+                fieldInfo.SetValue(this, sample as Sample); // explicit cast to avoid invalid assignment
+        }
+
+        updateSample(sampleChangeDifficulty);
+        updateSample(sampleChangeSet);
+        updateSample(sampleToggleGroup);
+        updateSample(spinSample);
+        updateSample(randomSelectSample);
     }
 
     void updatePanelBackground()
