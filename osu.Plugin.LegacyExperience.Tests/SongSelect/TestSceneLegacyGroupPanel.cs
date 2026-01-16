@@ -3,8 +3,9 @@ using osu.Framework.Graphics;
 using osu.Framework.Testing;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Skinning;
+using osu.Plugin.LegacyExperience.SongSelect;
 
-namespace osu.Plugin.LegacyExperience.SongSelect;
+namespace osu.Plugin.LegacyExperience.Tests.SongSelect;
 
 public partial class TestSceneLegacyGroupPanel : LocalSkinTestScene
 {

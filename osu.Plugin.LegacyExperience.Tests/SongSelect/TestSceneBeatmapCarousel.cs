@@ -18,14 +18,15 @@ using osu.Game.Screens.Select;
 using osu.Game.Screens.Select.Filter;
 using osu.Game.Skinning;
 using osu.Game.Tests.Resources;
+using LegacyBeatmapCarousel = osu.Plugin.LegacyExperience.SongSelect.BeatmapCarousel;
 
-namespace osu.Plugin.LegacyExperience.SongSelect;
+namespace osu.Plugin.LegacyExperience.Tests.SongSelect;
 
 public partial class TestSceneBeatmapCarousel : LocalSkinTestScene
 {
     private SkinProvidingContainer skinContainer = null!;
 
-    private BeatmapCarousel carousel = null!;
+    private LegacyBeatmapCarousel carousel = null!;
     private OsuTextFlowContainer stats = null!;
 
     [Cached(typeof(BeatmapStore))]
@@ -74,7 +75,7 @@ public partial class TestSceneBeatmapCarousel : LocalSkinTestScene
 
         AddStep("Add carousel", () =>
         {
-            carousel = new BeatmapCarousel
+            carousel = new LegacyBeatmapCarousel
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
