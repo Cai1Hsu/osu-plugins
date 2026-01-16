@@ -10,6 +10,7 @@ using osu.Framework.Logging;
 using osu.Framework.Screens;
 using osu.Framework.Threading;
 using osu.Game.Screens;
+using osu.Game.Skinning;
 
 namespace osu.Game.Plugins;
 
@@ -244,5 +245,19 @@ public static class PluginHelper
     {
         return store.Get($"{lookup}@2x", wrapModeS, wrapModeT)
             ?? store.Get(lookup, wrapModeS, wrapModeT);
+    }
+
+    /// <summary>
+    /// Retrieves a texture from a skin, falling back to a texture store if not found.
+    /// </summary>
+    /// <remarks>This extension method is useful for retrieve legacy skin textures which Argon/Triangle don't provide.</remarks>
+    /// <param name="skin">The skin to retrieve the texture from.</param>
+    /// <param name="lookup">The lookup string for the texture.</param>
+    /// <param name="textures">The texture store to fall back to if the skin does not provide the texture.</param>
+    /// <param name="textureStoreLookupPrefix">An optional prefix to prepend to the lookup string when querying the texture store.</param>
+    /// <returns>>The retrieved texture, or null if not found.</returns>
+    public static Texture? GetSkinTexture(this ISkin? skin, string lookup, TextureStore? textures = null, string? textureStoreLookupPrefix = null)
+    {
+        return skin?.GetTexture(lookup) ?? textures?.GetAutoSized(textureStoreLookupPrefix is null ? lookup : $"{textureStoreLookupPrefix}/{lookup}");
     }
 }
