@@ -119,7 +119,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             sampleChangeSet: selectExpandSample,
             sampleToggleGroup: selectExpandSample,
             spinSample: menuClickSample, // TODO: stable repeatedly plays this sample until you release the button
-            randomSelectSample: randomSelectSample
+            randomSelectSample: randomSelectSample,
+            sampleKeyboardTraversal: selectDifficultySample
         );
 
         panelColors.SyncFromSkin(skin);
@@ -128,10 +129,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private static readonly FrozenDictionary<string, FieldInfo> sampleFields = typeof(BeatmapCarouselV2)
         .GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+        .Concat(typeof(Carousel<BeatmapInfo>).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
         .Where(f => f.FieldType == typeof(Sample))
         .ToFrozenDictionary(f => f.Name, f => f);
 
-    private void updateSamples(ISample? sampleChangeDifficulty, ISample? sampleChangeSet, ISample? sampleToggleGroup, ISample? spinSample, ISample? randomSelectSample)
+    private void updateSamples(ISample? sampleChangeDifficulty, ISample? sampleChangeSet, ISample? sampleToggleGroup, ISample? spinSample, ISample? randomSelectSample, ISample? sampleKeyboardTraversal)
     {
         void updateSample(ISample? sample, [CallerArgumentExpression(nameof(sample))] string filedName = "")
         {
@@ -144,6 +146,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         updateSample(sampleToggleGroup);
         updateSample(spinSample);
         updateSample(randomSelectSample);
+        updateSample(sampleKeyboardTraversal);
     }
 
     void updatePanelBackground()
