@@ -405,7 +405,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         if (item.Model is GroupedBeatmapSet groupedSet &&
             GetSingleBeatmap(groupedSet.BeatmapSet) is BeatmapInfo singleBeatmap &&
             grouping.SetItems.TryGetValue(groupedSet, out var singelSetItems) &&
-            singelSetItems.FirstOrDefault(i => i.Model is GroupedBeatmap groupedBeatmap && 
+            singelSetItems.FirstOrDefault(i => i.Model is GroupedBeatmap groupedBeatmap &&
                 groupedBeatmap.Beatmap.Equals(singleBeatmap)) is CarouselItem beatmapItem)
             activateItem = beatmapItem;
 
