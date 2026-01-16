@@ -199,6 +199,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         base.UpdateAfterChildren();
 
         delayedScheduler.Update();
+        spawnedItems.Clear();
     }
 
     private void makePanelsAppearFromScreenRightEdge()
@@ -288,7 +289,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     {
         LegacyPanel setupLegacyPanel(LegacyPanel panel)
         {
-            double initialX = 200 * LegacyExperiencePlugin.StableRatio;
+            // FIXME: this value is continously damped in stable.
+            const double edge_panels_initial_x = 200 * LegacyExperiencePlugin.StableRatio;  // a random value
+
+            double initialX = edge_panels_initial_x;
 
             if (spawnedItems.TryGetValue(item, out var source))
             {
@@ -378,9 +382,25 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             spawnedItems[i] = new SpawnSource
             {
                 Item = item,
-                PanelPosition = panel is not null ? new Vector2(panel.X, (float)panel.DrawYPosition) : null,
+                PanelPosition = panel is not null
+                    ? new Vector2(panel.X, (float)panel.DrawYPosition)
+                    : calculateSpawnPosition(),
                 Reason = reason
             };
+
+            Vector2 calculateSpawnPosition()
+            {
+                double yPos = toScrollLocalYPosition();
+                double xPos = itemXOffsetByYPosition(yPos + BleedTop);
+
+                return new Vector2((float)xPos, (float)yPos);
+
+                double toScrollLocalYPosition()
+                {
+                    double scrollableExtent = -Scroll.Current + Scroll.ScrollableExtent * Scroll.ScrollContent.RelativeAnchorPosition.Y;
+                    return item.CarouselYPosition + scrollableExtent;
+                }
+            }
         }
 
         switch (item.Model)
@@ -395,10 +415,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                         if (i.Model is GroupedBeatmapSet)
                             i.IsVisible &= !i.IsExpanded;
 
-                        if (!ReferenceEquals(i, item) && i.IsVisible)
-                        {
-                            addSpawnedItemsForExpandedGroup(i, SpawnReasonKind.GroupExpanded);
-                        }
+                        addSpawnedItemsForExpandedGroup(i, SpawnReasonKind.GroupExpanded);
                     }
                 }
                 break;
@@ -411,10 +428,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
                     foreach (var i in setItems)
                     {
-                        if (!ReferenceEquals(i, item) && i.IsVisible)
-                        {
-                            addSpawnedItemsForExpandedGroup(i, SpawnReasonKind.SetExpanded);
-                        }
+                        addSpawnedItemsForExpandedGroup(i, SpawnReasonKind.SetExpanded);
                     }
                 }
                 break;
