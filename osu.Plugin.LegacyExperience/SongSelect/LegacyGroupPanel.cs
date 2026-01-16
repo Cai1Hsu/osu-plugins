@@ -6,6 +6,10 @@ using osuTK;
 using System.Diagnostics;
 using osu.Game.Screens.SelectV2;
 using osu.Framework.Localisation;
+using osu.Framework.Graphics.UserInterface;
+using osu.Game.Graphics.UserInterface;
+using WebCommonStrings = osu.Game.Resources.Localisation.Web.CommonStrings;
+using osu.Framework.Extensions.LocalisationExtensions;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
@@ -40,6 +44,23 @@ public partial class LegacyGroupPanel : LegacyPanel
     private void updatePanelState()
     {
         titleText.Colour = Expanded.Value || Selected.Value ? PanelColors.ActiveText : PanelColors.InactiveText;
+    }
+
+    public override MenuItem[]? ContextMenuItems
+    {
+        get
+        {
+            if (Item is null)
+                return Array.Empty<MenuItem>();
+
+            return new MenuItem[]
+            {
+                new OsuMenuItem(Expanded.Value
+                    ? WebCommonStrings.ButtonsCollapse.ToSentence()
+                    : WebCommonStrings.ButtonsExpand.ToSentence(), MenuItemType.Highlighted, () => TriggerClick())
+            };
+
+        }
     }
 
     protected override void PrepareForUse()

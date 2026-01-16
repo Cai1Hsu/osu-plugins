@@ -11,10 +11,12 @@ using osu.Game.Plugins;
 using osu.Framework.Input.Events;
 using osu.Framework.Audio.Sample;
 using osu.Game.Audio;
+using osu.Framework.Graphics.Cursor;
+using osu.Framework.Graphics.UserInterface;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
-public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IHasInitialPosition
+public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IHasInitialPosition, IHasContextMenu
 {
     internal const float TextureScale = 0.6f * 1.6f;
 
@@ -48,6 +50,8 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
     protected BeatmapCarousel? Carousel { get; private set; }
 
     protected LegacyPanelColors PanelColors { get; set; } = null!;
+
+    public virtual MenuItem[]? ContextMenuItems => null;
 
     private Sprite backgroundSprite = null!;
 

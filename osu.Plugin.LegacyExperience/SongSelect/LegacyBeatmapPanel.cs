@@ -1,11 +1,11 @@
 using System.Diagnostics;
-using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Framework.Threading;
 using osu.Game.Beatmaps;
@@ -33,10 +33,13 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     private DrawablePool<StarDifficultyDisplay> starDifficultyPool { get; set; } = null!;
 
     [Resolved]
-    private BeatmapDifficultyCache? difficultyCache { get; set; } = null!;
+    private BeatmapDifficultyCache? difficultyCache { get; set; }
 
     [Resolved]
-    private BeatmapManager? beatmaps { get; set; } = null!;
+    private BeatmapManager? beatmaps { get; set; }
+
+    [Resolved]
+    private ISongSelect? songSelect { get; set; }
 
     private static readonly Vector2 cover_position = new Vector2(5.2f, 0.25f);
     private static readonly Vector2 cover_size = new Vector2(80, 60) * 1.425f;
@@ -314,6 +317,33 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     }
 
     public record PanelDisplayPolicy(RomanisableString Title, RomanisableString Artist, BeatmapInfo? CoverBeatmap, BeatmapInfo? playBeatmap);
+
+    public override MenuItem[]? ContextMenuItems
+    {
+        get
+        {
+            if (Item is null || songSelect is null)
+                return Array.Empty<MenuItem>();
+
+            MenuItem[] createMenuItemsForBeatmap(BeatmapInfo beatmap)
+                => songSelect!.GetForwardActions(beatmap).ToArray();
+
+            switch (Item.Model)
+            {
+                case GroupedBeatmap groupedBeatmap:
+                    return createMenuItemsForBeatmap(groupedBeatmap.Beatmap);
+
+                case GroupedBeatmapSet groupedBeatmapSet when BeatmapCarousel.GetSingleBeatmap(groupedBeatmapSet.BeatmapSet) is BeatmapInfo singleBeatmap:
+                    return createMenuItemsForBeatmap(singleBeatmap);
+
+                case GroupedBeatmapSet groupedBeatmapSet:
+                    return createMenuItemsForBeatmapSet(groupedBeatmapSet.BeatmapSet);
+
+                default:
+                    return Array.Empty<MenuItem>();
+            }
+        }
+    }
 
     private partial class PanelBeatmapCoverContainer : Container
     {
