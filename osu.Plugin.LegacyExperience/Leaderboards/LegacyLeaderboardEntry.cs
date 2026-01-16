@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Textures;
 using osu.Game.Configuration;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API;
+using osu.Game.Plugins;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Skinning;
 using osu.Game.Users;
@@ -43,7 +44,7 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
     }
 
     [BackgroundDependencyLoader]
-    private void load(ISkinSource skin, OsuConfigManager config)
+    private void load(ISkinSource skin, TextureStore textures,OsuConfigManager config)
     {
         InternalChildren = new Drawable[]
         {
@@ -100,7 +101,7 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
 
         Texture? getCroppedBackground()
         {
-            Texture? texture = skin.GetTexture("menu-button-background");
+            Texture? texture = skin.GetSkinTexture("menu-button-background", textures, "UI");
 
             if (texture is null)
                 return null;

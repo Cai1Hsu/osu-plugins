@@ -14,6 +14,7 @@ using osu.Framework.Threading;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
+using osu.Game.Plugins;
 using osu.Game.Screens.SelectV2;
 using osu.Game.Skinning;
 using osuTK;
@@ -146,7 +147,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     void updatePanelBackground()
     {
-        var backgroundTexture = LegacyPanel.GetBackgroundTexture(skin, textures);
+        var backgroundTexture = skin.GetSkinTexture("menu-button-background", textures, "UI");
 
         // texture should be non-null since we've packed a default one.
         Debug.Assert(backgroundTexture is not null);

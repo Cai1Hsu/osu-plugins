@@ -89,7 +89,7 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
         // TODO: Song select requires dynamic textures loading when skin changes
         // SkinnableSprite doestn't scale with @2x, so we manually retrieve the texture here.
         // This is a temporary workaround to make size correct.
-        var texture = GetBackgroundTexture(skin, textures);
+        var texture = skin.GetSkinTexture("menu-button-background", textures, "UI");
 
         const float background_fade_duration = 100;
 
@@ -104,13 +104,6 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
             backgroundSprite.FadeOut(background_fade_duration);
             backgroundSprite.Size = new Vector2(799, 103) * TextureScale; // default texture size
         }
-    }
-
-    public static Texture? GetBackgroundTexture(ISkinSource? skin, TextureStore? textures)
-    {
-        return skin?.GetTexture("menu-button-background")
-            // Argon/Triangle skins don't look up legacy textures, so we make a copy and retrieve from the texture store.
-            ?? textures?.GetAutoSized("UI/menu-button-background");
     }
 
     protected override bool OnHover(HoverEvent e)

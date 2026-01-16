@@ -104,7 +104,7 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
         for (int i = 0; i < stars.Length; i++)
         {
             var star = stars[i];
-            var texture = getStarTexture(skin, textures);
+            var texture = skin.GetSkinTexture("star", textures, "UI");
 
             // we've packed a fallback texture, so this should never be null
             Debug.Assert(texture is not null);
