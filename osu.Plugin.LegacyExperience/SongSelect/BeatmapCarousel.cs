@@ -452,7 +452,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 break;
 
             case GroupedBeatmapSet groupedBeatmapSet:
-                bool isSingleBeatmapSet = isSingleBeatmapBeatmapSet(groupedBeatmapSet.BeatmapSet);
+                bool isSingleBeatmapSet = IsSingleBeatmapBeatmapSet(groupedBeatmapSet.BeatmapSet);
 
                 // Use the beatmap set as beatmap directly when it has single beatmap.
                 item.IsVisible = isSingleBeatmapSet;
@@ -480,7 +480,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
     }
 
-    private static bool isSingleBeatmapBeatmapSet(BeatmapSetInfo set)
+    public static bool IsSingleBeatmapBeatmapSet(BeatmapSetInfo set)
     {
         int count = 0;
 
