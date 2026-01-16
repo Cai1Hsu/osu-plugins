@@ -210,14 +210,11 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         artistText.Text = displayPolicy.Artist;
         difficultyText.Text = GetDisplayDifficultyName(displayPolicy) ?? string.Empty;
 
-        if (displayPolicy.HasStarRating)
+        if (displayPolicy.playBeatmap is BeatmapInfo playBeatmap)
         {
             addStarDifficultyDisplay();
 
-            Debug.Assert(starDisplay is not null);
-            Debug.Assert(displayPolicy.CoverBeatmap is not null);
-
-            computeStarRating(displayPolicy.CoverBeatmap);
+            computeStarRating(playBeatmap);
         }
 
         if (displayPolicy.CoverBeatmap is not null && beatmaps is not null)
@@ -302,7 +299,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             // match stable behavior of picking the first beatmap in the set as cover if possible
             beatmapInfo.BeatmapSet?.Beatmaps.MinBy(b => b.OnlineID)
                 ?? beatmapInfo,
-            true
+            beatmapInfo
         );
     }
 
@@ -320,11 +317,11 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             null,
             null,
             beatmapSetInfo.Beatmaps.MinBy(b => b.OnlineID),
-            false
+            null
         );
     }
 
-    public record PanelDisplayPolicy(RomanisableString Title, RomanisableString Artist, string? DifficultyName, string? Mapper, BeatmapInfo? CoverBeatmap, bool HasStarRating);
+    public record PanelDisplayPolicy(RomanisableString Title, RomanisableString Artist, string? DifficultyName, string? Mapper, BeatmapInfo? CoverBeatmap, BeatmapInfo? playBeatmap);
 
     private partial class PanelBeatmapCoverContainer : Container
     {
