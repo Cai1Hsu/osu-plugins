@@ -400,7 +400,16 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             }
         }
 
-        base.HandleItemActivated(item);
+        CarouselItem activateItem = item;
+
+        if (item.Model is GroupedBeatmapSet groupedSet &&
+            GetSingleBeatmap(groupedSet.BeatmapSet) is BeatmapInfo singleBeatmap &&
+            grouping.SetItems.TryGetValue(groupedSet, out var singelSetItems) &&
+            singelSetItems.FirstOrDefault(i => i.Model is GroupedBeatmap groupedBeatmap && 
+                groupedBeatmap.Beatmap.Equals(singleBeatmap)) is CarouselItem beatmapItem)
+            activateItem = beatmapItem;
+
+        base.HandleItemActivated(activateItem);
 
         LegacyPanel? retrieveActivatedPanel(CarouselItem item) => Scroll.Panels.Children
             .OfType<LegacyPanel>()
