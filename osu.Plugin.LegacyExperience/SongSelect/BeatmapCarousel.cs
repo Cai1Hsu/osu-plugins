@@ -276,7 +276,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         return items;
     }
 
-    public float GetUndampedPanelXOffset(LegacyPanel panel)
+    public double GetUndampedPanelXOffset(LegacyPanel panel)
     {
         Vector2 posInScroll = Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre);
         var xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop);
@@ -284,7 +284,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         if (panel.IsHovered)
             xPosition -= hover_expand_amount_x;
 
-        return (float)xPosition;
+        return xPosition;
     }
 
     private double itemXOffsetByYPosition(double yPosition)
@@ -299,17 +299,17 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private double frameRatio;
 
-    public float GetPanelXOffset(LegacyPanel panel)
+    public double GetPanelXOffset(LegacyPanel panel)
     {
         var xPosition = GetUndampedPanelXOffset(panel);
 
         return dampPanelXOffset(panel.X, xPosition);
     }
 
-    private float dampPanelXOffset(float currentX, float targetX)
+    private double dampPanelXOffset(double currentX, double targetX)
     {
-        float offsetX = targetX - currentX;
-        offsetX *= (float)Math.Pow(0.95, frameRatio);
+        double offsetX = targetX - currentX;
+        offsetX *= Math.Pow(0.95, frameRatio);
 
         return targetX - offsetX;
     }
@@ -317,7 +317,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     protected override float GetPanelXOffset(Drawable panel)
     {
         if (panel is LegacyPanel legacyPanel)
-            return GetPanelXOffset(legacyPanel);
+            return (float)GetPanelXOffset(legacyPanel);
 
         return base.GetPanelXOffset(panel);
     }
