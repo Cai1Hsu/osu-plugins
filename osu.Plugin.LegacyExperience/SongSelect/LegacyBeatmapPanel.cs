@@ -208,12 +208,11 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
         titleText.Text = displayPolicy.Title;
         artistText.Text = displayPolicy.Artist;
-        difficultyText.Text = GetDisplayDifficultyName(displayPolicy) ?? string.Empty;
 
         if (displayPolicy.playBeatmap is BeatmapInfo playBeatmap)
         {
+            difficultyText.Text = GetDisplayDifficultyName(playBeatmap);
             addStarDifficultyDisplay();
-
             computeStarRating(playBeatmap);
         }
 
@@ -262,14 +261,11 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         }, true);
     }
 
-    protected virtual LocalisableString? GetDisplayDifficultyName(PanelDisplayPolicy displayPolicy)
+    protected virtual string GetDisplayDifficultyName(BeatmapInfo beatmap)
     {
-        if (string.IsNullOrEmpty(displayPolicy.DifficultyName))
-            return null;
+        string mapper = beatmap.Metadata.Author.Username ?? "Unknown";
 
-        string mapper = displayPolicy.Mapper ?? "Unknown";
-
-        return LocalisableString.Format("{0} // {1}", displayPolicy.DifficultyName, mapper);
+        return $"{beatmap.DifficultyName} // {mapper}";
     }
 
     protected virtual PanelDisplayPolicy CreateDisplayPolicy(object model)
@@ -294,8 +290,6 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         return new PanelDisplayPolicy(
             new RomanisableString(metadata.TitleUnicode, metadata.Title),
             new RomanisableString(metadata.ArtistUnicode, metadata.Artist),
-            beatmapInfo.DifficultyName,
-            metadata.Author.Username,
             // match stable behavior of picking the first beatmap in the set as cover if possible
             beatmapInfo.BeatmapSet?.Beatmaps.MinBy(b => b.OnlineID)
                 ?? beatmapInfo,
@@ -314,14 +308,12 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         return new PanelDisplayPolicy(
             new RomanisableString(metadata.TitleUnicode, metadata.Title),
             new RomanisableString(metadata.ArtistUnicode, metadata.Artist),
-            null,
-            null,
             beatmapSetInfo.Beatmaps.MinBy(b => b.OnlineID),
             null
         );
     }
 
-    public record PanelDisplayPolicy(RomanisableString Title, RomanisableString Artist, string? DifficultyName, string? Mapper, BeatmapInfo? CoverBeatmap, BeatmapInfo? playBeatmap);
+    public record PanelDisplayPolicy(RomanisableString Title, RomanisableString Artist, BeatmapInfo? CoverBeatmap, BeatmapInfo? playBeatmap);
 
     private partial class PanelBeatmapCoverContainer : Container
     {
