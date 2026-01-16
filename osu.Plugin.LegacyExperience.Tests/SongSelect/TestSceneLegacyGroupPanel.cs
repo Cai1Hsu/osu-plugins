@@ -1,3 +1,4 @@
+using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Testing;
 using osu.Game.Graphics.Carousel;
@@ -9,6 +10,9 @@ public partial class TestSceneLegacyGroupPanel : LocalSkinTestScene
 {
     private SkinProvidingContainer skinProvidingContainer = null!;
     private LegacyPanel? panel = null;
+
+    [Cached]
+    private LegacyPanelColors panelColors = LegacyPanelColors.CreateDefault();
 
     [SetUpSteps]
     public void SetUpSteps()
