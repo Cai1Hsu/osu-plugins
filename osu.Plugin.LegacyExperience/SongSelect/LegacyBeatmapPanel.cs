@@ -215,16 +215,16 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             addStarDifficultyDisplay();
 
             Debug.Assert(starDisplay is not null);
-            Debug.Assert(displayPolicy.Beatmap is not null);
+            Debug.Assert(displayPolicy.CoverBeatmap is not null);
 
-            computeStarRating(displayPolicy.Beatmap);
+            computeStarRating(displayPolicy.CoverBeatmap);
         }
 
-        if (displayPolicy.Beatmap is not null && beatmaps is not null)
+        if (displayPolicy.CoverBeatmap is not null && beatmaps is not null)
         {
             background_update_task = Scheduler.AddDelayed(
                 s => cover.UpdateBackground(beatmaps.GetWorkingBeatmap(s)),
-                displayPolicy.Beatmap,
+                displayPolicy.CoverBeatmap,
                 background_update_debounce);
         }
 
@@ -299,7 +299,9 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             new RomanisableString(metadata.ArtistUnicode, metadata.Artist),
             beatmapInfo.DifficultyName,
             metadata.Author.Username,
-            beatmapInfo,
+            // match stable behavior of picking the first beatmap in the set as cover if possible
+            beatmapInfo.BeatmapSet?.Beatmaps.MinBy(b => b.OnlineID)
+                ?? beatmapInfo,
             true
         );
     }
@@ -322,7 +324,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         );
     }
 
-    public record PanelDisplayPolicy(RomanisableString Title, RomanisableString Artist, string? DifficultyName, string? Mapper, BeatmapInfo? Beatmap, bool HasStarRating);
+    public record PanelDisplayPolicy(RomanisableString Title, RomanisableString Artist, string? DifficultyName, string? Mapper, BeatmapInfo? CoverBeatmap, bool HasStarRating);
 
     private partial class PanelBeatmapCoverContainer : Container
     {
