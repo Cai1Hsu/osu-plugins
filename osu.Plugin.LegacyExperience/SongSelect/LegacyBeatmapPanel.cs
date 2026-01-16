@@ -26,7 +26,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     private StarDifficultyDisplay? starDisplay = null!;
 
     private PanelBeatmapCoverContainer cover = null!;
-    private Container playInfoContainer = null!;
+    private LegacyLocalRankDisplay localRankDisplay = null!;
     private Container beatmapInfoContainer = null!;
 
     [Resolved]
@@ -82,16 +82,11 @@ public partial class LegacyBeatmapPanel : LegacyPanel
                         FillMode = FillMode.Fill,
                         Masking = true,
                     },
-                    // container used to display play info like
-                    // - local best rank
-                    // - ruleset icon if not the selected one
-                    // Currently unused, but we may add more info later.
-                    playInfoContainer = new Container
+                    // in lazer, there's no case where play mode icon can be shown in legacy panel.
+                    localRankDisplay = new LegacyLocalRankDisplay
                     {
-                        // currently unused, so 0 size
-                        RelativeSizeAxes = Axes.Y,
-                        Width = 0,
-                        // TODO: investigate anchor/origin
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
                     },
                     beatmapInfoContainer = new Container
                     {
@@ -196,6 +191,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         cover.ClearBackground();
         background_update_task?.Cancel();
         background_update_task = null;
+        localRankDisplay.Beatmap = null;
     }
 
     private const float background_update_debounce = 350;
@@ -217,6 +213,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             difficultyText.Text = GetDisplayDifficultyName(playBeatmap);
             addStarDifficultyDisplay();
             computeStarRating(playBeatmap);
+            localRankDisplay.Beatmap = playBeatmap;
         }
 
         if (displayPolicy.CoverBeatmap is not null && beatmaps is not null)
