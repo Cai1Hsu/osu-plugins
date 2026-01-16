@@ -368,10 +368,41 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     protected override void HandleItemActivated(CarouselItem item)
     {
+        // TODO: this method contains duplicated code, cleanup later.
+
+        if (ExpandedBeatmapSet is not null)
+        {
+            // previous beamap set collapsing, set item will be visible
+            // calculate a spawn position for the set item based on beatmap panels
+            if (grouping.SetItems.TryGetValue(ExpandedBeatmapSet, out var setItems))
+            {
+                if (setItems.FirstOrDefault(i => i.Model is GroupedBeatmapSet) is CarouselItem setItem)
+                {
+                    var firstVisibleBeatmapItem = setItems.Where(i => i.IsVisible && i.Model is GroupedBeatmap)
+                        // generally, align to top panel looks better in collapsing case
+                        .OrderByDescending(i => i.CarouselYPosition)
+                        .LastOrDefault();
+
+                    if (firstVisibleBeatmapItem is not null)
+                    {
+                        var firstVisiblePanel = retrieveActivatedPanel(firstVisibleBeatmapItem);
+
+                        spawnedItems[setItem] = new SpawnSource
+                        {
+                            Item = item,
+                            PanelPosition = firstVisiblePanel is not null
+                                ? new Vector2(firstVisiblePanel.X, (float)firstVisiblePanel.DrawYPosition)
+                                : calculateSpawnPosition(firstVisibleBeatmapItem),
+                            Reason = SpawnReasonKind.SetExpanded
+                        };
+                    }
+                }
+            }
+        }
+
         base.HandleItemActivated(item);
 
-
-        LegacyPanel? retrieveActivatedPanel() => Scroll.Panels.Children
+        LegacyPanel? retrieveActivatedPanel(CarouselItem item) => Scroll.Panels.Children
             .OfType<LegacyPanel>()
             .FirstOrDefault(p => p.Item == item);
 
@@ -384,22 +415,22 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 Item = item,
                 PanelPosition = panel is not null
                     ? new Vector2(panel.X, (float)panel.DrawYPosition)
-                    : calculateSpawnPosition(),
+                    : calculateSpawnPosition(item),
                 Reason = reason
             };
+        }
 
-            Vector2 calculateSpawnPosition()
+        Vector2 calculateSpawnPosition(CarouselItem item)
+        {
+            double yPos = toScrollLocalYPosition();
+            double xPos = itemXOffsetByYPosition(yPos + BleedTop);
+
+            return new Vector2((float)xPos, (float)yPos);
+
+            double toScrollLocalYPosition()
             {
-                double yPos = toScrollLocalYPosition();
-                double xPos = itemXOffsetByYPosition(yPos + BleedTop);
-
-                return new Vector2((float)xPos, (float)yPos);
-
-                double toScrollLocalYPosition()
-                {
-                    double scrollableExtent = -Scroll.Current + Scroll.ScrollableExtent * Scroll.ScrollContent.RelativeAnchorPosition.Y;
-                    return item.CarouselYPosition + scrollableExtent;
-                }
+                double scrollableExtent = -Scroll.Current + Scroll.ScrollableExtent * Scroll.ScrollContent.RelativeAnchorPosition.Y;
+                return item.CarouselYPosition + scrollableExtent;
             }
         }
 
@@ -408,7 +439,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             case GroupDefinition group:
                 if (grouping.GroupItems.TryGetValue(group, out var items))
                 {
-                    panel = retrieveActivatedPanel();
+                    panel = retrieveActivatedPanel(item);
 
                     foreach (var i in items)
                     {
@@ -428,7 +459,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
                 if (grouping.SetItems.TryGetValue(groupedBeatmapSet, out var setItems))
                 {
-                    panel = retrieveActivatedPanel();
+                    panel = retrieveActivatedPanel(item);
 
                     foreach (var i in setItems)
                     {
