@@ -311,8 +311,8 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         var metadata = beatmapSetInfo.Metadata;
 
         // treat the beatmap set as a single beatmap if it only contains one beatmap.
-        if (BeatmapCarousel.IsSingleBeatmapBeatmapSet(beatmapSetInfo))
-            return CreateDisplayPolicy(beatmapSetInfo.Beatmaps[0]);
+        if (BeatmapCarousel.GetSingleBeatmap(beatmapSetInfo) is BeatmapInfo singleBeatmap)
+            return CreateDisplayPolicy(singleBeatmap);
 
         return new PanelDisplayPolicy(
             new RomanisableString(metadata.TitleUnicode, metadata.Title),
