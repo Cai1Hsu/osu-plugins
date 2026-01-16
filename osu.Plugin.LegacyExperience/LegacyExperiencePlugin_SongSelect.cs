@@ -6,6 +6,7 @@ using osu.Game;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Plugins;
+using osu.Game.Screens;
 using osu.Game.Screens.Footer;
 using osu.Game.Screens.SelectV2;
 using SongSelectV2 = osu.Game.Screens.SelectV2.SongSelect;
@@ -27,6 +28,22 @@ public sealed partial class LegacyExperiencePlugin
 
     private void screenStack_ScreenSwitched(IScreen oldScreen, IScreen newScreen)
     {
+        // PlaylistSongSelectV2 is nested inside Playlists OnlinePlayScreen, hook sub-screen stacks to catch it
+        // TODO: investigate whether this change should be applied to other screen trackings
+        if (oldScreen is IHasSubScreenStack oldHasSubScreenStack)
+        {
+            var subScreenStack = oldHasSubScreenStack.SubScreenStack;
+            subScreenStack.ScreenPushed -= screenStack_ScreenSwitched;
+            subScreenStack.ScreenExited -= screenStack_ScreenSwitched;
+        }
+
+        if (newScreen is IHasSubScreenStack hasSubScreenStack)
+        {
+            var subScreenStack = hasSubScreenStack.SubScreenStack;
+            subScreenStack.ScreenPushed += screenStack_ScreenSwitched;
+            subScreenStack.ScreenExited += screenStack_ScreenSwitched;
+        }
+
         if (newScreen is not SongSelectV2 songSelect)
             return;
 
