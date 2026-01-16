@@ -40,6 +40,11 @@ public sealed partial class LegacyExperiencePlugin
         if (newScreen is IHasSubScreenStack hasSubScreenStack)
         {
             var subScreenStack = hasSubScreenStack.SubScreenStack;
+
+            // unsubscribe first to avoid multiple subscriptions
+            subScreenStack.ScreenPushed -= screenStack_ScreenSwitched;
+            subScreenStack.ScreenExited -= screenStack_ScreenSwitched;
+
             subScreenStack.ScreenPushed += screenStack_ScreenSwitched;
             subScreenStack.ScreenExited += screenStack_ScreenSwitched;
         }
