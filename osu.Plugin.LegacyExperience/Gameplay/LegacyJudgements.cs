@@ -8,6 +8,7 @@ using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Shaders.Types;
 using osuTK.Graphics.ES30;
 using osuTK;
+using osu.Framework.Extensions.EnumExtensions;
 
 namespace osu.Plugin.LegacyExperience.Gameplay;
 
@@ -20,9 +21,12 @@ public partial class LegacyJudgements : Drawable
     private readonly JudgementSpark[] sparks = new JudgementSpark[max_sparks];
     private int sparkIndex = 0;
 
-    private float sparkLifetime = 10000; // 10s
-    private Vector2 sparkSize = new Vector2(3, 10); // TODO: adjust it.
+    private Vector2 sparkDrawSize;
     private float time = 0;
+
+    public Axes SparkRelativeSizeAxes { get; set; } = Axes.None;
+    public Vector2 SparkSize { get; set; } = new Vector2(3, 10);
+    public float SparkLifetime { get; set; } = 10000; // 10s
 
     public bool EnableClipping { get; set; } = true;
 
@@ -42,6 +46,13 @@ public partial class LegacyJudgements : Drawable
         base.Update();
 
         time = (float)Time.Current;
+
+        sparkDrawSize = SparkSize;
+
+        if (SparkRelativeSizeAxes.HasFlagFast(Axes.X))
+            sparkDrawSize.X *= DrawSize.X;
+        if (SparkRelativeSizeAxes.HasFlagFast(Axes.Y))
+            sparkDrawSize.Y *= DrawSize.Y;
 
         Invalidate(Invalidation.DrawNode);
     }
@@ -79,7 +90,7 @@ public partial class LegacyJudgements : Drawable
         private IShader shader = null!;
         private float time;
         private float sparkLifetime;
-        private Vector2 sparkSize;
+        private Vector2 sparkDrawSize;
         private bool enableClipping;
         private RectangleF drawRectangle;
 
@@ -89,8 +100,8 @@ public partial class LegacyJudgements : Drawable
 
             shader = Source.shader;
             time = Source.time;
-            sparkLifetime = Source.sparkLifetime;
-            sparkSize = Source.sparkSize;
+            sparkLifetime = Source.SparkLifetime;
+            sparkDrawSize = Source.sparkDrawSize;
             enableClipping = Source.EnableClipping;
             drawRectangle = Source.DrawRectangle;
 
@@ -123,7 +134,7 @@ public partial class LegacyJudgements : Drawable
             renderer.SetBlend(BlendingParameters.Additive);
             renderer.PushLocalMatrix(DrawInfo.Matrix);
 
-            Vector2 halfSparkSize = sparkSize / 2;
+            Vector2 halfSparkSize = sparkDrawSize / 2;
 
             foreach (var spark in sparks)
             {
@@ -176,6 +187,7 @@ public partial class LegacyJudgements : Drawable
             shader.Unbind();
         }
 
+        // TODO: this is a naive implementation, consider using masking or scissoring for better performance.
         private Vector2 restrictToDrawRectangle(Vector2 position)
         {
             if (!enableClipping)
