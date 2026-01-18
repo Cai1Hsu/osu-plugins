@@ -38,6 +38,7 @@ public partial class TestSceneLegacyJudgements : OsuTestScene
                 Origin = Anchor.Centre,
                 Size = new Vector2(100, 10),
                 Scale = new Vector2(5),
+                Masking = true,
                 Children = new Drawable[]
                 {
                     new Box

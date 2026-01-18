@@ -28,8 +28,6 @@ public partial class LegacyJudgements : Drawable
     public Vector2 SparkSize { get; set; } = new Vector2(3, 10);
     public float SparkLifetime { get; set; } = 10000; // 10s
 
-    public bool EnableClipping { get; set; } = true;
-
     private IShader shader = null!;
 
     [BackgroundDependencyLoader]
@@ -96,8 +94,6 @@ public partial class LegacyJudgements : Drawable
         private float time;
         private float sparkLifetime;
         private Vector2 sparkDrawSize;
-        private bool enableClipping;
-        private RectangleF drawRectangle;
 
         public override void ApplyState()
         {
@@ -107,8 +103,6 @@ public partial class LegacyJudgements : Drawable
             time = Source.time;
             sparkLifetime = Source.SparkLifetime;
             sparkDrawSize = Source.sparkDrawSize;
-            enableClipping = Source.EnableClipping;
-            drawRectangle = Source.DrawRectangle;
 
             Source.sparks.CopyTo(sparks, 0);
         }
@@ -152,8 +146,7 @@ public partial class LegacyJudgements : Drawable
                 // bottom left
                 vertexBatch.Add(new JudgementSparkVertex
                 {
-                    Position = restrictToDrawRectangle(
-                        new Vector2(spark.Position.X - halfSparkSize.X, spark.Position.Y + halfSparkSize.Y)),
+                    Position = new Vector2(spark.Position.X - halfSparkSize.X, spark.Position.Y + halfSparkSize.Y),
                     Color = spark.Color * DrawColourInfo.Colour.BottomLeft.Linear,
                     Time = spark.Time
                 });
@@ -161,8 +154,7 @@ public partial class LegacyJudgements : Drawable
                 // bottom right
                 vertexBatch.Add(new JudgementSparkVertex
                 {
-                    Position = restrictToDrawRectangle(
-                        new Vector2(spark.Position.X + halfSparkSize.X, spark.Position.Y + halfSparkSize.Y)),
+                    Position = new Vector2(spark.Position.X + halfSparkSize.X, spark.Position.Y + halfSparkSize.Y),
                     Color = spark.Color * DrawColourInfo.Colour.BottomRight.Linear,
                     Time = spark.Time
                 });
@@ -170,8 +162,7 @@ public partial class LegacyJudgements : Drawable
                 // top right
                 vertexBatch.Add(new JudgementSparkVertex
                 {
-                    Position = restrictToDrawRectangle(
-                        new Vector2(spark.Position.X + halfSparkSize.X, spark.Position.Y - halfSparkSize.Y)),
+                    Position = new Vector2(spark.Position.X + halfSparkSize.X, spark.Position.Y - halfSparkSize.Y),
                     Color = spark.Color * DrawColourInfo.Colour.TopRight.Linear,
                     Time = spark.Time
                 });
@@ -179,8 +170,7 @@ public partial class LegacyJudgements : Drawable
                 // top left
                 vertexBatch.Add(new JudgementSparkVertex
                 {
-                    Position = restrictToDrawRectangle(
-                        new Vector2(spark.Position.X - halfSparkSize.X, spark.Position.Y - halfSparkSize.Y)),
+                    Position = new Vector2(spark.Position.X - halfSparkSize.X, spark.Position.Y - halfSparkSize.Y),
                     Color = spark.Color * DrawColourInfo.Colour.TopLeft.Linear,
                     Time = spark.Time
                 });
@@ -190,18 +180,6 @@ public partial class LegacyJudgements : Drawable
             renderer.PopLocalMatrix();
 
             shader.Unbind();
-        }
-
-        // TODO: this is a naive implementation, consider using masking or scissoring for better performance.
-        private Vector2 restrictToDrawRectangle(Vector2 position)
-        {
-            if (!enableClipping)
-                return position;
-
-            return new Vector2(
-                MathHelper.Clamp(position.X, drawRectangle.Left, drawRectangle.Right),
-                MathHelper.Clamp(position.Y, drawRectangle.Top, drawRectangle.Bottom)
-            );
         }
 
         protected override void Dispose(bool isDisposing)
