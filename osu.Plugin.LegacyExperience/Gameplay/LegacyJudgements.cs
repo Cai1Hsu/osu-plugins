@@ -186,9 +186,9 @@ public partial class LegacyJudgements : Drawable
                 });
             }
 
+            vertexBatch.Draw();
             renderer.PopLocalMatrix();
 
-            vertexBatch.Draw();
             shader.Unbind();
         }
 
