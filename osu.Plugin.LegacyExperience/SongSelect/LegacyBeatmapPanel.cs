@@ -244,9 +244,20 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
         if (displayPolicy.CoverBeatmap is not null && beatmaps is not null)
         {
-            background_update_task = Scheduler.AddDelayed(
-                s => cover.UpdateBackground(beatmaps.GetWorkingBeatmap(s)),
-                displayPolicy.CoverBeatmap, background_update_debounce);
+            void updateBackground()
+                => cover.UpdateBackground(beatmaps.GetWorkingBeatmap(displayPolicy.CoverBeatmap));
+
+            if (Item.Model is GroupedBeatmap)
+            {
+                // immediately update background when expanding a beatmap set manually.
+                updateBackground();
+            }
+            else
+            {
+                // The debounce is intended to reduce the number of background loading operations
+                // when rapidly scrolling through the song select.
+                background_update_task = Scheduler.AddDelayed(updateBackground, background_update_debounce);
+            }
         }
 
         // TODO: update play info
