@@ -37,8 +37,7 @@ public partial class LegacyJudgements : Drawable
     {
         shader = shaders.Load(@"LegacyJudgements", "LegacyJudgements");
 
-        for (int i = 0; i < max_sparks; i++)
-            sparks[i].InvalidationId = unused_invalidation_id;
+        Clear();
     }
 
     protected override void Update()
@@ -55,6 +54,12 @@ public partial class LegacyJudgements : Drawable
             sparkDrawSize.Y *= DrawSize.Y;
 
         Invalidate(Invalidation.DrawNode);
+    }
+
+    public void Clear()
+    {
+        for (int i = 0; i < max_sparks; i++)
+            sparks[i].InvalidationId = unused_invalidation_id;
     }
 
     public void SpawnSpark(Vector2 position, Colour4 color)
