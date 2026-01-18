@@ -191,11 +191,16 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         cover.ClearBackground();
         background_update_task?.Cancel();
         background_update_task = null;
+        local_score_task?.Cancel();
+        local_score_task = null;
         localRankDisplay.Beatmap = null;
     }
 
     private const float background_update_debounce = 350;
     private ScheduledDelegate? background_update_task;
+
+    private const float local_score_debounce = 150;
+    private ScheduledDelegate? local_score_task;
 
     protected override void PrepareForUse()
     {
@@ -213,15 +218,19 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             difficultyText.Text = GetDisplayDifficultyName(playBeatmap);
             addStarDifficultyDisplay();
             computeStarRating(playBeatmap);
-            localRankDisplay.Beatmap = playBeatmap;
+
+            // Realm notification registration is VERY expensive and can NOT be done asynchronously.
+            // Generally we would cache the local scores for all beatmaps beforehand,
+            // but since we are just patching lazer's code instead of rewriting the whole song select, 
+            // we will just debounce the updates to reduce the number of registrations.
+            local_score_task = Scheduler.AddDelayed(() => localRankDisplay.Beatmap = playBeatmap, local_score_debounce);
         }
 
         if (displayPolicy.CoverBeatmap is not null && beatmaps is not null)
         {
             background_update_task = Scheduler.AddDelayed(
                 s => cover.UpdateBackground(beatmaps.GetWorkingBeatmap(s)),
-                displayPolicy.CoverBeatmap,
-                background_update_debounce);
+                displayPolicy.CoverBeatmap, background_update_debounce);
         }
 
         // TODO: update play info

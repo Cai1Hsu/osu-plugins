@@ -6,16 +6,13 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.Textures;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Online.API;
-using osu.Game.Plugins;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
-using osu.Game.Skinning;
 using Realms;
+using static osu.Plugin.LegacyExperience.SongSelect.LegacyRankSpritePool;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
@@ -44,21 +41,18 @@ public partial class LegacyLocalRankDisplay : CompositeDrawable
     [Resolved]
     private IAPIProvider api { get; set; } = null!;
 
+    [Resolved]
+    private LegacyRankSpritePool? rankSpritePool { get; set; }
+
     private IDisposable? scoreSubscription;
 
-    private RankSprite rankSprite = null!;
+    private LegacyRankSprite? rankSprite;
 
     [BackgroundDependencyLoader]
     private void load()
     {
         RelativeSizeAxes = Axes.Y;
         AutoSizeAxes = Axes.X;
-
-        InternalChild = rankSprite = new RankSprite
-        {
-            Anchor = Anchor.Centre,
-            Origin = Anchor.Centre,
-        };
     }
 
     protected override void LoadComplete()
@@ -72,18 +66,32 @@ public partial class LegacyLocalRankDisplay : CompositeDrawable
     {
         disposeSubscription();
 
-        if (beatmap == null)
+        if (beatmap is null)
         {
-            rankSprite.Rank = null;
+            updateRankDisplay(null);
+            return;
         }
-        else
-        {
-            scoreSubscription = realm.RegisterForNotifications(r =>
-                    r.GetAllLocalScoresForUser(api.LocalUser.Value.Id)
-                     .Filter($@"{nameof(ScoreInfo.BeatmapInfo)}.{nameof(BeatmapInfo.ID)} == $0"
-                             + $" && {nameof(ScoreInfo.Ruleset)}.{nameof(RulesetInfo.ShortName)} == $1", beatmap.ID, ruleset.Value.ShortName),
-                localScoresChanged);
-        }
+
+        scoreSubscription = realm.RegisterForNotifications(r =>
+                r.GetAllLocalScoresForUser(api.LocalUser.Value.Id)
+                 .Filter($@"{nameof(ScoreInfo.BeatmapInfo)}.{nameof(BeatmapInfo.ID)} == $0"
+                         + $" && {nameof(ScoreInfo.Ruleset)}.{nameof(RulesetInfo.ShortName)} == $1", beatmap.ID, ruleset.Value.ShortName),
+            localScoresChanged);
+    }
+
+    private void updateRankDisplay(ScoreInfo? topScore)
+    {
+        if (rankSprite?.Rank == topScore?.Rank)
+            return;
+
+        rankSprite?.Expire();
+        rankSprite = null;
+
+        if (topScore is null)
+            return;
+
+        rankSprite = getRankSprite(topScore.Rank);
+        AddInternal(rankSprite);
     }
 
     private void localScoresChanged(IRealmCollection<ScoreInfo> sender, ChangeSet? changes)
@@ -94,8 +102,7 @@ public partial class LegacyLocalRankDisplay : CompositeDrawable
             return;
 
         ScoreInfo? topScore = sender.MaxBy(info => (info.TotalScore, -info.Date.UtcDateTime.Ticks));
-        rankSprite.Alpha = topScore != null ? 1 : 0;
-        rankSprite.Rank = topScore?.Rank;
+        updateRankDisplay(topScore);
     }
 
     private void disposeSubscription()
@@ -107,72 +114,18 @@ public partial class LegacyLocalRankDisplay : CompositeDrawable
     protected override void Dispose(bool isDisposing)
     {
         base.Dispose(isDisposing);
+
         disposeSubscription();
     }
 
-    private partial class RankSprite : Sprite
+    private LegacyRankSprite getRankSprite(ScoreRank rank)
     {
-        [Resolved]
-        private ISkinSource? skin { get; set; }
+        var sprite = rankSpritePool?.Get(rank)
+            ?? new LegacyRankSprite(rank); // fallback in case the pool is not available, e.g. test scenarios
 
-        [Resolved]
-        private TextureStore? textures { get; set; }
+        sprite.Anchor = Anchor.Centre;
+        sprite.Origin = Anchor.Centre;
 
-        private ScoreRank? rank;
-
-        public ScoreRank? Rank
-        {
-            get => rank;
-            set
-            {
-                if (rank == value)
-                    return;
-
-                rank = value;
-                updateTexture();
-            }
-        }
-
-        [BackgroundDependencyLoader]
-        private void load()
-        {
-            if (skin is not null)
-                skin.SourceChanged += updateTexture;
-
-            updateTexture();
-        }
-
-        private void updateTexture()
-        {
-            if (rank is null)
-            {
-                Texture = null;
-                return;
-            }
-
-            var lookup = getRankTextureLookup(rank.Value);
-            Texture = skin?.GetSkinTexture(lookup, textures, "UI");
-        }
-
-        private static string getRankTextureLookup(ScoreRank rank) => rank switch
-        {
-            ScoreRank.XH => "ranking-XH-small",
-            ScoreRank.X => "ranking-X-small",
-            ScoreRank.SH => "ranking-SH-small",
-            ScoreRank.S => "ranking-S-small",
-            ScoreRank.A => "ranking-A-small",
-            ScoreRank.B => "ranking-B-small",
-            ScoreRank.C => "ranking-C-small",
-            ScoreRank.D => "ranking-D-small",
-            _ => string.Empty,
-        };
-
-        protected override void Dispose(bool isDisposing)
-        {
-            base.Dispose(isDisposing);
-
-            if (skin is not null)
-                skin.SourceChanged -= updateTexture;
-        }
+        return sprite;
     }
 }

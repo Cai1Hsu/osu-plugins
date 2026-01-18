@@ -38,6 +38,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     [Cached]
     private DrawablePool<StarDifficultyDisplay> starDifficultyPool { get; set; } = new DrawablePool<StarDifficultyDisplay>(20);
 
+    [Cached]
+    private LegacyRankSpritePool rankSpritePool { get; set; } = new LegacyRankSpritePool();
+
     // SongSelectV2's capacity is 100 foreach panel type.
     // Although V2's panels are more varied, I think 100 is enough.
     private const int pool_capacity = 100;
@@ -47,6 +50,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     public BeatmapCarousel()
     {
         AddInternal(starDifficultyPool);
+        AddInternal(rankSpritePool);
     }
 
     private static readonly FieldInfo groupingField = typeof(BeatmapCarouselV2)
