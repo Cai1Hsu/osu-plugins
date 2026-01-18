@@ -3,6 +3,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input;
 using osu.Framework.Testing;
+using osu.Framework.Utils;
 using osu.Game.Tests.Visual;
 using osu.Plugin.LegacyExperience.Gameplay;
 using osuTK;
@@ -22,11 +23,15 @@ public partial class TestSceneLegacyJudgements : OsuTestScene
         inputManager = GetContainingInputManager();
     }
 
+    private Colour4 colour = Colour4.Red;
+
     [SetUpSteps]
     public void SetupSteps()
     {
         AddStep("add legacy judgements", () =>
         {
+            Clear();
+
             Add(new ClickableContainer()
             {
                 Anchor = Anchor.Centre,
@@ -55,9 +60,26 @@ public partial class TestSceneLegacyJudgements : OsuTestScene
                         return;
 
                     var spawnPosition = legacyJudgements.ToLocalSpace(inputManager.CurrentState.Mouse.Position);
-                    legacyJudgements.SpawnSpark(spawnPosition, Colour4.Red);
+                    legacyJudgements.SpawnSpark(spawnPosition, colour);
                 }
             });
+        });
+
+        AddStep("clear sparks", () =>
+        {
+            if (legacyJudgements is null)
+                return;
+
+            legacyJudgements.Clear();
+        });
+
+        AddStep("random colour", () =>
+        {
+            colour = new Colour4(
+                RNG.NextSingle(),
+                RNG.NextSingle(),
+                RNG.NextSingle(),
+                1f);
         });
     }
 }
