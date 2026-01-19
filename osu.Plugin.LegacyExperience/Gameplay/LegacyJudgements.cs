@@ -122,7 +122,6 @@ public partial class LegacyJudgements : Drawable
             parametersBuffer ??= renderer.CreateUniformBuffer<JudgementsParameters>();
             parametersBuffer.Data = parametersBuffer.Data with
             {
-                InitialAlpha = initial_spark_alpha,
                 Time = time,
                 SparkLifetime = sparkLifetime,
             };
@@ -135,6 +134,8 @@ public partial class LegacyJudgements : Drawable
 
             Vector2 halfSparkSize = sparkDrawSize / 2;
 
+            var averageColorLinear = DrawColourInfo.Colour.AverageColour.Linear;
+
             foreach (var spark in sparks)
             {
                 if (spark.InvalidationId == unused_invalidation_id)
@@ -143,11 +144,17 @@ public partial class LegacyJudgements : Drawable
                 if (spark.Time + sparkLifetime < time)
                     continue;
 
+                // TODO: we should interpolate color for each vertex here,
+                // but since color tinting should never happen to legacy judgements in practice,
+                // and the reason we apply DrawColourInfo is that the whole judgement's alpha may changes during a fade animation, 
+                // we just sample the average color once for all vertices to make alpha correct.
+                var color = (spark.Color * averageColorLinear).MultiplyAlpha(initial_spark_alpha);
+
                 // bottom left
                 vertexBatch.Add(new JudgementSparkVertex
                 {
                     Position = new Vector2(spark.Position.X - halfSparkSize.X, spark.Position.Y + halfSparkSize.Y),
-                    Color = spark.Color * DrawColourInfo.Colour.BottomLeft.Linear,
+                    Color = color,
                     Time = spark.Time
                 });
 
@@ -155,7 +162,7 @@ public partial class LegacyJudgements : Drawable
                 vertexBatch.Add(new JudgementSparkVertex
                 {
                     Position = new Vector2(spark.Position.X + halfSparkSize.X, spark.Position.Y + halfSparkSize.Y),
-                    Color = spark.Color * DrawColourInfo.Colour.BottomRight.Linear,
+                    Color = color,
                     Time = spark.Time
                 });
 
@@ -163,7 +170,7 @@ public partial class LegacyJudgements : Drawable
                 vertexBatch.Add(new JudgementSparkVertex
                 {
                     Position = new Vector2(spark.Position.X + halfSparkSize.X, spark.Position.Y - halfSparkSize.Y),
-                    Color = spark.Color * DrawColourInfo.Colour.TopRight.Linear,
+                    Color = color,
                     Time = spark.Time
                 });
 
@@ -171,7 +178,7 @@ public partial class LegacyJudgements : Drawable
                 vertexBatch.Add(new JudgementSparkVertex
                 {
                     Position = new Vector2(spark.Position.X - halfSparkSize.X, spark.Position.Y - halfSparkSize.Y),
-                    Color = spark.Color * DrawColourInfo.Colour.TopLeft.Linear,
+                    Color = color,
                     Time = spark.Time
                 });
             }
@@ -193,10 +200,9 @@ public partial class LegacyJudgements : Drawable
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private record struct JudgementsParameters
         {
-            public UniformFloat InitialAlpha;
             public UniformFloat Time;
             public UniformFloat SparkLifetime;
-            private readonly UniformPadding4 padding;
+            private readonly UniformPadding8 padding;
         }
 
         [StructLayout(LayoutKind.Sequential)]
