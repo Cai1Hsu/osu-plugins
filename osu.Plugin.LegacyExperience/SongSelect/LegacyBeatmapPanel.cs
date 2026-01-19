@@ -222,24 +222,11 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             void updateLocalRankDisplay()
                 => localRankDisplay.Beatmap = playBeatmap;
 
-            if (Item.Model is GroupedBeatmap)
-            {
-                // The debounce is intended to reduce the number of realm notification registrations
-                // when rapidly scrolling through the song select.
-                // However, only beatmap sets with single beatmap would show the local rank display without manual expansion.
-                // So a beatmap model indicates the user is manually expanding the set,
-                // theres no frequent registrations in this case and a immediate update is better UX.
-                // You wouldn't want to see visual jumping after a delay when you just expanded a set.
-                updateLocalRankDisplay();
-            }
-            else
-            {
-                // Realm notification registration is VERY expensive and can NOT be done asynchronously.
-                // Generally we would cache the local scores for all beatmaps beforehand,
-                // but since we are just patching lazer's code instead of rewriting the whole song select, 
-                // we will just debounce the updates to reduce the number of registrations.
-                local_score_task = Scheduler.AddDelayed(updateLocalRankDisplay, local_score_debounce);
-            }
+            // Realm notification registration is VERY expensive and can NOT be done asynchronously.
+            // Generally we would cache the local scores for all beatmaps beforehand,
+            // but since we are just patching lazer's code instead of rewriting the whole song select, 
+            // we will just debounce the updates to reduce the number of registrations.
+            local_score_task = Scheduler.AddDelayed(updateLocalRankDisplay, local_score_debounce);
         }
 
         if (displayPolicy.CoverBeatmap is not null && beatmaps is not null)
@@ -247,17 +234,9 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             void updateBackground()
                 => cover.UpdateBackground(beatmaps.GetWorkingBeatmap(displayPolicy.CoverBeatmap));
 
-            if (Item.Model is GroupedBeatmap)
-            {
-                // immediately update background when expanding a beatmap set manually.
-                updateBackground();
-            }
-            else
-            {
-                // The debounce is intended to reduce the number of background loading operations
-                // when rapidly scrolling through the song select.
-                background_update_task = Scheduler.AddDelayed(updateBackground, background_update_debounce);
-            }
+            // The debounce is intended to reduce the number of background loading operations
+            // when rapidly scrolling through the song select.
+            background_update_task = Scheduler.AddDelayed(updateBackground, background_update_debounce);
         }
 
         // TODO: update play info
