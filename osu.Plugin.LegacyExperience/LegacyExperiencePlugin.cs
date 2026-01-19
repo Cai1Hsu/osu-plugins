@@ -45,6 +45,7 @@ public sealed class LegacyExperiencePlugin : OsuPlugin
             typeof(LegacyErrorMeter),
             typeof(LegacyFpsDisplay),
             typeof(LegacyLeaderboard),
+            typeof(PlayfieldMask),
         }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.MainHUDComponents));
 
         skinEditor.RegisterSkinComponents(new[]
