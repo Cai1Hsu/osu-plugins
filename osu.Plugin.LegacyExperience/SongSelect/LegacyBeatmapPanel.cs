@@ -215,7 +215,11 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
         if (displayPolicy.playBeatmap is BeatmapInfo playBeatmap)
         {
-            difficultyText.Text = GetDisplayDifficultyName(playBeatmap);
+            var mapper = playBeatmap.Metadata.Author.Username ?? "Unknown";
+
+            artistText.Text = LocalisableString.Format("{0} // {1}", displayPolicy.Artist, mapper);
+            difficultyText.Text = playBeatmap.DifficultyName;
+
             addStarDifficultyDisplay();
             computeStarRating(playBeatmap);
 
@@ -274,13 +278,6 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
             starDisplay.Current.Value = starDifficulty.NewValue.Stars;
         }, true);
-    }
-
-    protected virtual string GetDisplayDifficultyName(BeatmapInfo beatmap)
-    {
-        string mapper = beatmap.Metadata.Author.Username ?? "Unknown";
-
-        return $"{beatmap.DifficultyName} // {mapper}";
     }
 
     protected virtual PanelDisplayPolicy CreateDisplayPolicy(object model)
