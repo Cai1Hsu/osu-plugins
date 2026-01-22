@@ -21,8 +21,6 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
         if (gameBase is not OsuGame game)
             return;
 
-        applyLegacyBackgroundFillModeHook(game);
-
         SkinEditorOverlay? skinEditor = game.Dependencies.Get<SkinEditorOverlay?>();
         if (skinEditor is null)
             return;
