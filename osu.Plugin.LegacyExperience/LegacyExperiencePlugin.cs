@@ -21,8 +21,6 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
         if (gameBase is not OsuGame game)
             return;
 
-        applyLegacyBackgroundFillModeHook(game);
-
         SkinEditorOverlay? skinEditor = game.Dependencies.Get<SkinEditorOverlay?>();
         if (skinEditor is null)
             return;
@@ -48,6 +46,7 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
             typeof(LegacyFpsDisplay),
             typeof(LegacyLeaderboard),
             typeof(PlayfieldMask),
+            typeof(LegacyStoryboardExtend),
         }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.MainHUDComponents));
 
         skinEditor.RegisterSkinComponents(new[]
