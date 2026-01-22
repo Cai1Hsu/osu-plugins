@@ -41,6 +41,7 @@ public partial class TestScenePlayfieldMask : OsuTestScene
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
+                AutoSizeAxes = Axes.Both
             });
 
             void updateInfoText()
