@@ -1,6 +1,7 @@
 using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
+using osu.Framework.Logging;
 using osu.Framework.Screens;
 using osu.Game;
 using osu.Game.Graphics.Backgrounds;
@@ -15,6 +16,12 @@ public sealed partial class LegacyExperiencePlugin
 {
     private void applyLegacyBackgroundFillModeHook(OsuGame game)
     {
+        if (backgroundField is null)
+        {
+            Logger.Log("Failed to apply legacy background fill mode hook because a required reflection field was not found. Consider reporting this issue.", level: LogLevel.Error);
+            return;
+        }
+
         var screenStack = game.GetScreenStack();
         var backgroundScreenStack = screenStack.Dependencies.Get<BackgroundScreenStack>();
 
