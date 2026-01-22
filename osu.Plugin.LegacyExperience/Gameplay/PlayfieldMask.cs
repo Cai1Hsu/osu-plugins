@@ -153,7 +153,7 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
             return false;
 
         // masking playfield while letterboxing is enabled in breaks looks bad,
-        // because they pretty much does the same thing, just different aspect ratios,
+        // because they pretty much do the same thing, just different aspect ratios,
         // but stable does it anyway, we just follow suit.
         if (beatmap?.Value.Beatmap.LetterboxInBreaks ?? false)
             return true;
