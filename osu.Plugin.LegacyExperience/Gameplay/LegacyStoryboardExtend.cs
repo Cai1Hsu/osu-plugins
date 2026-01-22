@@ -55,6 +55,7 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
         if (drawable_storyboard is null)
             return;
 
+        // TODO: this probably only appiles to non-widescreen storyboards, investigate further.
         handleBackgroundLayer(drawable_storyboard.Children.FirstOrDefault(l => l.Name == background_layer_name));
     }
 
@@ -109,11 +110,11 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
 
                 alreadyCreated = true;
 
-                // FIXME: 
                 // `elementContainer` is a LifetimeManagementContainer which doesn't support remove child when dead.
                 // When creating multiple instances of LegacyStoryboardExtend, multiple BackgroundSprites are added to the container,
                 // and never removed, causing memory leak.
-                // We need to figure out a way to at least avoid adding multiple BackgroundSprites.
+                // We try to avoid creating multiple BackgroundSprites by checking `alreadyCreated` above. But this may resulted no background
+                // when create two instances and removed the first one. This wouldn't be be a problem relative to memory leak.
                 LoadComponentAsync(backgroundSprite = new BackgroundSprite(beatmap.Value), elementContainer.AddInternal);
             }, true);
         });
