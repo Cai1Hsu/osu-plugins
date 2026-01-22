@@ -26,6 +26,8 @@ public partial class TestScenePlayfieldMask : OsuTestScene
     [SetUpSteps]
     public void SetUpSteps()
     {
+        var dimLevel = settings.GetBindable<double>(OsuSetting.DimLevel);
+
         AddStep("add playfield mask", () =>
         {
             Clear();
@@ -46,10 +48,14 @@ public partial class TestScenePlayfieldMask : OsuTestScene
                 infoText.Clear();
                 infoText.AddParagraph($"Top/Bottom Borders: {(mask.DisplayTopBottomBorders.Value ? "Visible" : "Hidden")}");
                 infoText.AddParagraph($"Border Type: {mask.VerticalBorderType.Value}");
+                infoText.AddParagraph($"Dim Level: {dimLevel:P0}");
+                infoText.AddParagraph($"Background Dimming: {(mask.ApplyBackgroundDimming.Value ? "Applied" : "Not Applied")}");
             }
 
             mask.DisplayTopBottomBorders.BindValueChanged(_ => updateInfoText());
-            mask.VerticalBorderType.BindValueChanged(_ => updateInfoText(), true);
+            mask.VerticalBorderType.BindValueChanged(_ => updateInfoText());
+            mask.ApplyBackgroundDimming.BindValueChanged(_ => updateInfoText());
+            dimLevel.BindValueChanged(_ => updateInfoText(), true);
         });
 
         AddStep("Fade out", () => mask.FadeOut());
@@ -59,8 +65,6 @@ public partial class TestScenePlayfieldMask : OsuTestScene
 
         AddStep("Set border type: BlackBar", () => mask.VerticalBorderType.Value = PlayfieldMask.SideBorderType.BlackBar);
         AddStep("Set border type: Legacy", () => mask.VerticalBorderType.Value = PlayfieldMask.SideBorderType.LegacyMaskingBorder);
-
-        var dimLevel = settings.GetBindable<double>(OsuSetting.DimLevel);
 
         AddSliderStep("Background dimming", 0.0, 1.0, 0.0, v => dimLevel.Value = v);
         AddToggleStep("Apply background dimming", v => mask.ApplyBackgroundDimming.Value = v);
