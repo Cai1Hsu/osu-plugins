@@ -39,7 +39,7 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
     [BackgroundDependencyLoader]
     private void load()
     {
-        if (drawable_storyboard_field is null || LayerElementContainer_getter is null)
+        if (drawable_storyboard_field is null || LayerElementContainer_getter is null || composite_alive_children_field is null)
         {
             Logger.Log("Failed to apply LegacyStoryboardExtend because of missing reflection field. Consider reporting this issue.", level: LogLevel.Error);
             return;
@@ -70,7 +70,7 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
         .GetField("drawableStoryboard", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
     private readonly static MethodInfo LayerElementContainer_getter = typeof(DrawableStoryboardLayer)
-        .GetProperty("ElementContainer", BindingFlags.NonPublic | BindingFlags.Instance)!
+        .GetProperty("ElementContainer", BindingFlags.NonPublic | BindingFlags.Instance)?
         .GetGetMethod(nonPublic: true)!;
 
     private const string background_layer_name = "Background";
