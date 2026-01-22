@@ -48,7 +48,7 @@ public partial class TestScenePlayfieldMask : OsuTestScene
                 infoText.Clear();
                 infoText.AddParagraph($"Top/Bottom Borders: {(mask.DisplayTopBottomBorders.Value ? "Visible" : "Hidden")}");
                 infoText.AddParagraph($"Border Type: {mask.VerticalBorderType.Value}");
-                infoText.AddParagraph($"Dim Level: {dimLevel:P0}");
+                infoText.AddParagraph($"Dim Level: {dimLevel.Value:P0}");
                 infoText.AddParagraph($"Background Dimming: {(mask.ApplyBackgroundDimming.Value ? "Applied" : "Not Applied")}");
             }
 
