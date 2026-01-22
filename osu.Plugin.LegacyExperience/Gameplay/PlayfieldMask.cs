@@ -123,7 +123,12 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
     {
         base.LoadComplete();
 
-        FadeOutDuringBreaks.BindValueChanged(_ => syncFadeState(), true);
+        showStoryboard.BindValueChanged(_ => scheduleFadeStateSync());
+        lightenDuringBreaks.BindValueChanged(_ => scheduleFadeStateSync());
+        backgroundDimLevel.BindValueChanged(_ => scheduleFadeStateSync());
+        FadeOutDuringBreaks.BindValueChanged(_ => scheduleFadeStateSync(), true);
+
+        void scheduleFadeStateSync() => Scheduler.AddOnce(syncFadeState);
     }
 
     public void FadeIn()
