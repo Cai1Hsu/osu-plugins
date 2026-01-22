@@ -4,8 +4,8 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Lists;
 using osu.Framework.Logging;
-using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Plugins;
 using osu.Game.Screens.Play;
@@ -76,7 +76,6 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
     private const string background_layer_name = "Background";
 
     private Drawable? backgroundSprite;
-    private StoryboardLayer backgroundLayer = null!;
 
     private void handleBackgroundLayer(DrawableStoryboardLayer? backgroundLayer)
     {
@@ -94,17 +93,19 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
         if (string.IsNullOrEmpty(backgroundFile))
             return;
 
-        this.backgroundLayer = backgroundLayer.Layer;
+        // reflection operations done asynchronously so the overhead is acceptable
+        // also, for LifetimeManagementContainer, enumerating through alive children are expected to be fast.
+        var layerAliveChildren = composite_alive_children_field.GetValue(elementContainer) as SortedList<Drawable>;
+
+        if (layerAliveChildren is null)
+            return;
 
         Scheduler.Add(() =>
         {
-            bool alreadyCreated = this.backgroundLayer.Elements.OfType<StoryboardBackground>().Any();
+            bool alreadyCreated = layerAliveChildren.OfType<BackgroundSprite>().Any();
 
             if (alreadyCreated)
                 return;
-
-            // Hope this prevents creating multiple backgrounds.
-            this.backgroundLayer.Add(new StoryboardBackground(beatmap.Value));
 
             // Some beatmaps doesn't really have storyboard, we don't want to add background sprite in that case.
             // DrawableStoryboard sets HasStoryboardEnded to true by default until an actual storyboard is loaded.
@@ -125,8 +126,8 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
         });
     }
 
-    [Resolved]
-    private GameHost? host { get; set; }
+    private static readonly FieldInfo composite_alive_children_field = typeof(CompositeDrawable)
+        .GetField("aliveInternalChildren", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
     protected override void Dispose(bool isDisposing)
     {
@@ -137,35 +138,6 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
 
         // at least make it invisible
         backgroundSprite.Expire();
-
-        if (host is null)
-            return;
-
-        // keep us on the update thread to avoid potential race conditions.
-        host.UpdateThread.Scheduler.Add(() =>
-        {
-            backgroundLayer.Elements.RemoveAll(static e => e is StoryboardBackground);
-        });
-    }
-
-    private partial class StoryboardBackground : IStoryboardElement
-    {
-        public string Path => workingBeatmap.Beatmap.Metadata?.BackgroundFile ?? string.Empty;
-
-        public bool IsDrawable => true;
-
-        public double StartTime => 0;
-
-        private WorkingBeatmap workingBeatmap;
-
-        public StoryboardBackground(WorkingBeatmap working)
-        {
-            workingBeatmap = working;
-        }
-
-        // This method will never be called, as the whole storyboard is created beforehand.
-        public Drawable CreateDrawable()
-            => new BackgroundSprite(workingBeatmap);
     }
 
     private partial class BackgroundSprite : Sprite
