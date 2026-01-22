@@ -1,10 +1,14 @@
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.Textures;
 using osu.Framework.Layout;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Game.Plugins;
 using osu.Game.Screens.Play;
 using osu.Game.Skinning;
 using osu.Game.Storyboards;
@@ -29,16 +33,35 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
         Value = FadeOutBehaviour.Auto,
     };
 
-    private Box topMask = null!;
-    private Box bottomMask = null!;
-    private Box leftMask = null!;
-    private Box rightMask = null!;
+    [SettingSource("Side border type", "The type of side borders to use.")]
+    public Bindable<SideBorderType> VerticalBorderType { get; private set; } = new Bindable<SideBorderType>()
+    {
+        Default = SideBorderType.LegacyMaskingBorder,
+        Value = SideBorderType.LegacyMaskingBorder,
+    };
+
+    [SettingSource("Display Top Bottom Borders", "Whether to display top and bottom borders in addition to side borders.")]
+    public Bindable<bool> DisplayTopBottomBorders { get; private set; } = new Bindable<bool>()
+    {
+        Default = true,
+        Value = true,
+    };
+
+    [SettingSource("Apply background dimming", "Whether to dim the background behind the playfield mask.")]
+    public Bindable<bool> ApplyBackgroundDimming { get; private set; } = new Bindable<bool>()
+    {
+        Default = true,
+        Value = true,
+    };
 
     [Resolved]
     private IBindable<WorkingBeatmap>? beatmap { get; set; }
 
     [Resolved]
     private GameplayState? gameplayState { get; set; }
+
+    [Resolved]
+    private TextureStore textures { get; set; } = null!;
 
     private bool isWideScreenStoryboard;
 
@@ -61,6 +84,9 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
     [Resolved]
     private GameplayClockContainer? gameplayClock { get; set; }
 
+    private Container horizontalBorderContainer = null!;
+    private Container verticalBorderContainer = null!;
+
     [BackgroundDependencyLoader]
     private void load(OsuConfigManager? config)
     {
@@ -71,29 +97,30 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
 
         InternalChildren = new Drawable[]
         {
-            topMask = new Box
+            horizontalBorderContainer = new Container
             {
-                Anchor = Anchor.TopCentre,
-                Origin = Anchor.TopCentre,
-                Colour = Colour4.Black,
+                RelativeSizeAxes = Axes.Both,
+                Children = new Drawable[]
+                {
+                    new Box
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        Anchor = Anchor.TopCentre,
+                        Origin = Anchor.TopCentre,
+                        Colour = Colour4.Black,
+                    },
+                    new Box
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        Anchor = Anchor.BottomCentre,
+                        Origin = Anchor.BottomCentre,
+                        Colour = Colour4.Black,
+                    },
+                }
             },
-            bottomMask = new Box
+            verticalBorderContainer = new Container
             {
-                Anchor = Anchor.BottomCentre,
-                Origin = Anchor.BottomCentre,
-                Colour = Colour4.Black,
-            },
-            leftMask = new Box
-            {
-                Anchor = Anchor.CentreLeft,
-                Origin = Anchor.CentreLeft,
-                Colour = Colour4.Black,
-            },
-            rightMask = new Box
-            {
-                Anchor = Anchor.CentreRight,
-                Origin = Anchor.CentreRight,
-                Colour = Colour4.Black,
+                RelativeSizeAxes = Axes.Both,
             },
         };
 
@@ -117,6 +144,104 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
 
         if (gameplayClock != null)
             gameplayClock.OnSeek += gameSeeked;
+
+        VerticalBorderType.BindValueChanged(_ => recreateSideBorderChildren(), true);
+        DisplayTopBottomBorders.BindValueChanged(v =>
+        {
+            if (v.NewValue)
+                horizontalBorderContainer.FadeIn(500);
+            else
+                horizontalBorderContainer.FadeOut(500);
+        }, true);
+
+        backgroundDimLevel.BindValueChanged(_ => updateBorderColour());
+        ApplyBackgroundDimming.BindValueChanged(_ => updateBorderColour(), true);
+    }
+
+    private void updateBorderColour()
+    {
+        Colour4 borderColour = Colour4.White;
+
+        if (ApplyBackgroundDimming.Value)
+        {
+            borderColour = borderColour.Darken((float)backgroundDimLevel.Value);
+        }
+
+        Colour = borderColour;
+    }
+
+    private void recreateSideBorderChildren()
+    {
+        verticalBorderContainer.Clear();
+
+        bool useLegacyMaskingBorder = VerticalBorderType.Value == SideBorderType.LegacyMaskingBorder;
+
+        verticalBorderContainer.AddRange(new Drawable[]
+        {
+            // left border
+            new BufferedContainer
+            {
+                RelativeSizeAxes = Axes.Y,
+                Anchor = Anchor.CentreLeft,
+                Origin = Anchor.CentreLeft,
+                Children = new Drawable[]
+                {
+                    new Box
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                        Colour = Colour4.Black,
+                        RelativeSizeAxes = Axes.Both,
+                    },
+                    useLegacyMaskingBorder ? applyborderTexture(new Sprite
+                    {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight,
+                        RelativeSizeAxes = Axes.Y,
+                    }) : Empty(),
+                }
+            },
+            // right border
+            new BufferedContainer
+            {
+                RelativeSizeAxes = Axes.Y,
+                Anchor = Anchor.CentreRight,
+                Origin = Anchor.CentreRight,
+                Children = new Drawable[]
+                {
+                    new Box
+                    {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight,
+                        Colour = Colour4.Black,
+                        RelativeSizeAxes = Axes.Both,
+                    },
+                    useLegacyMaskingBorder ? applyborderTexture(new Sprite
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        // horizontally flipped, so we use CentreLeft/CentreRight
+                        Origin = Anchor.CentreRight,
+                        Scale = new Vector2(-1, 1),
+                        RelativeSizeAxes = Axes.Y,
+                    }) : Empty(),
+                }
+            },
+        });
+
+        Sprite applyborderTexture(Sprite sprite)
+        {
+            // the texture has 2 rows of identical pixels,
+            // technically Repeat and ClampToEdge would look the same,
+            // But somehow repeat looks better to me.
+            var texture = textures.GetAutoSized("UI/masking-border", wrapModeS: WrapMode.None, wrapModeT: WrapMode.Repeat);
+
+            sprite.Texture = texture;
+            sprite.Width = texture?.DisplayWidth ?? 0;
+
+            return sprite;
+        }
+
+        drawSizeLayout.Invalidate();
     }
 
     protected override void LoadComplete()
@@ -214,13 +339,22 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
 
         Vector2 maskSize = (size - centerSize) / 2;
 
-        topMask.Size = new Vector2(size.X, maskSize.Y);
-        bottomMask.Size = new Vector2(size.X, maskSize.Y);
-
-        leftMask.Size = new Vector2(maskSize.X, centerSize.Y);
-        rightMask.Size = new Vector2(maskSize.X, centerSize.Y);
+        updateVerticalBorderWidth(maskSize.X);
+        updateHorizontalBorderHeight(maskSize.Y);
 
         drawSizeLayout.Validate();
+    }
+
+    private void updateVerticalBorderWidth(float width)
+    {
+        foreach (var child in verticalBorderContainer.Children)
+            child.Width = width;
+    }
+
+    private void updateHorizontalBorderHeight(float height)
+    {
+        foreach (var child in horizontalBorderContainer.Children)
+            child.Height = height;
     }
 
     protected override void Dispose(bool isDisposing)
@@ -242,5 +376,11 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
         Auto,
         Always,
         Never,
+    }
+
+    public enum SideBorderType
+    {
+        BlackBar,
+        LegacyMaskingBorder,
     }
 }
