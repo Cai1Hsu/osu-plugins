@@ -25,10 +25,11 @@ public sealed partial class LegacyExperiencePlugin
 
         void captureBackgroundScreenBeatmap(IScreen prev, IScreen next, bool exiting)
         {
-            if (exiting)
-                currentBeatmapBg = prev as BackgroundScreenBeatmap;
+            if (exiting && ReferenceEquals(currentBeatmapBg, prev))
+                currentBeatmapBg = null;
 
-            currentBeatmapBg = next as BackgroundScreenBeatmap;
+            if (next is BackgroundScreenBeatmap newBg)
+                currentBeatmapBg = newBg;
         }
 
         screenStack.ScreenPushed += (p, n) => capturePlayer(p, n, false);
