@@ -133,11 +133,8 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
     {
         base.Dispose(isDisposing);
 
-        if (backgroundSprite is null)
-            return;
-
         // at least make it invisible
-        backgroundSprite.Expire();
+        backgroundSprite?.Expire();
     }
 
     private partial class BackgroundSprite : Sprite
