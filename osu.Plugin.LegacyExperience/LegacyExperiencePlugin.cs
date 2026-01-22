@@ -12,7 +12,7 @@ using osu.Plugin.LegacyExperience.Leaderboards;
 
 namespace osu.Plugin.LegacyExperience;
 
-public sealed class LegacyExperiencePlugin : OsuPlugin
+public sealed partial class LegacyExperiencePlugin : OsuPlugin
 {
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
@@ -20,6 +20,8 @@ public sealed class LegacyExperiencePlugin : OsuPlugin
 
         if (gameBase is not OsuGame game)
             return;
+
+        applyLegacyBackgroundFillModeHook(game);
 
         SkinEditorOverlay? skinEditor = game.Dependencies.Get<SkinEditorOverlay?>();
         if (skinEditor is null)
