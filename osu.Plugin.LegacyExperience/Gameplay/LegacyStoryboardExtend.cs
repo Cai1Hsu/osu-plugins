@@ -55,8 +55,13 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
         if (drawable_storyboard is null)
             return;
 
-        // TODO: this probably only appiles to non-widescreen storyboards, investigate further.
-        handleBackgroundLayer(drawable_storyboard.Children.FirstOrDefault(l => l.Name == background_layer_name));
+        if (!isWideScreenStoryboard(player.GameplayState.Storyboard))
+            handleBackgroundLayer(drawable_storyboard.Children.FirstOrDefault(l => l.Name == background_layer_name));
+    }
+
+    private static bool isWideScreenStoryboard(Storyboard storyboard)
+    {
+        return storyboard.Beatmap.WidescreenStoryboard || storyboard.Layers.SelectMany(l => l.Elements).All(e => e is StoryboardVideo);
     }
 
     private readonly IBindable<bool> hasStoryboardEnded = new BindableBool(true);
