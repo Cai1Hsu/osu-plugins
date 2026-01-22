@@ -1,12 +1,13 @@
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Layout;
+using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Screens.Play;
 using osu.Game.Skinning;
+using osu.Game.Storyboards;
 using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Gameplay;
@@ -21,13 +22,34 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
 
     public bool UsesFixedAnchor { get; set; } = true;
 
-    [SettingSource("Fade out during breaks", "Whether the playfield masks should fade out during breaks.")]
-    public Bindable<bool> FadeOutDuringBreaks { get; private set; } = new Bindable<bool>(true);
+    [SettingSource("Fade out during breaks", "How the playfield mask should behave during breaks.")]
+    public Bindable<FadeOutBehaviour> FadeOutDuringBreaks { get; private set; } = new Bindable<FadeOutBehaviour>()
+    {
+        Default = FadeOutBehaviour.Auto,
+        Value = FadeOutBehaviour.Auto,
+    };
 
     private Box topMask = null!;
     private Box bottomMask = null!;
     private Box leftMask = null!;
     private Box rightMask = null!;
+
+    [Resolved]
+    private IBindable<WorkingBeatmap>? beatmap { get; set; }
+
+    [Resolved]
+    private GameplayState? gameplayState { get; set; }
+
+    private bool isWideScreenStoryboard;
+
+    private bool shouldStoryboardVisible => showStoryboard.Value &&
+        (backgroundDimLevel.Value < 1 || lightenDuringBreaks.Value);
+
+    private Bindable<bool> showStoryboard = null!;
+    private Bindable<bool> lightenDuringBreaks = null!;
+    private Bindable<double> backgroundDimLevel = null!;
+
+    private bool hasStoryboardDrawables = false;
 
     private readonly LayoutValue drawSizeLayout = new LayoutValue(Invalidation.DrawSize);
 
@@ -40,7 +62,7 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
     private GameplayClockContainer? gameplayClock { get; set; }
 
     [BackgroundDependencyLoader]
-    private void load()
+    private void load(OsuConfigManager? config)
     {
         Anchor = Anchor.Centre;
         Origin = Anchor.Centre;
@@ -75,6 +97,24 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
             },
         };
 
+        if (config is not null)
+        {
+            lightenDuringBreaks = config.GetBindable<bool>(OsuSetting.LightenDuringBreaks);
+            showStoryboard = config.GetBindable<bool>(OsuSetting.ShowStoryboard);
+            backgroundDimLevel = config.GetBindable<double>(OsuSetting.DimLevel);
+        }
+
+        showStoryboard ??= new Bindable<bool>(false);
+        lightenDuringBreaks ??= new Bindable<bool>(false);
+        backgroundDimLevel ??= new Bindable<double>(0);
+
+        var storyboard = gameplayState?.Storyboard ?? beatmap?.Value.Storyboard;
+
+        if (storyboard != null)
+            isWideScreenStoryboard = IsWideScreenStoryboard(storyboard);
+
+        hasStoryboardDrawables = storyboard?.HasDrawable ?? false;
+
         if (gameplayClock != null)
             gameplayClock.OnSeek += gameSeeked;
     }
@@ -83,7 +123,12 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
     {
         base.LoadComplete();
 
-        FadeOutDuringBreaks.BindValueChanged(_ => syncFadeState(), true);
+        showStoryboard.BindValueChanged(_ => scheduleFadeStateSync());
+        lightenDuringBreaks.BindValueChanged(_ => scheduleFadeStateSync());
+        backgroundDimLevel.BindValueChanged(_ => scheduleFadeStateSync());
+        FadeOutDuringBreaks.BindValueChanged(_ => scheduleFadeStateSync(), true);
+
+        void scheduleFadeStateSync() => Scheduler.AddOnce(syncFadeState);
     }
 
     public void FadeIn()
@@ -96,9 +141,34 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
         this.FadeOut(500);
     }
 
+    private bool shouldFadeOutDuringBreaks()
+    {
+        return FadeOutDuringBreaks.Value switch
+        {
+            FadeOutBehaviour.Auto => shouldAutoFadeOutDuringBreaks(),
+            FadeOutBehaviour.Always => true,
+            FadeOutBehaviour.Never => false,
+            _ => throw new InvalidOperationException($"Unknown FadeOutBehaviour value: {FadeOutDuringBreaks.Value}"),
+        };
+    }
+
+    private bool shouldAutoFadeOutDuringBreaks()
+    {
+        if (hasStoryboardDrawables && shouldStoryboardVisible && !isWideScreenStoryboard)
+            return false;
+
+        // masking playfield while letterboxing is enabled in breaks looks bad,
+        // because they pretty much do the same thing, just different aspect ratios,
+        // but stable does it anyway, we just follow suit.
+        if (beatmap?.Value.Beatmap.LetterboxInBreaks ?? false)
+            return true;
+
+        return false;
+    }
+
     private void syncFadeState()
     {
-        if (FadeOutDuringBreaks.Value && CurrentBreak.Value.HasValue)
+        if (CurrentBreak.Value.HasValue && shouldFadeOutDuringBreaks())
             FadeOut();
         else
             FadeIn();
@@ -112,13 +182,13 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
 
     public override void OnBreakStart()
     {
-        if (FadeOutDuringBreaks.Value)
+        if (shouldFadeOutDuringBreaks())
             FadeOut();
     }
 
     public override void OnBreakEnd()
     {
-        if (FadeOutDuringBreaks.Value)
+        if (shouldFadeOutDuringBreaks())
             FadeIn();
     }
 
@@ -159,5 +229,18 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
 
         if (gameplayClock != null)
             gameplayClock.OnSeek -= gameSeeked;
+    }
+
+    public static bool IsWideScreenStoryboard(Storyboard storyboard)
+    {
+        // Wide screen storyboards use 16:9 aspect ratio while non-wide screen use 4:3.
+        return storyboard.Beatmap.WidescreenStoryboard || storyboard.Layers.SelectMany(l => l.Elements).All(e => e is StoryboardVideo);
+    }
+
+    public enum FadeOutBehaviour
+    {
+        Auto,
+        Always,
+        Never,
     }
 }

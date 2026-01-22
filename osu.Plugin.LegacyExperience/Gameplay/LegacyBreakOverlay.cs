@@ -1,9 +1,7 @@
-using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
-using osu.Game.Rulesets.Scoring;
 using osu.Game.Screens.Play;
 using osu.Game.Skinning;
 using osu.Game.Rulesets.Mods;
@@ -33,10 +31,14 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
     private Player? player { get; set; }
 
     [Resolved]
-    private ScoreProcessor scoreProcessor { get; set; } = null!;
-
-    [Resolved]
     private GameplayClockContainer? gameplayClock { get; set; } = null!;
+
+    private readonly BindableDouble healthValue = new BindableDouble(1)
+    {
+        MinValue = 0,
+        MaxValue = 1,
+        Default = 1,
+    };
 
     private double globalPreemptTime = 0;
 
@@ -56,10 +58,8 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
     private double? firstHitObjectStartTime;
 
     [BackgroundDependencyLoader]
-    private void load(IBindable<WorkingBeatmap> workingBeatmap, IBindable<IReadOnlyList<Mod>> mods, IBindable<RulesetInfo> rulesetInfo)
+    private void load(IBindable<WorkingBeatmap> workingBeatmap, IBindable<IReadOnlyList<Mod>> mods, IBindable<RulesetInfo> rulesetInfo, GameplayState? gameplayState)
     {
-        Debug.Assert(scoreProcessor is not null, "ScoreProcessor should be resolved when LegacyBreakOverlay is used in gameplay.");
-
         AddInternal(overlay = new LegacyBreakOverlayDrawable());
 
         var beatmap = workingBeatmap.Value.Beatmap;
@@ -75,6 +75,9 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
         if (gameplayClock is not null)
             gameplayClock.OnSeek += onGameSeek;
+
+        if (gameplayState is not null)
+            healthValue.BindTo(gameplayState.HealthProcessor.Health);
     }
 
     private void onGameSeek()
@@ -152,12 +155,16 @@ public partial class LegacyBreakOverlay : BreakTrackingContainer, ISerialisableD
 
     protected virtual bool IsSectionPassing()
     {
-        // lazer didn't provide sections passing/failing feedback, so we approximate it here.
-        if (scoreProcessor is null)
-            return true;
-
-        // This should be a reasonable approximation of passing a section.
-        return scoreProcessor.Accuracy.Value > 0.9;
+        // pass state is considered when HP bar ended above half in the last playtime section
+        // see: https://osu.ppy.sh/wiki/en/Storyboard/Scripting/General_Rules#game-state
+        // lazer's storyboard also uses health value to determine section pass/fail state
+        // see: https://github.com/ppy/osu/blob/e2dd4d86b4a79232aa0c1c8e8c520dc4be7ec94d/osu.Game/Storyboards/Drawables/DrawableStoryboard.cs#L110-L111
+        // however, according to wiki, Geki and Katu also affect section pass/fail state, but lazer doesn't consider them.
+        // reference:
+        // - Geki: https://osu.ppy.sh/wiki/en/Gameplay/Judgement/Geki#osu%21
+        // - Katu: https://osu.ppy.sh/wiki/en/Gameplay/Judgement/Katu#osu%21
+        // Since lazer's scoreprocessor doesn't judge Geki/Katu for osu! ruleset, we simply ignore them here.
+        return healthValue.Value >= 0.5;
     }
 
     private const double min_break_duration_for_section_ranking = 2880;
