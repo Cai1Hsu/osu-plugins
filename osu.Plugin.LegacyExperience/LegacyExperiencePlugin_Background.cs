@@ -42,13 +42,13 @@ public sealed partial class LegacyExperiencePlugin
 
             if (next is Player)
                 // stable's default fill mode in Player is Fit.
-                updateFilllMode(FillMode.Fit);
+                updateFillMode(FillMode.Fit);
             else if (exiting && prev is Player)
                 // lazer's default fill mode outside of Player is Fill.
-                updateFilllMode(FillMode.Fill);
+                updateFillMode(FillMode.Fill);
         }
 
-        void updateFilllMode(FillMode newMode)
+        void updateFillMode(FillMode newMode)
         {
             var bg = backgroundField.GetValue(currentBeatmapBg) as Background;
 
