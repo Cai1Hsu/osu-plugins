@@ -35,7 +35,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     // Since multiplayer's overlay displays requested players and legacy does not have that feature,
     // we can just have a separate opacity setting for it so that user can still know when someone requested a skip.
     [SettingSource("Multiplayer Skip Overlay Opacity", "The opacity of the skip overlay used in multiplayer.")]
-    public BindableFloat MultiplayerSkipOverlayOpacity { get; private set; } = new BindableFloat()
+    public BindableFloat MultiplayerSkipOverlayOpacity { get; private set; } = new BindableFloat(1)
     {
         MinValue = 0,
         MaxValue = 1,
