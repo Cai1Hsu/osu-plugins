@@ -50,9 +50,12 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     };
 
     [BackgroundDependencyLoader]
-    private void load(Player? player, ISkinSource? skin)
+    private void load(Player player, ISkinSource? skin)
     {
         RelativeSizeAxes = Axes.Both;
+
+        if (!player.Configuration.AllowSkipping || !drawableRuleset.AllowGameplayOverlays)
+            return;
 
         var skipOverlay = getLazerSkipOverlay(player);
 
@@ -118,11 +121,8 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
             : Visibility.Visible;
     }
 
-    private SkipOverlay? getLazerSkipOverlay(Player? player)
+    private SkipOverlay? getLazerSkipOverlay(Player player)
     {
-        if (player is null)
-            return null;
-
         return SkipIntroOverlay_getter?.Invoke(player, Array.Empty<object?>()) as SkipOverlay;
     }
 
