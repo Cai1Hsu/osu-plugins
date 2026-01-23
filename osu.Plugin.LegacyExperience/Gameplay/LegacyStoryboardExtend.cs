@@ -121,13 +121,23 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
                 // and never removed, causing memory leak.
                 // We try to avoid creating multiple BackgroundSprites by checking `alreadyCreated` above. But this may resulted no background
                 // when create two instances and removed the first one. This wouldn't be be a problem relative to memory leak.
-                LoadComponentAsync(backgroundSprite = new BackgroundSprite(beatmap.Value), elementContainer.AddInternal);
+                LoadComponentAsync(backgroundSprite = new BackgroundSprite(beatmap.Value), s =>
+                {
+                    elementContainer.AddInternal(s);
+
+                    // make background always at the bottom of the layer
+                    // so that any other storyboard elements added would be on top of it.
+                    composite_ChangeInternalChildDepth?.Invoke(elementContainer, new object[] { s, float.MaxValue });
+                });
             }, true);
         });
     }
 
     private static readonly FieldInfo composite_alive_children_field = typeof(CompositeDrawable)
         .GetField("aliveInternalChildren", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private static readonly MethodInfo? composite_ChangeInternalChildDepth = typeof(CompositeDrawable)
+        .GetMethod("ChangeInternalChildDepth", BindingFlags.NonPublic | BindingFlags.Instance);
 
     protected override void Dispose(bool isDisposing)
     {
@@ -147,7 +157,7 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
         {
             Anchor = Anchor.Centre;
             Origin = Anchor.Centre;
-            FillMode = FillMode.Fit;
+            FillMode = FillMode.Fill;
             RelativeSizeAxes = Axes.Both;
 
             workingBeatmap = working;
