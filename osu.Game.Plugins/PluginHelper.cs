@@ -258,6 +258,6 @@ public static class PluginHelper
     /// <returns>The retrieved texture, or null if not found.</returns>
     public static Texture? GetSkinTexture(this ISkin? skin, string lookup, TextureStore? textures = null, string? textureStoreLookupPrefix = null)
     {
-        return skin?.GetTexture(lookup) ?? textures?.GetAutoSized(textureStoreLookupPrefix is null ? lookup : $"{textureStoreLookupPrefix}/{lookup}");
+        return skin?.GetTexture(lookup) ?? textures?.GetAutoSized(string.IsNullOrEmpty(textureStoreLookupPrefix) ? lookup : $"{textureStoreLookupPrefix}/{lookup}");
     }
 }
