@@ -3,15 +3,17 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Game.Audio;
+using osu.Game.Input.Bindings;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
 using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Gameplay;
 
-public partial class LegacySkipDrawable : CompositeDrawable
+public partial class LegacySkipDrawable : CompositeDrawable, IKeyBindingHandler<GlobalAction>
 {
     private const float stable_ratio = 1.6f;
 
@@ -73,8 +75,31 @@ public partial class LegacySkipDrawable : CompositeDrawable
 
     protected override bool OnClick(ClickEvent e)
     {
+        activated();
+        return true;
+    }
+
+    private void activated()
+    {
         SkipRequested?.Invoke();
         clickSample?.Play();
-        return true;
+    }
+
+    public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+    {
+        if (e.Repeat)
+            return false;
+
+        if (e.Action is GlobalAction.SkipCutscene)
+        {
+            activated();
+            return true;
+        }
+
+        return false;
+    }
+
+    public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+    {
     }
 }
