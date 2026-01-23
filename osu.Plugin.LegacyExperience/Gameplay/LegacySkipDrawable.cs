@@ -75,6 +75,6 @@ public partial class LegacySkipDrawable : CompositeDrawable
     {
         SkipRequested?.Invoke();
         clickSample?.Play();
-        return base.OnClick(e);
+        return true;
     }
 }
