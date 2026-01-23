@@ -137,7 +137,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
             this.FadeIn(400);
         }
 
-        override protected void PopOut()
+        protected override void PopOut()
         {
             this.FadeOut(200);
         }
