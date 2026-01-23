@@ -54,7 +54,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     {
         RelativeSizeAxes = Axes.Both;
 
-        var skipOverlay = getSkipAction(player);
+        var skipOverlay = getLazerSkipOverlay(player);
 
         var hasAnimation = skin?.GetTexture("play-skip-0") is not null;
 
@@ -118,7 +118,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
             : Visibility.Visible;
     }
 
-    private SkipOverlay? getSkipAction(Player? player)
+    private SkipOverlay? getLazerSkipOverlay(Player? player)
     {
         if (player is null)
             return null;
