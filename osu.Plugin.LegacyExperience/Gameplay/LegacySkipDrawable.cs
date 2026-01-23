@@ -32,7 +32,6 @@ public partial class LegacySkipDrawable : CompositeDrawable
     {
         var firstFrame = skinSource?.GetTexture("play-skip-0");
 
-        // static 
         if (firstFrame is null)
         {
             InternalChild = new Sprite()
