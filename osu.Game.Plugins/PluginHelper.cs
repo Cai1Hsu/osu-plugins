@@ -255,7 +255,7 @@ public static class PluginHelper
     /// <param name="lookup">The lookup string for the texture.</param>
     /// <param name="textures">The texture store to fall back to if the skin does not provide the texture.</param>
     /// <param name="textureStoreLookupPrefix">An optional prefix to prepend to the lookup string when querying the texture store.</param>
-    /// <returns>>The retrieved texture, or null if not found.</returns>
+    /// <returns>The retrieved texture, or null if not found.</returns>
     public static Texture? GetSkinTexture(this ISkin? skin, string lookup, TextureStore? textures = null, string? textureStoreLookupPrefix = null)
     {
         return skin?.GetTexture(lookup) ?? textures?.GetAutoSized(textureStoreLookupPrefix is null ? lookup : $"{textureStoreLookupPrefix}/{lookup}");
