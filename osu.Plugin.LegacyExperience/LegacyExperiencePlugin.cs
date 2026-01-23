@@ -47,6 +47,7 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
             typeof(LegacyLeaderboard),
             typeof(PlayfieldMask),
             typeof(LegacyStoryboardExtend),
+            typeof(LegacySkipOverlay),
         }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.MainHUDComponents));
 
         skinEditor.RegisterSkinComponents(new[]
