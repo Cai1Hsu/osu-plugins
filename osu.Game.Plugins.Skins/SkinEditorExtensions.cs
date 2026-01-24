@@ -46,7 +46,7 @@ public static class SkinEditorExtensions
         void registerOverlayActiveEvent(Drawable d)
         {
             var skinEditorOverlay = (SkinEditorOverlay)d;
-            var overlayScheduler = skinEditorOverlay.GetScheduler();
+            var overlayScheduler = skinEditorOverlay.Scheduler;
 
             skinEditorOverlay.State.BindValueChanged(v =>
             {
@@ -121,7 +121,7 @@ public static class SkinEditorExtensions
                 return;
 
             var selectedTarget = skinEditor.getInternalSelectedTarget();
-            var skinEditorScheduler = skinEditor.GetScheduler();
+            var skinEditorScheduler = skinEditor.Scheduler;
 
             selectedTarget.BindValueChanged(v =>
             {

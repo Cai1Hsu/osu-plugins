@@ -80,7 +80,7 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
             }
         };
 
-        osuScreenStack = game.GetScreenStack();
+        osuScreenStack = game.ScreenStack;
     }
 
     private OsuScreenStack osuScreenStack = null!;

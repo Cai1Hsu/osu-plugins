@@ -1,54 +1,15 @@
-using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using osu.Framework.Allocation;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Logging;
 using osu.Framework.Screens;
-using osu.Framework.Threading;
-using osu.Game.Screens;
 using osu.Game.Skinning;
 
 namespace osu.Game.Plugins;
 
 public static class PluginHelper
 {
-    /// <summary>
-    /// Injects a dependency into the composite drawable if it does not already exist.
-    /// Ensure to call this method on the update thread.
-    /// </summary>
-    /// <typeparam name="T">The type of the dependency to inject.</typeparam>
-    /// <param name="composite">The composite drawable to inject into.</param>
-    /// <param name="instance">The injected or existing instance.</param>
-    /// <param name="factory">A factory function to create the instance if it does not exist.</param>
-    /// <returns>True if a new instance was injected; false if an existing instance was found.</returns>
-    public static bool InjectDependencies<T>(this CompositeDrawable composite, out T instance, Func<T> factory)
-        where T : Drawable
-    {
-        if (composite.Dependencies.Get<T>() is T existing)
-        {
-            instance = existing;
-            return false;
-        }
-
-        var dependencies = composite.Dependencies as DependencyContainer;
-
-        Debug.Assert(dependencies != null);
-
-        instance = factory();
-
-        if (composite is Container container)
-            container.Add(instance);
-        else
-            composite.AddInternal(instance);
-
-        dependencies.CacheAs(instance);
-        return true;
-    }
-
     public delegate void ScreenSwitchedDelegate(IScreen oldScreen, IScreen newScreen);
 
     static void PerformOnceInternal(ScreenStack screenStack, ScreenSwitchedDelegate action, Func<Type, bool> shouldInvoke)
@@ -70,8 +31,8 @@ public static class PluginHelper
 
                 default:
                     var scheduler = currentScreen is Drawable drawable
-                        ? drawable.GetScheduler()
-                        : screenStack.GetScheduler();
+                        ? drawable.Scheduler
+                        : screenStack.Scheduler;
                     // SAFETY: currentScreen is non-null guarded by the outer if condition.
                     scheduler.Add(() => action(currentScreen!, currentScreen!));
                     break;
@@ -134,7 +95,7 @@ public static class PluginHelper
             return !hasAny;
         }
 
-        PerformOnceInternal(game.GetScreenStack(), action, shouldInvoke);
+        PerformOnceInternal(game.ScreenStack, action, shouldInvoke);
     }
 
     /// <summary>
@@ -158,47 +119,8 @@ public static class PluginHelper
             return true;
         }
 
-        PerformOnceInternal(game.GetScreenStack(), action, shouldInvoke);
+        PerformOnceInternal(game.ScreenStack, action, shouldInvoke);
     }
-
-    // This method exists to prevent compiled binaries from breaking when the original method signature changes.
-    public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, bool requiresUpdateThread = true)
-       => drawable.InvokeWhenReady(action, null, requiresUpdateThread);
-
-    public static void InvokeWhenReady(this Drawable drawable, Action<Drawable> action, Func<Drawable, Scheduler>? schedulerGetter, bool requiresUpdateThread = true)
-    {
-        switch (drawable.IsLoaded)
-        {
-            case true when !requiresUpdateThread || ThreadSafety.IsUpdateThread:
-                action(drawable);
-                break;
-
-            case true:
-                void scheduleAction() => action(drawable);
-
-                // if the subtree the drawable is in is inactive,
-                // this could result in action queuing.
-                // We assume the caller is aware of this.
-                var scheduler = schedulerGetter is null
-                    ? drawable.GetScheduler()
-                    : schedulerGetter(drawable);
-                scheduler.Add(scheduleAction);
-                break;
-
-            default:
-                drawable.OnLoadComplete += action;
-                break;
-        }
-    }
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "ScreenStack")]
-    public static extern ref OsuScreenStack GetScreenStack(this OsuGame game);
-
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "AddInternal")]
-    public static extern void AddInternal(this CompositeDrawable composite, Drawable drawable);
-
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_Scheduler")]
-    public static extern Scheduler GetScheduler(this Drawable drawable);
 
     private static readonly FieldInfo[] logger_static_delegates = typeof(Logger)
         .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
