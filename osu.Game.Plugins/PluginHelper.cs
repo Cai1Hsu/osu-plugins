@@ -1,4 +1,5 @@
 using System.Reflection;
+using osu.Framework;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Textures;
@@ -10,6 +11,10 @@ namespace osu.Game.Plugins;
 
 public static class PluginHelper
 {
+    // FIXME: this means full JIT support is required.
+    // use better detection for AOT platforms if necessary.
+    public static bool IsIACTSupported => RuntimeInfo.IsDesktop;
+
     public delegate void ScreenSwitchedDelegate(IScreen oldScreen, IScreen newScreen);
 
     static void PerformOnceInternal(ScreenStack screenStack, ScreenSwitchedDelegate action, Func<Type, bool> shouldInvoke)

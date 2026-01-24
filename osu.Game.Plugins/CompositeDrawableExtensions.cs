@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using AccessItEasy;
+using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -67,11 +68,25 @@ public static class CompositeDrawableExtensions
             dependencies.CacheAs(instance);
             return true;
         }
+
+        public void AddInternal(Drawable drawable)
+        {
+            if (PluginHelper.IsIACTSupported)
+                AddInternal_Accessor(@this, drawable);
+            else
+                // AddRangeInternal can be broken by IgnoresAccessChecksToAttribute.
+                // hope that CLR stack-allocates the array to avoid memory allocations.
+                @this.AddRangeInternal(new[] { drawable });
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [PrivateAccessor(PrivateAccessorKind.Method, Name = "AddInternal")]
+            static extern void AddInternal_Accessor(CompositeDrawable composite, Drawable drawable);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [PrivateAccessor(PrivateAccessorKind.Method, Name = "AddInternal")]
-    public static extern void AddInternal(this CompositeDrawable composite, Drawable drawable);
+    [PrivateAccessor(PrivateAccessorKind.Method, Name = "AddRangeInternal")]
+    public static extern void AddRangeInternal(this CompositeDrawable composite, IEnumerable<Drawable> drawable);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [PrivateAccessor(PrivateAccessorKind.Method, Name = "ContainsInternal")]

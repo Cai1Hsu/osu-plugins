@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using AccessItEasy;
 using osu.Game.Screens;
@@ -9,10 +10,10 @@ public static class OsuGameExtensions
 {
     extension(OsuGame @this)
     {
-        public ref OsuScreenStack ScreenStack
+        public OsuScreenStack ScreenStack
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => ref GetScreenStack(@this);
+            get => GetScreenStack(@this);
         }
 
         public ScreenFooter ScreenFooter
@@ -22,11 +23,34 @@ public static class OsuGameExtensions
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [PrivateAccessor(PrivateAccessorKind.Field, Name = "ScreenStack")]
-    public static extern ref OsuScreenStack GetScreenStack(OsuGame game);
+    private static readonly FieldInfo screenStackField = typeof(OsuGame)
+        .GetField("ScreenStack", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_ScreenFooter")]
-    public static extern ScreenFooter GetScreenFooter(OsuGame game);
+    public static OsuScreenStack GetScreenStack(OsuGame game)
+    {
+        if (PluginHelper.IsIACTSupported)
+            return GetScreenStack_Accessor(game);
+        else
+            return (OsuScreenStack)screenStackField.GetValue(game)!;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [PrivateAccessor(PrivateAccessorKind.Field, Name = "ScreenStack")]
+        static extern OsuScreenStack GetScreenStack_Accessor(OsuGame game);
+    }
+
+    private static readonly MethodInfo? screenFooterGetter = typeof(OsuGame)
+        .GetProperty("ScreenFooter", BindingFlags.NonPublic | BindingFlags.Instance)?
+        .GetMethod;
+
+    public static ScreenFooter GetScreenFooter(OsuGame game)
+    {
+        if (PluginHelper.IsIACTSupported)
+            return GetScreenFooter_Accessor(game);
+        else
+            return (ScreenFooter)screenFooterGetter!.Invoke(game, Array.Empty<object>())!;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_ScreenFooter")]
+        static extern ScreenFooter GetScreenFooter_Accessor(OsuGame game);
+    }
 }

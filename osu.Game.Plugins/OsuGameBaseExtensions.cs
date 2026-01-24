@@ -1,5 +1,7 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using AccessItEasy;
+using osu.Framework;
 using osu.Framework.Platform;
 
 namespace osu.Game.Plugins;
@@ -12,11 +14,23 @@ public static class OsuGameBaseExtensions
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => GetStorage(@this);
-            // This property has a setter, but we don't expose it as it may break things.
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_Storage")]
-    public static extern Storage GetStorage(OsuGameBase gameBase);
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static Storage GetStorage(OsuGameBase gameBase)
+    {
+        // `Storgae` can not broken by IgnoresAccessChecksToAttribute as it doesn't have internal modifier.
+        if (PluginHelper.IsIACTSupported)
+            return GetStorage_Accessor(gameBase);
+
+        return (Storage)storageGetter?.Invoke(gameBase, Array.Empty<object>())!;
+
+        [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_Storage")]
+        static extern Storage GetStorage_Accessor(OsuGameBase gameBase);
+    }
+
+    private static readonly MethodInfo? storageGetter = typeof(OsuGameBase)
+        .GetProperty("Storage", BindingFlags.NonPublic | BindingFlags.Instance)?
+        .GetMethod;
 }
