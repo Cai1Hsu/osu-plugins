@@ -1,0 +1,11 @@
+﻿<Solution>
+  <Project Path="osu.Game.Plugins/osu.Game.Plugins.csproj" />
+  <Project Path="osu.Game.Plugins.Skins/osu.Game.Plugins.Skins.csproj" />
+  <Project Path="osu.Game.Rulesets.PluginsLoader/osu.Game.Rulesets.PluginsLoader.csproj" />
+  <Project Path="osu.Game.Rulesets.PluginsLoader.Tests/osu.Game.Rulesets.PluginsLoader.Tests.csproj" />
+  <Project Path="osu.Plugin.LegacyExperience/osu.Plugin.LegacyExperience.csproj" />
+  <Project Path="osu.Plugin.LegacyExperience.Tests/osu.Plugin.LegacyExperience.Tests.csproj" />
+  <Project Path="osu.Plugin.MainMenuPlayer/osu.Plugin.MainMenuPlayer.csproj" />
+  <Project Path="osu.Plugin.StableIntegration/osu.Plugin.StableIntegration.csproj" />
+  <Project Path="osu.Plugin.Template/osu.Plugin.Template.csproj" />
+</Solution>
