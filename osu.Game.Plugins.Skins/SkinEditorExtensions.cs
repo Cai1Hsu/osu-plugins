@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
+using AccessItEasy;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -147,7 +147,7 @@ public static class SkinEditorExtensions
         }
     }
 
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "attemptAddComponent")]
+    [PrivateAccessor(PrivateAccessorKind.Method, Name = "attemptAddComponent")]
     static extern void attemptAddComponentToolbox(this SkinComponentToolbox toolbox, Type componentType);
 
     // unsafe accessor is not applicable here as the concrete type of the sidebar is internal.
@@ -164,12 +164,12 @@ public static class SkinEditorExtensions
         return componentsSidebarFieldInfo.GetValue(skinEditor) as Container<EditorSidebarSection>;
     }
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "ruleset")]
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "ruleset")]
     static extern ref RulesetInfo? getInternalRuleset(this SkinComponentToolbox lookup);
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "selectedTarget")]
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "selectedTarget")]
     static extern ref Bindable<GlobalSkinnableContainerLookup?> getInternalSelectedTarget(this SkinEditor skinEditor);
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "skinEditor")]
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "skinEditor")]
     static extern ref SkinEditor? getInternalSkinEditor(this SkinEditorOverlay overlay);
 }
