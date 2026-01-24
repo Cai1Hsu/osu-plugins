@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Reflection;
-using AccessItEasy;
+﻿using AccessItEasy;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -126,7 +124,7 @@ public static class SkinEditorExtensions
             selectedTarget.BindValueChanged(v =>
             {
                 // There's a manual trigger to load the selected target during skin editor loading.
-                if (v.OldValue is null)
+                if (v.NewValue == v.OldValue)
                     return;
 
                 // Ruleset is not considered in target selection, so we only need to check Lookup equality.
@@ -150,19 +148,9 @@ public static class SkinEditorExtensions
     [PrivateAccessor(PrivateAccessorKind.Method, Name = "attemptAddComponent")]
     static extern void attemptAddComponentToolbox(this SkinComponentToolbox toolbox, Type componentType);
 
-    // unsafe accessor is not applicable here as the concrete type of the sidebar is internal.
-    // In iOS or Android's AOT compilation, dynamic method generation is not supported, so we resort to reflection here.
-    // Reflection is not a big performance concern as this is only once for every SkinEditor instance in every registration.
-    static readonly FieldInfo componentsSidebarFieldInfo = typeof(SkinEditor).GetField("componentsSidebar", BindingFlags.NonPublic | BindingFlags.Instance)!;
-    static Container<EditorSidebarSection>? getInternalComponentsSidebar(this SkinEditor skinEditor)
-    {
-        Debug.Assert(componentsSidebarFieldInfo is not null);
-
-        // I kinda hate the Container<T> not being covariant...
-        // at least non-generic version container should be assignable from generic one.
-        // But sadly, non of them are.
-        return componentsSidebarFieldInfo.GetValue(skinEditor) as Container<EditorSidebarSection>;
-    }
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "componentsSidebar")]
+    [return: PrivateAccessorType("osu.Game.Screens.Edit.Components.EditorSidebar")]
+    static extern Container<EditorSidebarSection> getInternalComponentsSidebar(this SkinEditor skinEditor);
 
     [PrivateAccessor(PrivateAccessorKind.Field, Name = "ruleset")]
     static extern ref RulesetInfo? getInternalRuleset(this SkinComponentToolbox lookup);
