@@ -10,7 +10,7 @@ public static class GameExtensions
         game.InvokeWhenReady(d =>
         {
             var game = (OsuGameBase)d;
-            game.InjectDependencies(out LegacyResourceManager _, () => new());
+            game.InjectDependency(out LegacyResourceManager _, () => new());
         });
     }
 }

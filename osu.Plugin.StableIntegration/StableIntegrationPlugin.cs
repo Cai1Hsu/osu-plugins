@@ -24,7 +24,7 @@ public class StableIntegrationPlugin : OsuPlugin
         registerFooterButtonHook();
         scheduler.Add(() =>
         {
-            game.InjectDependencies(out StableIntegrationManager _, () => new());
+            game.InjectDependency(out StableIntegrationManager _, () => new());
         });
 
         void registerFooterButtonHook()

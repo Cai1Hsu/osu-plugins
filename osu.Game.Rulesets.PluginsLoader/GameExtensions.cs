@@ -40,7 +40,7 @@ public static class GameExtensions
 
             try
             {
-                game.InjectDependencies(out PluginManager _, () => pluginsManager);
+                game.InjectDependency(out PluginManager _, () => pluginsManager);
             }
             finally
             {

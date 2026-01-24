@@ -42,7 +42,7 @@ public static class CompositeDrawableExtensions
         /// <param name="instance">The injected or existing instance.</param>
         /// <param name="factory">A factory function to create the instance if it does not exist.</param>
         /// <returns>True if a new instance was injected; false if an existing instance was found.</returns>
-        public bool InjectDependencies<T>(out T instance, Func<T> factory)
+        public bool InjectDependency<T>(out T instance, Func<T> factory)
             where T : Drawable
         {
             @this.EnsureChildMutationAllowed();
