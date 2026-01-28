@@ -17,7 +17,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     private const float centre_line_width = 1.5f * stable_ratio;
     private const double arrow_move_duration = 800;
 
-    private Container segmentsContainer = null!;
+    private BufferedContainer segmentsContainer = null!;
     private LegacyJudgements judgements = null!;
     private ArrowAverageIndicator arrow = null!;
 
@@ -49,7 +49,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                         Colour = Colour4.Black.Opacity(0.6f),
                         RelativeSizeAxes = Axes.Both
                     },
-                    segmentsContainer = new Container
+                    segmentsContainer = new BufferedContainer
                     {
                         Name = "segments",
                         Anchor = Anchor.Centre,
