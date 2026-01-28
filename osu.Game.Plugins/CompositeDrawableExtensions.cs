@@ -35,6 +35,12 @@ public static class CompositeDrawableExtensions
             set => SetInternalChild(@this, value);
         }
 
+        public IReadOnlyList<Drawable> AliveInternalChildren
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetAliveInternalChildren(@this);
+        }
+
         /// <summary>
         /// Injects a dependency into the composite drawable if it does not already exist.
         /// Ensure to call this method on the update thread.
@@ -103,6 +109,10 @@ public static class CompositeDrawableExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [PrivateAccessor(PrivateAccessorKind.Method, Name = "set_InternalChildren")]
     public static extern void SetInternalChildren(CompositeDrawable composite, IReadOnlyList<Drawable> children);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_AliveInternalChildren")]
+    public static extern IReadOnlyList<Drawable> GetAliveInternalChildren(CompositeDrawable composite);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_InternalChild")]
