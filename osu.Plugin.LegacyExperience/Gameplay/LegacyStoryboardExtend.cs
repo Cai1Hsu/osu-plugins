@@ -39,7 +39,7 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
     [BackgroundDependencyLoader]
     private void load()
     {
-        if (drawable_storyboard_field is null || LayerElementContainer_getter is null || composite_alive_children_field is null)
+        if (drawable_storyboard_field is null || LayerElementContainer_getter is null)
         {
             Logger.Log("Failed to apply LegacyStoryboardExtend because of missing reflection field. Consider reporting this issue.", level: LogLevel.Error);
             return;
@@ -93,16 +93,9 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
         if (string.IsNullOrEmpty(backgroundFile))
             return;
 
-        // reflection operations done asynchronously so the overhead is acceptable
-        // also, for LifetimeManagementContainer, enumerating through alive children are expected to be fast.
-        var layerAliveChildren = composite_alive_children_field.GetValue(elementContainer) as SortedList<Drawable>;
-
-        if (layerAliveChildren is null)
-            return;
-
         Scheduler.Add(() =>
         {
-            bool alreadyCreated = layerAliveChildren.OfType<BackgroundSprite>().Any();
+            bool alreadyCreated = elementContainer.AliveInternalChildren.OfType<BackgroundSprite>().Any();
 
             if (alreadyCreated)
                 return;
@@ -127,17 +120,11 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
 
                     // make background always at the bottom of the layer
                     // so that any other storyboard elements added would be on top of it.
-                    composite_ChangeInternalChildDepth?.Invoke(elementContainer, new object[] { s, float.MaxValue });
+                    elementContainer.ChangeInternalChildDepth(s, float.MinValue);
                 });
             }, true);
         });
     }
-
-    private static readonly FieldInfo composite_alive_children_field = typeof(CompositeDrawable)
-        .GetField("aliveInternalChildren", BindingFlags.NonPublic | BindingFlags.Instance)!;
-
-    private static readonly MethodInfo? composite_ChangeInternalChildDepth = typeof(CompositeDrawable)
-        .GetMethod("ChangeInternalChildDepth", BindingFlags.NonPublic | BindingFlags.Instance);
 
     protected override void Dispose(bool isDisposing)
     {
