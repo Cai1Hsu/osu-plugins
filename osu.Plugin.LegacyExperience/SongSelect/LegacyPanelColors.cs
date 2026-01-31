@@ -48,7 +48,7 @@ public class LegacyPanelColors
     public Color4 InactiveText { get; private set; }
     public Color4 InactiveTextFaded { get; private set; }
 
-    private static Color4 Lighten2(Color4 color, float amount)
+    public static Color4 Lighten2(Color4 color, float amount)
     {
         amount *= 0.5f;
 
