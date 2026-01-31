@@ -9,6 +9,7 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
@@ -28,6 +29,12 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
 
     public Bindable<double> Current { get; set; } = new BindableDouble();
 
+    public void UpdateStarColor(Color4 color, bool additive)
+    {
+        Colour = color;
+        Blending = additive ? BlendingParameters.Additive : BlendingParameters.Inherit;
+    }
+
     [BackgroundDependencyLoader]
     private void load()
     {
@@ -41,7 +48,6 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
                 Origin = Anchor.CentreLeft,
                 Position = new Vector2(i * 12, 0), // TODO: spacing
                 Scale = deafult_scale, // TODO: investigate scale?
-                Blending = BlendingParameters.Additive,
             };
 
             stars[i] = star;

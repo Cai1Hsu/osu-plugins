@@ -150,9 +150,12 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         var textColor = isActivated ? PanelColors.ActiveText :
                         activatedBySet ? PanelColors.InactiveTextFaded : PanelColors.InactiveText;
 
+        var difficultyColor = isActivated ? PanelColors.ActiveText : PanelColors.InactiveText;
+
         titleText.Colour = textColor;
         artistText.Colour = textColor;
-        difficultyText.Colour = textColor;
+        difficultyText.Colour = difficultyColor;
+        starDisplay?.UpdateStarColor(difficultyColor, additive: !isActivated);
 
         var coverColor = isActivated || activatedBySet ? PanelColors.White : PanelColors.InactiveCover;
 
