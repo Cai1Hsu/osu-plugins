@@ -306,8 +306,50 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
     }
 
-    protected override float GetSpacingBetweenPanels(CarouselItem previousVisible, CarouselItem bottom)
-        => 0; // seems good enough, maybe reference for stable later
+    protected override float GetSpacingBetweenPanels(CarouselItem top, CarouselItem bottom)
+    {
+        // align with stable's behaviour
+        const float default_spacing_with_height = 48 * LegacyExperiencePlugin.StableRatio;
+
+        // in case top's DrawHeight is not yet updated, we use DrawHeight instead of panelSize.Y
+        float spacing = default_spacing_with_height - top.DrawHeight;
+
+        if (top.Model is GroupDefinition)
+        {
+            if (bottom.Model is not GroupDefinition)
+                spacing += 10.0f;
+        }
+        else
+        {
+            bool isItemConsideredExpanded(CarouselItem item)
+            {
+                if (item.IsExpanded)
+                    return true;
+
+                if (ExpandedBeatmapSet is not null)
+                {
+                    if (item.Model is GroupedBeatmapSet set && 
+                        set.BeatmapSet.Equals(ExpandedBeatmapSet))
+                        return true;
+
+                    if (item.Model is GroupedBeatmap beatmap &&
+                        (beatmap.Beatmap.BeatmapSet?.Equals(ExpandedBeatmapSet.BeatmapSet) ?? false))
+                        return true;
+                }
+
+                return CurrentSelectionItem == item;
+            }
+
+            bool topHasBeatmap = top.Model is GroupedBeatmap or GroupedBeatmapSet;
+
+            if (topHasBeatmap && (isItemConsideredExpanded(top) || isItemConsideredExpanded(bottom)))
+            {
+                spacing += 10.0f;
+            }
+        }
+
+        return spacing;
+    }
 
     protected override async Task<IEnumerable<CarouselItem>> FilterAsync(bool clearExistingPanels = false)
     {
