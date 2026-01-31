@@ -354,8 +354,36 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     {
         var items = await base.FilterAsync(clearExistingPanels);
 
+        CarouselItem? previousItem = null;
+
         foreach (var item in items)
+        {
             item.DrawHeight = panelSize.Y;
+
+            // Align with stable's behaviour:
+            // beatmap set with single beatmap is treated as the beatmap directly.
+            // To make this work properly, we need to hide the previous set item and show the beatmap item instead.
+            // We also have to restore visibility of the beatmap item in HandleItemDeselected
+            // because it will be hide by Lazer's selection logic.
+            if (previousItem is not null)
+            {
+                if (grouping.BeatmapSetsGroupedTogether &&
+                    previousItem.Model is GroupedBeatmapSet previousSet &&
+                    item.Model is GroupedBeatmap beatmap &&
+                    GetSingleBeatmap(previousSet.BeatmapSet) is not null)
+                {
+                    Debug.Assert(previousSet.BeatmapSet.Equals(beatmap.Beatmap.BeatmapSet));
+
+                    previousItem.DrawHeight = 0;
+                    previousItem.IsVisible = false;
+
+                    item.IsVisible = true;
+                    item.DepthLayer = previousItem.DepthLayer;
+                }
+            }
+
+            previousItem = item;
+        }
 
         // trigger recalculation of items' Y positions
         // x position calculation requires proper Y positions
@@ -528,16 +556,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             }
         }
 
-        CarouselItem activateItem = item;
-
-        if (item.Model is GroupedBeatmapSet groupedSet &&
-            GetSingleBeatmap(groupedSet.BeatmapSet) is BeatmapInfo singleBeatmap &&
-            grouping.SetItems.TryGetValue(groupedSet, out var singelSetItems) &&
-            singelSetItems.FirstOrDefault(i => i.Model is GroupedBeatmap groupedBeatmap &&
-                groupedBeatmap.Beatmap.Equals(singleBeatmap)) is CarouselItem beatmapItem)
-            activateItem = beatmapItem;
-
-        base.HandleItemActivated(activateItem);
+        base.HandleItemActivated(item);
 
         LegacyPanel? retrieveActivatedPanel(CarouselItem item) => Scroll.Panels.Children
             .OfType<LegacyPanel>()
@@ -589,10 +608,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 break;
 
             case GroupedBeatmapSet groupedBeatmapSet:
-                bool isSingleBeatmapSet = GetSingleBeatmap(groupedBeatmapSet.BeatmapSet) is not null;
-
-                // Use the beatmap set as beatmap directly when it has single beatmap.
-                item.IsVisible = isSingleBeatmapSet;
+                item.IsVisible = false;
 
                 if (grouping.SetItems.TryGetValue(groupedBeatmapSet, out var setItems))
                 {
@@ -600,14 +616,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
                     foreach (var i in setItems)
                     {
-                        // beatmap set with only one beatmap is handled as beatmap directly in stable.
-                        if (isSingleBeatmapSet)
-                        {
-                            if (i.Model is GroupedBeatmap)
-                                // Simply hide the beatmap item and use the set item as the beatmap item.
-                                i.IsVisible = false;
-                        }
-
                         addSpawnedItemsForExpandedGroup(i, SpawnReasonKind.SetExpanded);
                     }
                 }
@@ -635,6 +643,55 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         return singleBeatmap;
     }
 
+    protected override void HandleItemDeselected(object? model)
+    {
+        base.HandleItemDeselected(model);
+
+        // single beatmap will be hidden by lazer's selection logic, restore its visibility here
+        if (model is GroupedBeatmap beatmap &&
+            beatmap?.Beatmap.BeatmapSet is BeatmapSetInfo set &&
+            GetSingleBeatmap(set) == beatmap.Beatmap &&
+            grouping.ItemMap.TryGetValue(model, out var value))
+        {
+            (CarouselItem item, var _) = value;
+
+            item.IsVisible = true;
+        }
+    }
+
+    protected override void HandleItemSelected(object? model)
+    {
+        var previousExpandedBeatmapSet = ExpandedBeatmapSet;
+
+        base.HandleItemSelected(model);
+
+        // restore visibility of previously expanded set item.
+        // To align with stable's behaviour, beatmap set item is hidden when it expands,
+        // when it deselects, we need to restore its visibility.
+        if (grouping.BeatmapSetsGroupedTogether &&
+            previousExpandedBeatmapSet is not null &&
+            // only restore if the newly selected beatmap is different
+            previousExpandedBeatmapSet != ExpandedBeatmapSet &&
+            // only restore if the newly selected beatmap is in the same group
+            previousExpandedBeatmapSet.Group == ExpandedBeatmapSet?.Group &&
+            // skip if the expanded set has single beatmap
+            GetSingleBeatmap(previousExpandedBeatmapSet.BeatmapSet) is null &&
+            grouping.ItemMap.TryGetValue(previousExpandedBeatmapSet, out var prevSetItems))
+        {
+            (CarouselItem setItem, var _) = prevSetItems;
+
+            setItem.IsVisible = true;
+        }
+
+        // ensure the newly selected set item is hidden when selected
+        if (grouping.BeatmapSetsGroupedTogether &&
+            ExpandedBeatmapSet is not null &&
+            grouping.ItemMap.TryGetValue(ExpandedBeatmapSet, out var newSetItemValue))
+        {
+            newSetItemValue.item.IsVisible = false;
+        }
+    }
+
     public bool IsBeatmapPanelFromExpandedSet(LegacyBeatmapPanel panel)
     {
         if (panel.Item is not CarouselItem item)
@@ -643,48 +700,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         if (item.Model is not GroupedBeatmap beatmap)
             return false;
 
-        // When not grouped, only beatmaps from expanded set are displayed.
-        if (beatmap.Group is null)
-            return true;
-
         if (ExpandedBeatmapSet is null)
             return false;
 
         return ExpandedBeatmapSet.BeatmapSet.Equals(beatmap.Beatmap.BeatmapSet);
-    }
-
-    protected override void HandleItemSelected(object? model)
-    {
-        // align with stable's behaviour:
-        // Hide beatmap set item when one of its beatmaps is selected(set expanded).
-        // TODO: there's still one difference: if a beatmap set has only one beatmap,
-        // stable treats the single beatmap directly as a set item, thus no hiding occurs.
-        bool handleBeatmapSetExpansion = grouping.BeatmapSetsGroupedTogether && model is GroupedBeatmap;
-
-        // restore visibility of previous 
-        if (handleBeatmapSetExpansion && ExpandedBeatmapSet is not null)
-        {
-            bool isInSameGroup = (model as GroupedBeatmap)?.Group == ExpandedBeatmapSet.Group;
-            setVisibilityOfSetItem(ExpandedBeatmapSet, i => i.IsVisible |= i.IsExpanded && isInSameGroup);
-        }
-
-        base.HandleItemSelected(model);
-
-        // hide newly expanded set item
-        if (handleBeatmapSetExpansion && ExpandedBeatmapSet is not null)
-            setVisibilityOfSetItem(ExpandedBeatmapSet, static i => i.IsVisible = false);
-    }
-
-    private void setVisibilityOfSetItem(GroupedBeatmapSet set, Action<CarouselItem> action)
-    {
-        if (grouping.SetItems.TryGetValue(set, out var items))
-        {
-            foreach (var item in items)
-            {
-                if (item.Model is GroupedBeatmapSet)
-                    action(item);
-            }
-        }
     }
 
     protected override void Dispose(bool isDisposing)
