@@ -281,14 +281,13 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     {
         base.HandleFilterCompleted();
 
-        Scheduler.Add(() => delayedScheduler.Add(makePanelsAppearFromScreenRightEdge));
+        Scheduler.Add(() => SchedulerAfterChildren.Add(makePanelsAppearFromScreenRightEdge));
     }
 
     protected override void UpdateAfterChildren()
     {
         base.UpdateAfterChildren();
 
-        delayedScheduler.Update();
         spawnedItems.Clear();
     }
 
@@ -306,8 +305,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             panel.X += panelSize.X;
         }
     }
-
-    private readonly Scheduler delayedScheduler = new Scheduler();
 
     protected override float GetSpacingBetweenPanels(CarouselItem previousVisible, CarouselItem bottom)
         => 0; // seems good enough, maybe reference for stable later
