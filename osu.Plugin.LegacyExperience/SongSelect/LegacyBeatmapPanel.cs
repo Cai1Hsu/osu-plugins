@@ -159,6 +159,21 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         cover.FadeColour(coverColor, 300);
     }
 
+    protected override Colour4 GetBackgroundColor()
+    {
+        if (Selected.Value)
+            return PanelColors.White;
+
+        if (Expanded.Value ||
+            (Carousel?.IsBeatmapPanelFromExpandedSet(this) ?? false))
+            return PanelColors.Blue;
+
+        // TODO: stable uses orange color for played beatmaps.
+        // However, to determine whether a beatmap is played is a expensive operation in lazer.
+        // So for now we just always return pink for inactive panels.
+        return PanelColors.Pink;
+    }
+
     private void clearStarDifficultyDisplay()
     {
         if (starDisplay is null)

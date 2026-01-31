@@ -125,4 +125,21 @@ public partial class LegacyGroupPanel : LegacyPanel
     {
         return group.Title;
     }
+
+    protected override Colour4 GetBackgroundColor()
+    {
+        if (Selected.Value || Expanded.Value)
+            return PanelColors.Active;
+
+        // TODO: stable's behavior:
+        // 
+        // base.UnselectedColour = ContainsCurrent 
+        //      ? BeatmapTreeItem.colourRootInactiveContainsCurrent
+        //      : BeatmapTreeItem.colourRootInactive;
+        //
+        // I haven't yet figured out how ContainsCurrent is different from Expanded/Selected.
+        // So for now, we just use Inactive color.
+
+        return PanelColors.Inactive;
+    }
 }

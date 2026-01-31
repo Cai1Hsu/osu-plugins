@@ -79,6 +79,34 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
             skin.SourceChanged += SkinChanged;
     }
 
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        Selected.BindValueChanged(_ => updateBackgroundColor());
+        Expanded.BindValueChanged(_ => updateBackgroundColor());
+        KeyboardSelected.BindValueChanged(v =>
+        {
+            UpdateBackgroundColor(getBackgroundColor(), 50);
+
+            if (v.NewValue)
+                flashBackground();
+        });
+    }
+
+    private void flashBackground()
+    {
+        var color = LegacyPanelColors.Lighten2(getBackgroundColor(), 0.3f);
+        backgroundSprite.FlashColour(color, 1000);
+    }
+
+    private void updateBackgroundColor(int duration = 300)
+    {
+        var targetColor = getBackgroundColor();
+
+        UpdateBackgroundColor(targetColor, duration);
+    }
+
     private ISample? hoverSample;
     private static readonly SampleInfo menu_click_sample_info = new SampleInfo("menuclick");
 
@@ -110,7 +138,12 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
     {
         // quick scrolling spamms hover events, so we suppress the sound in that case.
         if (Carousel?.AllowPanelHoverSample ?? true)
+        {
             hoverSample?.Play();
+
+            // TODO: use a btter name instead of `AllowPanelHoverSample`
+            flashBackground();
+        }
 
         return base.OnHover(e);
     }
@@ -136,6 +169,8 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
 
         if (InitialXPosition is double xPos)
             X = (float)xPos;
+
+        updateBackgroundColor(0);
     }
 
     protected override void Dispose(bool isDisposing)
@@ -144,5 +179,22 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
 
         if (skin is not null)
             skin.SourceChanged -= SkinChanged;
+    }
+
+    private Colour4 getBackgroundColor()
+    {
+        var color = GetBackgroundColor();
+
+        if (KeyboardSelected.Value)
+            color = color.Lighten(0.4f);
+
+        return color;
+    }
+
+    protected abstract Colour4 GetBackgroundColor();
+
+    protected void UpdateBackgroundColor(Colour4 colour, int duration = 300)
+    {
+        backgroundSprite.FadeColour(colour, duration);
     }
 }
