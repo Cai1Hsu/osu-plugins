@@ -1,13 +1,11 @@
-﻿using System.Runtime.CompilerServices;
+﻿using AccessItEasy;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Logging;
 using osu.Framework.Screens;
 using osu.Framework.Threading;
 using osu.Game;
 using osu.Game.Plugins;
-using osu.Game.Screens;
 using osu.Game.Screens.Footer;
 using SongSelectV2 = osu.Game.Screens.SelectV2.SongSelect;
 
@@ -24,7 +22,7 @@ public class StableIntegrationPlugin : OsuPlugin
         registerFooterButtonHook();
         scheduler.Add(() =>
         {
-            game.InjectDependencies(out StableIntegrationManager _, () => new());
+            game.InjectDependency(out StableIntegrationManager _, () => new());
         });
 
         void registerFooterButtonHook()
@@ -53,7 +51,7 @@ public class StableIntegrationPlugin : OsuPlugin
                     button.AppearFromBottom(index * delay_per_button);
                 }
 
-                [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "makeButtonAppearFromBottom")]
+                [PrivateAccessor(PrivateAccessorKind.Method, Name = "makeButtonAppearFromBottom")]
                 extern static void makeButtonAppearFromBottom(ScreenFooter footer, ScreenFooterButton button, int index);
             }
 
@@ -80,16 +78,13 @@ public class StableIntegrationPlugin : OsuPlugin
                 songSelect.InvokeWhenReady(addButtonToScreenFooter);
             }
 
-            ScreenStack screenStack = GetScreenStack(game);
+            ScreenStack screenStack = game.ScreenStack;
 
             screenStack.ScreenPushed += newScreenArrives;
             screenStack.ScreenExited += newScreenArrives;
         }
     }
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "buttonsFlow")]
-    private extern static ref FillFlowContainer<ScreenFooterButton> GetFooterContent(ScreenFooter footer);
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "ScreenStack")]
-    private static extern ref OsuScreenStack GetScreenStack(OsuGame game);
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "buttonsFlow")]
+    private extern static FillFlowContainer<ScreenFooterButton> GetFooterContent(ScreenFooter footer);
 }

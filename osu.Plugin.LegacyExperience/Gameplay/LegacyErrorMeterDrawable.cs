@@ -1,7 +1,6 @@
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.Scoring;
@@ -18,10 +17,8 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     private const float centre_line_width = 1.5f * stable_ratio;
     private const double arrow_move_duration = 800;
 
-    private readonly DrawablePool<LegacyJudgementSpark> sparkPool = new DrawablePool<LegacyJudgementSpark>(64);
-
-    private Container segmentsContainer = null!;
-    private Container flashContainer = null!;
+    private BufferedContainer segmentsContainer = null!;
+    private LegacyJudgements judgements = null!;
     private ArrowAverageIndicator arrow = null!;
 
     private double errorRange = 1;
@@ -36,12 +33,12 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
         InternalChildren = new Drawable[]
         {
-            sparkPool,
             new Container
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
                 RelativeSizeAxes = Axes.Both,
+                Masking = true,
                 Children = new Drawable[]
                 {
                     new Box
@@ -52,7 +49,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                         Colour = Colour4.Black.Opacity(0.6f),
                         RelativeSizeAxes = Axes.Both
                     },
-                    segmentsContainer = new Container
+                    segmentsContainer = new BufferedContainer
                     {
                         Name = "segments",
                         Anchor = Anchor.Centre,
@@ -60,12 +57,14 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                         RelativeSizeAxes = Axes.Both,
                         Height = 0.25f, // quarter height of the background
                     },
-                    flashContainer = new Container
+                    judgements = new LegacyJudgements()
                     {
-                        Name = "flashes",
+                        Name = "judgements",
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
-                        RelativeSizeAxes = Axes.Both
+                        RelativeSizeAxes = Axes.Both,
+                        SparkRelativeSizeAxes = Axes.Y,
+                        SparkSize = new Vector2(centre_line_width, 1),
                     },
                     new Box
                     {
@@ -155,14 +154,14 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
         arrow.MoveToX(0, 200, Easing.Out);
 
-        flashContainer.Clear(false); // don't dispose, sparks are pooled
+        judgements.Clear();
     }
 
     private void spawnSpark(Colour4 colour, float offsetPixels)
     {
-        var spark = sparkPool.Get();
-        spark.Apply(colour, offsetPixels);
-        flashContainer.Add(spark);
+        var judgementsLocal = new Vector2(offsetPixels, 0) + judgements.OriginPosition;
+
+        judgements.SpawnSpark(judgementsLocal, colour);
     }
 
     private Colour4 getColour(HitResult result) => result switch
@@ -184,40 +183,6 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
             Size = new Vector2(10.625f, 5f);
             Scale = new Vector2(1, -1); // make it upside down
             Colour = Colour4.White;
-        }
-    }
-
-    private partial class LegacyJudgementSpark : PoolableDrawable
-    {
-        private readonly Box box;
-
-        public LegacyJudgementSpark()
-        {
-            Anchor = Anchor.Centre;
-            Origin = Anchor.Centre;
-            Width = centre_line_width;
-            RelativeSizeAxes = Axes.Y;
-
-            Blending = BlendingParameters.Additive;
-
-            AddInternal(box = new Box
-            {
-                RelativeSizeAxes = Axes.Both,
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre
-            });
-        }
-
-        public void Apply(Colour4 colour, float targetPosition)
-        {
-            ClearTransforms();
-
-            Alpha = 0.4f;
-            X = targetPosition;
-            box.Colour = colour;
-
-            this.FadeOut(10000)
-                .Expire();
         }
     }
 }

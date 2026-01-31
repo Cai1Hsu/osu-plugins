@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using AccessItEasy;
 using osu.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Sprites;
@@ -20,27 +21,9 @@ public partial class PluginLoaderRuleset : Ruleset
 {
     static PluginLoaderRuleset()
     {
-        // Manual load is required for:
-        // - Skin extension plugins requires their types to be loaded very early or the game throws exceptions as type resolution fails.
-        // - AOT platforms(iOS/Android) where assemblies are not automatically loaded when referenced.
+        // Skin plugins requires their types to be loaded very early or the game throws exceptions as type resolution fails.
         loadPluginAssembly();
     }
-
-    // Our code rarely caches private members because we expect access them is fast with UnsafeAccessor, this is designed.
-    // However, Some platforms do not support UnsafeAccessor, especially iOS and Android.
-    // I've tried on my own device and it either:
-    // - throws TypeLoadException when accessing UnsafeAccessorAttribute, this is probably due to trimming.
-    // - mono CLR crashes(native code) immediately when it tries to generate accessor method(I build the game in debug mode and disabled trimming).
-    // Seems like UnsafeAccessor won't be able to work on those platforms in the near future.
-    // Although fallback to reflection is possible, it is not worth the maintenance cost.
-    // Also, we can't assume how frequently the plugins call those accessors, so performance impact is uncertain.
-    // so there's no plan of supporting those platforms in the near future because few users are expected to run osu! on those platforms.
-    internal static bool IsUnsupportedPlatforms => RuntimeInfo.OS switch
-    {
-        RuntimeInfo.Platform.Android or
-        RuntimeInfo.Platform.iOS => true,
-        _ => false,
-    };
 
     private static void loadPluginAssembly()
     {
@@ -152,7 +135,7 @@ public partial class PluginLoaderRuleset : Ruleset
         .GetProperty("LoadThread", internal_binding_flags)?
         .GetMethod!;
 
-    [UnsafeAccessor(UnsafeAccessorKind.StaticField, Name = "NewEntry")]
+    [PrivateAccessor(PrivateAccessorKind.StaticField, Name = "NewEntry")]
     private extern static ref Action<LogEntry> get_log_entry_delegate(Logger _);
 
     private OsuGame? RetrieveCurrentOsuGame()
