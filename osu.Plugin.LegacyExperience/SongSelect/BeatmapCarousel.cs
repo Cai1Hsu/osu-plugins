@@ -8,12 +8,16 @@ using osu.Framework.Allocation;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Caching;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Input;
 using osu.Framework.Threading;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
+using osu.Game.Graphics.Cursor;
 using osu.Game.Plugins;
 using osu.Game.Screens.SelectV2;
 using osu.Game.Skinning;
@@ -177,6 +181,44 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private const float hover_expand_amount_x = 30;
 
+    private InputManager inputManager = null!;
+
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        inputManager = GetContainingInputManager();
+    }
+
+    [Resolved]
+    private OsuContextMenuContainer? contextMenuContainer { get; set; }
+
+    private LegacyPanel? getPanelWithContextMenu()
+    {
+        if (contextMenuContainer is null)
+            return null;
+
+        var menu = get_menu(contextMenuContainer);
+
+        if (menu is null || menu.State is MenuState.Closed)
+            return null;
+
+        var menuTarget = get_menuTarget(contextMenuContainer) as LegacyPanel;
+
+        if (menuTarget?.Item is null)
+            return null;
+
+        return menuTarget;
+    }
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "menu")]
+    private static extern ref Menu get_menu(ContextMenuContainer container);
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "menuTarget")]
+    private static extern ref IHasContextMenu get_menuTarget(ContextMenuContainer container);
+
+    private LegacyPanel? contextMenuActivePanel;
+
     protected override void Update()
     {
         visibleHalfHeight = (DrawHeight + BleedBottom + BleedTop) / 2;
@@ -188,15 +230,16 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         double? hoveredY = null;
 
-        for (int i = 0; i < scrollChildren.Count; i++)
-        {
-            var child = scrollChildren[i];
-            if (child is not LegacyPanel panel)
-                continue;
+        contextMenuActivePanel = getPanelWithContextMenu();
 
-            if (panel.IsHovered && panel.Item is CarouselItem item)
-                hoveredY = item.CarouselYPosition;
-        }
+        LegacyPanel? hoverActivePanel = inputManager.HoveredDrawables
+                .OfType<LegacyPanel>()
+                .FirstOrDefault(p => p.Item is not null && p.Parent == Scroll.Panels)
+            // fallback to context menu active panel so that panels keep their position
+            // when the user interacts with the context menu
+            ?? contextMenuActivePanel;
+
+        hoveredY = hoverActivePanel?.Item!.CarouselYPosition;
 
         // expand the hovered panel and push others away
         double dampingFactor = Math.Pow(0.875, frameRatio);
@@ -288,7 +331,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         Vector2 posInScroll = Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre);
         var xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop);
 
-        if (panel.IsHovered)
+        if (panel.IsHovered || ReferenceEquals(contextMenuActivePanel, panel))
             xPosition -= hover_expand_amount_x;
 
         return xPosition;
