@@ -41,6 +41,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     [Cached]
     private LegacyRankSpritePool rankSpritePool { get; set; } = new LegacyRankSpritePool();
 
+    public bool AllowPanelHoverSample => !AbsoluteScrolling &&
+        (Scroll.Target == Scroll.Current || Scroll.UserScrolling);
+
     // SongSelectV2's capacity is 100 foreach panel type.
     // Although V2's panels are more varied, I think 100 is enough.
     private const int pool_capacity = 100;
