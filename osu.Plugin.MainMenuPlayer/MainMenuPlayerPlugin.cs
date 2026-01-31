@@ -16,7 +16,6 @@ public class MainMenuPlayerPlugin : OsuPlugin
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
         var game = (OsuGame)gameBase;
-        var screenStack = GetScreenStack(game);
 
         static void addOverlayToMainMenu(Drawable d)
         {
@@ -35,7 +34,4 @@ public class MainMenuPlayerPlugin : OsuPlugin
             mainMenu.InvokeWhenReady(addOverlayToMainMenu);
         }, new[] { typeof(MainMenu) });
     }
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "ScreenStack")]
-    private static extern ref OsuScreenStack GetScreenStack(OsuGame game);
 }

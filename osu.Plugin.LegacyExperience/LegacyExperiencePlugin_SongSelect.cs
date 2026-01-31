@@ -20,7 +20,7 @@ public sealed partial class LegacyExperiencePlugin
     private void hookSongSelectScreen(OsuGame game)
     {
         // No-op, the existence of this method is enough to ensure the assembly is loaded
-        var screenStack = game.GetScreenStack();
+        var screenStack = game.ScreenStack;
 
         screenStack.ScreenPushed += screenStack_ScreenSwitched;
         screenStack.ScreenExited += screenStack_ScreenSwitched;

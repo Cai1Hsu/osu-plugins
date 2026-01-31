@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -80,7 +80,7 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
             }
         };
 
-        osuScreenStack = game.GetScreenStack();
+        osuScreenStack = game.ScreenStack;
     }
 
     private OsuScreenStack osuScreenStack = null!;
@@ -119,7 +119,7 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
         base.LoadComplete();
 
         if (mainMenu is not null)
-            buttonSystem = GetMainMenuButtonSystem(mainMenu);
+            buttonSystem = buttonSystemFieldInfo?.GetValue(mainMenu) as ButtonSystem;
 
         if (buttonSystem is not null)
         {
@@ -146,10 +146,13 @@ public partial class MainMenuPlayerOverlay : CompositeDrawable
 
         osuScreenStack.ScreenPushed += newScreenArrives;
         osuScreenStack.ScreenExited += newScreenArrives;
-
-        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "Buttons")]
-        static extern ref ButtonSystem GetMainMenuButtonSystem(MainMenu mainMenu);
     }
+
+    // There's only one private member access in this project,
+    // and it's likely it will only be invoked once across the lifetime of the plugin,
+    // so use reflection directly here.
+    private static readonly FieldInfo? buttonSystemFieldInfo =
+        typeof(MainMenu).GetField("Buttons", BindingFlags.NonPublic | BindingFlags.Instance);
 
     private bool buttonStateAllowsShowPlayer => buttonSystem is null ||
         buttonSystem.State is ButtonSystemState.Initial or ButtonSystemState.Exit;
