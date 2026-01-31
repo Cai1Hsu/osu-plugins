@@ -302,7 +302,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             if (child is not LegacyPanel panel)
                 continue;
 
-            panel.X += panelSize.X;
+            panel.X = panelSize.X;
         }
     }
 
