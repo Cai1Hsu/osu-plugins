@@ -1,17 +1,14 @@
-using System.Runtime.CompilerServices;
-using osu.Framework.Graphics;
-using osu.Framework.Graphics.Containers;
 using osu.Framework.Screens;
 using osu.Game;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Plugins;
 using osu.Game.Screens;
-using osu.Game.Screens.Footer;
 using osu.Game.Screens.SelectV2;
 using SongSelectV2 = osu.Game.Screens.SelectV2.SongSelect;
 using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
 using LegacyBeatmapCarousel = osu.Plugin.LegacyExperience.SongSelect.BeatmapCarousel;
+using AccessItEasy;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -19,7 +16,6 @@ public sealed partial class LegacyExperiencePlugin
 {
     private void hookSongSelectScreen(OsuGame game)
     {
-        // No-op, the existence of this method is enough to ensure the assembly is loaded
         var screenStack = game.ScreenStack;
 
         screenStack.ScreenPushed += screenStack_ScreenSwitched;
@@ -69,51 +65,44 @@ public sealed partial class LegacyExperiencePlugin
 
             var previousDepth = currentCarousel.Depth;
 
-            RemoveInternal(carouselParent, currentCarousel, true);
+            carouselParent.RemoveInternal(currentCarousel, true);
 
             carouselParent.AddInternal(legacyCarousel);
-            ChangeInternalChildDepth(carouselParent, legacyCarousel, previousDepth);
+            carouselParent.ChangeInternalChildDepth(legacyCarousel, previousDepth);
 
             currentCarousel = legacyCarousel;
         });
     }
 
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "RemoveInternal")]
-    private static extern bool RemoveInternal(CompositeDrawable @this, Drawable child, bool disposeImmediately);
-
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "ChangeInternalChildDepth")]
-    private static extern void ChangeInternalChildDepth(CompositeDrawable @this, Drawable child, float newDepth);
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "carousel")]
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "carousel")]
     private static extern ref BeatmapCarouselV2 get_carousel(SongSelectV2 songSelect);
 
     private LegacyBeatmapCarousel? createLegacyCarousel(BeatmapCarouselV2 carousel)
     {
-        if (carousel is LegacyBeatmapCarousel)
+        if (carousel.GetType() != typeof(BeatmapCarouselV2))
             return null;
 
         return new LegacyBeatmapCarousel()
         {
-            BleedTop = FilterControl.HEIGHT_FROM_SCREEN_TOP + 5,
-            BleedBottom = ScreenFooter.HEIGHT + 5,
-            RelativeSizeAxes = Axes.Both,
+            BleedTop = carousel.BleedTop,
+            BleedBottom = carousel.BleedBottom,
+            RelativeSizeAxes = carousel.RelativeSizeAxes,
             RequestPresentBeatmap = get_RequestPresentBeatmap(carousel),
             RequestSelection = get_RequestSelection(carousel),
             RequestRecommendedSelection = get_RequestRecommendedSelection(carousel),
             NewItemsPresented = get_NewItemsPresented(carousel),
-
         };
     }
 
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_RequestPresentBeatmap")]
+    [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_RequestPresentBeatmap")]
     private static extern Action<BeatmapInfo>? get_RequestPresentBeatmap(BeatmapCarouselV2 carousel);
 
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_RequestSelection")]
+    [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_RequestSelection")]
     private static extern Action<GroupedBeatmap> get_RequestSelection(BeatmapCarouselV2 carousel);
 
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_RequestRecommendedSelection")]
+    [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_RequestRecommendedSelection")]
     private static extern Action<IEnumerable<GroupedBeatmap>> get_RequestRecommendedSelection(BeatmapCarouselV2 carousel);
 
-    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_NewItemsPresented")]
+    [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_NewItemsPresented")]
     private static extern Action<IEnumerable<CarouselItem>>? get_NewItemsPresented(Carousel<BeatmapInfo> carousel);
 }
