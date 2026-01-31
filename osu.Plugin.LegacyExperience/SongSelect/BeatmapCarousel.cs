@@ -326,16 +326,15 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 if (item.IsExpanded)
                     return true;
 
-                if (ExpandedBeatmapSet is not null)
+                var beatmapSet = item.Model switch
                 {
-                    if (item.Model is GroupedBeatmapSet set && 
-                        set.BeatmapSet.Equals(ExpandedBeatmapSet))
-                        return true;
+                    GroupedBeatmapSet set => set.BeatmapSet,
+                    GroupedBeatmap beatmap => beatmap.Beatmap.BeatmapSet,
+                    _ => null
+                };
 
-                    if (item.Model is GroupedBeatmap beatmap &&
-                        (beatmap.Beatmap.BeatmapSet?.Equals(ExpandedBeatmapSet.BeatmapSet) ?? false))
-                        return true;
-                }
+                if (beatmapSet is not null)
+                    return beatmapSet.Equals(ExpandedBeatmapSet?.BeatmapSet);
 
                 return CurrentSelectionItem == item;
             }
