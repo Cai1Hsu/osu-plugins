@@ -71,9 +71,12 @@ public partial class TestSceneBeatmapCarousel : LocalSkinTestScene
         {
             carousel = new LegacyBeatmapCarousel
             {
+                BleedTop = 50,
+                BleedBottom = 50,
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
                 Width = 800,
+                RelativeSizeAxes = Axes.Y,
                 NewItemsPresented = _ => { },
                 RequestSelection = b =>
                 {

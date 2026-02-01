@@ -254,6 +254,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         visibleHalfHeight = (DrawHeight + BleedBottom + BleedTop) / 2;
         frameRatio = Time.Elapsed / (1000 / 60f);
 
+        Debug.Assert(visibleHalfHeight > 0, "visibleHalfHeight should be positive.");
+
         base.Update();
 
         var scrollChildren = Scroll.Panels.Children;
