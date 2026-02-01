@@ -393,9 +393,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                     Debug.Assert(previousSet.BeatmapSet.Equals(beatmap.Beatmap.BeatmapSet));
 
                     previousItem.DrawHeight = 0;
-                    previousItem.IsVisible = false;
+                    // The set item may be hidden already in some cases (e.g. containing group collapsed),
+                    // we don't want to show the beatmap item in these cases.
+                    item.IsVisible = previousItem.IsVisible;
 
-                    item.IsVisible = true;
+                    previousItem.IsVisible = false;
                     item.DepthLayer = previousItem.DepthLayer;
                 }
             }
