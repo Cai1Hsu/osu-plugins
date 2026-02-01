@@ -107,15 +107,17 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
     {
         float offsetX = 0;
 
+        var texture = skin.GetSkinTexture("star", textures, "UI");
+
         for (int i = 0; i < stars.Length; i++)
         {
             var star = stars[i];
-            var texture = skin.GetSkinTexture("star", textures, "UI");
 
             // we've packed a fallback texture, so this should never be null
             Debug.Assert(texture is not null);
 
             star.Texture = texture;
+            star.Size = texture.DisplaySize;
 
             // reposition stars based on texture size
             star.X = offsetX * LegacyExperiencePlugin.StableRatio;
@@ -123,13 +125,6 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
             // Although textures are expected to be the same, we use the actual width to be safe.
             offsetX += texture.DisplayWidth * 0.625f * 0.6f;
         }
-    }
-
-    private static Texture? getStarTexture(ISkinSource? skin, TextureStore? textures)
-    {
-        return skin?.GetTexture("star")
-            // fallback path for Argon skins
-            ?? textures?.GetAutoSized("UI/star");
     }
 
     protected override void Dispose(bool isDisposing)
