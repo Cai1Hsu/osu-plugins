@@ -185,7 +185,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         starDisplay.Current.Value = 0;
         starDisplay.FinishTransforms();
 
-        starDisplay.Expire();
+        beatmapInfoContainer.Remove(starDisplay, false);
         starDisplay = null;
     }
 
