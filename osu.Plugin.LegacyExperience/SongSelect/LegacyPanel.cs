@@ -137,14 +137,10 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
     protected override bool OnHover(HoverEvent e)
     {
         // quick scrolling spamms hover events, so we suppress the sound in that case.
-        if (Carousel?.AllowPanelHoverSample ?? true)
-        {
+        if (Carousel?.RequestPlayPanelHoverSample() ?? true)
             hoverSample?.Play();
 
-            // TODO: use a btter name instead of `AllowPanelHoverSample`
-            flashBackground();
-        }
-
+        flashBackground();
         return base.OnHover(e);
     }
 
