@@ -388,7 +388,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         public void UpdateBackground(WorkingBeatmap working)
         {
             // same background, no need to update
-            if ((this.working is not null || working is not null) &&
+            if ((this.working is null && working is null) ||
                 // SongSelectV2 use this simple way to determine if using the same background
                 (getBackgroundFileHash(this.working) == getBackgroundFileHash(working)))
                 return;
