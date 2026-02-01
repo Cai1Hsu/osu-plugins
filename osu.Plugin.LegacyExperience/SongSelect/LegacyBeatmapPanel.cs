@@ -23,7 +23,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     private OsuSpriteText titleText = null!;
     private OsuSpriteText artistText = null!;
     private OsuSpriteText difficultyText = null!;
-    private StarDifficultyDisplay? starDisplay = null!;
+    private StarDifficultyDisplay? starDisplay;
 
     private PanelBeatmapCoverContainer cover = null!;
     private LegacyLocalRankDisplay localRankDisplay = null!;
