@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using AccessItEasy;
 using osu.Framework.Allocation;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Caching;
@@ -172,13 +173,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         filterAfterItemsChanged.Invalidate();
     }
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "selectionValid")]
-    private static extern ref Cached get_selection_valid(Carousel<BeatmapInfo> carousel);
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "selectionValid")]
+    private static extern Cached get_selection_valid(Carousel<BeatmapInfo> carousel);
 
-    // FIXME: POC stage temporarily uses unsafe accessor
-    // use reflection as some deploy platforms do not support UnsafeAccessor
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "filterAfterItemsChanged")]
-    private static extern ref Cached get_filter_after_items_changed(Carousel<BeatmapInfo> carousel);
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "filterAfterItemsChanged")]
+    private static extern Cached get_filter_after_items_changed(Carousel<BeatmapInfo> carousel);
 
     private const float hover_expand_amount_y = 10;
 
@@ -214,11 +213,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         return menuTarget;
     }
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "menu")]
-    private static extern ref Menu get_menu(ContextMenuContainer container);
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "menu")]
+    private static extern Menu get_menu(ContextMenuContainer container);
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "menuTarget")]
-    private static extern ref IHasContextMenu get_menuTarget(ContextMenuContainer container);
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "menuTarget")]
+    private static extern IHasContextMenu get_menuTarget(ContextMenuContainer container);
 
     private LegacyPanel? contextMenuActivePanel;
 
