@@ -2,6 +2,9 @@
 
 #nullable disable
 
+#pragma warning disable IDE0079 // Remove unnecessary suppression
+#pragma warning disable IDE0130 // Namespace does not match folder structure
+
 using System.Text;
 using NUnit.Framework;
 using osu.Framework.Extensions;
