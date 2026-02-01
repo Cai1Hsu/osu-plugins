@@ -14,6 +14,8 @@ namespace osu.Plugin.LegacyExperience;
 
 public sealed partial class LegacyExperiencePlugin : OsuPlugin
 {
+    public const float StableRatio = 1.6f;
+
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
         gameBase.EnsureLegacyResources();
@@ -56,5 +58,7 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
             typeof(LegacyDashboardButton),
             typeof(LegacyFpsDisplay),
         }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.SongSelect));
+
+        hookSongSelectScreen(game);
     }
 }

@@ -8,7 +8,7 @@ using osu.Game.Database;
 using osu.Game.IO;
 using osu.Game.Tests.Visual;
 
-namespace osu.Plugin.LegacyExperience;
+namespace osu.Plugin.LegacyExperience.Tests;
 
 public abstract partial class LocalSkinTestScene : OsuTestScene, IStorageResourceProvider
 {
