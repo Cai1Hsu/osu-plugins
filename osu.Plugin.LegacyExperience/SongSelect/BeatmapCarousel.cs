@@ -110,10 +110,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         foreach (var pool in poolFields)
             dispose(pool);
 
-        void dispose(FieldInfo? fieldInfo)
+        void dispose(FieldInfo fieldInfo)
         {
-            Debug.Assert(fieldInfo is not null);
-
             if (fieldInfo.GetValue(this) is not Drawable pool)
                 return;
 
