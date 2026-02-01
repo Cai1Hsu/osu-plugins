@@ -160,6 +160,22 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         updateSample(sampleKeyboardTraversal);
     }
 
+    protected override bool ShouldActivateOnKeyboardSelection(CarouselItem item)
+    {
+        if (!base.ShouldActivateOnKeyboardSelection(item))
+            return false;
+
+        // if the item is single beatmap of an non-expanded set, don't activate it
+        if (grouping.BeatmapSetsGroupedTogether &&
+            item.Model is GroupedBeatmap beatmap &&
+            ExpandedBeatmapSet is not null &&
+            beatmap.Beatmap.BeatmapSet is not null &&
+            !ExpandedBeatmapSet.BeatmapSet.Equals(beatmap.Beatmap.BeatmapSet))
+            return false;
+
+        return true;
+    }
+
     void updatePanelBackground()
     {
         var backgroundTexture = skin.GetSkinTexture("menu-button-background", textures, "UI");
