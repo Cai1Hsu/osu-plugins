@@ -14,6 +14,7 @@ using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
 using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Plugins;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu;
@@ -110,7 +111,8 @@ namespace osu.Game.Tests.Resources
             var beatmapSet = new BeatmapSetInfo
             {
                 OnlineID = setId,
-                Hash = new MemoryStream(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString())).ComputeMD5Hash(),
+                Hash = new MemoryStream(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()))
+                    .Using(static s => s.ComputeMD5Hash()),
                 DateAdded = DateTimeOffset.UtcNow,
             };
 
