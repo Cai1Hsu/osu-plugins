@@ -120,7 +120,7 @@ public partial class LegacyStoryboardExtend : CompositeDrawable, ISerialisableDr
 
                     // make background always at the bottom of the layer
                     // so that any other storyboard elements added would be on top of it.
-                    elementContainer.ChangeInternalChildDepth(s, float.MinValue);
+                    elementContainer.ChangeInternalChildDepth(s, float.MaxValue);
                 });
             }, true);
         });
