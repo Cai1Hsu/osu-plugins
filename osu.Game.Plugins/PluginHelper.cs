@@ -187,4 +187,22 @@ public static class PluginHelper
     {
         return skin?.GetTexture(lookup) ?? textures?.GetAutoSized(string.IsNullOrEmpty(textureStoreLookupPrefix) ? lookup : $"{textureStoreLookupPrefix}/{lookup}");
     }
+
+    public static TUsing Using<TDisposable, TUsing>(this TDisposable disposable, Func<TDisposable, TUsing> action)
+        where TDisposable : IDisposable
+    {
+        using (disposable)
+        {
+            return action(disposable);
+        }
+    }
+
+    public static void Using<TDisposable>(this TDisposable disposable, Action<TDisposable> action)
+        where TDisposable : IDisposable
+    {
+        using (disposable)
+        {
+            action(disposable);
+        }
+    }
 }
