@@ -149,7 +149,7 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
         if (Item is null || Carousel is null)
             return base.OnClick(e);
 
-        Carousel?.Activate(Item);
+        Carousel.Activate(Item);
         return true;
     }
 
