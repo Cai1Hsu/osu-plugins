@@ -115,7 +115,7 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
         hoverSample = skin?.GetSample(menu_click_sample_info);
 
         // TODO: Song select requires dynamic textures loading when skin changes
-        // SkinnableSprite doestn't scale with @2x, so we manually retrieve the texture here.
+        // SkinnableSprite doesn't scale with @2x, so we manually retrieve the texture here.
         // This is a temporary workaround to make size correct.
         var texture = skin.GetSkinTexture("menu-button-background", textures, "UI");
 

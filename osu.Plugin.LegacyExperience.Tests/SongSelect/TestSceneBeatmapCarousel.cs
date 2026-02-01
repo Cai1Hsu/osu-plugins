@@ -112,7 +112,6 @@ public partial class TestSceneBeatmapCarousel : LocalSkinTestScene
         createHeader("carousel");
         stats.AddParagraph($"""
                                 filtering: {carousel.IsFiltering} (total {carousel.FilterCount} times)
-                                filtering: {carousel.IsFiltering} (total {carousel.FilterCount} times)
                                 tracked: {carousel.ItemsTracked}
                                 displayable: {carousel.DisplayableItems}
                                 displayed: {carousel.VisibleItems}

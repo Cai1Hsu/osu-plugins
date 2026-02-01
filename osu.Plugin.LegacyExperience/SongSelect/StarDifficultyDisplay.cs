@@ -47,7 +47,7 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
                 Anchor = Anchor.CentreLeft,
                 Origin = Anchor.CentreLeft,
                 Position = new Vector2(i * 12, 0), // TODO: spacing
-                Scale = deafult_scale, // TODO: investigate scale?
+                Scale = default_scale, // TODO: investigate scale?
             };
 
             stars[i] = star;
@@ -61,7 +61,7 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
         onSkinChanged(); // update textures initially
     }
 
-    private static readonly Vector2 deafult_scale = new Vector2(0.35f);
+    private static readonly Vector2 default_scale = new Vector2(0.35f);
 
     private static readonly Colour4 active_colour = Colour4.White;
     private static readonly Colour4 inactive_colour = Colour4.White.Opacity(30 / 255f);
@@ -89,12 +89,12 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
                 if (i < value)
                 {
                     target_colour = active_colour;
-                    target_scale = deafult_scale;
+                    target_scale = default_scale;
                 }
                 else
                 {
                     target_colour = inactive_colour;
-                    target_scale = deafult_scale * 0.6f;
+                    target_scale = default_scale * 0.6f;
                 }
 
                 star.FadeColour(target_colour, fade_duration)

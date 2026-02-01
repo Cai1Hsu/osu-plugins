@@ -560,7 +560,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         if (ExpandedBeatmapSet is not null)
         {
-            // previous beamap set collapsing, set item will be visible
+            // previous beatmap set collapsing, set item will be visible
             // calculate a spawn position for the set item based on beatmap panels
             if (grouping.SetItems.TryGetValue(ExpandedBeatmapSet, out var setItems))
             {
