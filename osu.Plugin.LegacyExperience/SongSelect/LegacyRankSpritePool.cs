@@ -27,6 +27,9 @@ public partial class LegacyRankSpritePool : CompositeDrawable
         // consider having lower initial sizes or using lazy initialization.
         foreach (var rank in (ScoreRank[])Enum.GetValues(typeof(ScoreRank)))
         {
+            if (rank < ScoreRank.D)
+                continue;
+
             var pool = new RankPool(rank, initial_pool_size);
             rankPools.Add(rank, pool);
             AddInternal(pool);

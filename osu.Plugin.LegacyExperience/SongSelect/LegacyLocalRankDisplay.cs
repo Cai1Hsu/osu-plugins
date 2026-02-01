@@ -87,7 +87,8 @@ public partial class LegacyLocalRankDisplay : CompositeDrawable
         rankSprite?.Expire();
         rankSprite = null;
 
-        if (topScore is null)
+        // Failed scores and no scores do not get a rank displayed.
+        if (topScore is null || topScore.Rank < ScoreRank.D)
             return;
 
         rankSprite = getRankSprite(topScore.Rank);
