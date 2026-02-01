@@ -21,18 +21,18 @@ public partial class LegacyRankSpritePool : CompositeDrawable
     [BackgroundDependencyLoader]
     private void load()
     {
-        var rankPools = new List<RankPool>();
+        var rankPools = new Dictionary<ScoreRank, RankPool>();
 
         // TODO: SS, SH, X, XH ranks are generally rare,
         // consider having lower initial sizes or using lazy initialization.
         foreach (var rank in (ScoreRank[])Enum.GetValues(typeof(ScoreRank)))
         {
             var pool = new RankPool(rank, initial_pool_size);
-            rankPools.Add(pool);
+            rankPools.Add(rank, pool);
             AddInternal(pool);
         }
 
-        this.pools = rankPools.ToFrozenDictionary(pool => pool.Rank);
+        this.pools = rankPools.ToFrozenDictionary();
     }
 
     public LegacyRankSprite Get(ScoreRank rank)

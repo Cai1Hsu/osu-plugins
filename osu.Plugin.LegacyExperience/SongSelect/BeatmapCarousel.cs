@@ -138,7 +138,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         .GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
         .Concat(typeof(Carousel<BeatmapInfo>).GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
         .Where(f => f.FieldType == typeof(Sample))
-        .ToFrozenDictionary(f => f.Name, f => f);
+        // On android devices all ToFrozenDictionary() overrides with key/value selector throw MissingMethodException
+        // so we manually build the dictionary first and then convert to FrozenDictionary
+        .ToDictionary(static f => f.Name, StringComparer.InvariantCulture)
+        .ToFrozenDictionary();
 
     private void updateSamples(ISample? sampleChangeDifficulty, ISample? sampleChangeSet, ISample? sampleToggleGroup, ISample? spinSample, ISample? randomSelectSample, ISample? sampleKeyboardTraversal)
     {
