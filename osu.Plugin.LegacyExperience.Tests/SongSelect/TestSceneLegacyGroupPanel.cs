@@ -12,9 +12,6 @@ public partial class TestSceneLegacyGroupPanel : LocalSkinTestScene
     private SkinProvidingContainer skinProvidingContainer = null!;
     private LegacyPanel? panel = null;
 
-    [Cached]
-    private LegacyPanelColors panelColors = LegacyPanelColors.CreateDefault();
-
     [SetUpSteps]
     public void SetUpSteps()
     {

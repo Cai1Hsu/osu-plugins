@@ -38,7 +38,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     private TextureStore? textures { get; set; }
 
     [Cached]
-    private LegacyPanelColors panelColors { get; set; } = LegacyPanelColors.CreateDefault();
+    private LegacyPanelColors panelColors { get; set; } = new LegacyPanelColors();
 
     [Cached]
     private DrawablePool<StarDifficultyDisplay> starDifficultyPool { get; set; } = new DrawablePool<StarDifficultyDisplay>(20);

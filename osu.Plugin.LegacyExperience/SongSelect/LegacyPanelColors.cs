@@ -9,12 +9,12 @@ public class LegacyPanelColors
     private static readonly SkinCustomColourLookup activeTextLookup = new("SongSelectActiveText");
     private static readonly SkinCustomColourLookup inactiveTextLookup = new("SongSelectInactiveText");
 
-    public static LegacyPanelColors CreateDefault() => new LegacyPanelColors
+    public LegacyPanelColors()
     {
-        ActiveText = Color4.Black,
-        InactiveText = Color4.White,
-        InactiveTextFaded = Color4.White.Opacity(0.5f),
-    };
+        ActiveText = Color4.Black;
+        InactiveText = Color4.White;
+        InactiveTextFaded = InactiveText.Opacity(0.5f);
+    }
 
     public void SyncFromSkin(ISkinSource? skin)
     {
