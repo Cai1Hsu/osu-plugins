@@ -204,6 +204,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
     {
         base.FreeAfterUse();
 
+        difficultyText.Text = string.Empty;
         clearStarDifficultyComputation();
         clearStarDifficultyDisplay();
         cover.ClearBackground();
