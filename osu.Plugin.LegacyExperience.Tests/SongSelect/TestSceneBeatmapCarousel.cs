@@ -43,12 +43,6 @@ public partial class TestSceneBeatmapCarousel : LocalSkinTestScene
         {
             BeatmapSets = { BindTarget = BeatmapSets }
         };
-
-        BeatmapSets.BindCollectionChanged((b, n) =>
-        {
-            IEnumerable<BeatmapSetInfo>? newItems = n.NewItems?.Cast<BeatmapSetInfo>();
-            IEnumerable<BeatmapSetInfo>? oldItems = n.OldItems?.Cast<BeatmapSetInfo>();
-        });
     }
 
     [BackgroundDependencyLoader]
@@ -85,9 +79,7 @@ public partial class TestSceneBeatmapCarousel : LocalSkinTestScene
                 {
                     carousel.CurrentGroupedBeatmap = b;
                 },
-                RequestRecommendedSelection = groupedBeatmaps =>
-                {
-                },
+                RequestRecommendedSelection = groupedBeatmaps => { },
             };
 
             skinContainer.Add(carousel);
@@ -179,7 +171,7 @@ public partial class TestSceneBeatmapCarousel : LocalSkinTestScene
     private static char getRandomCharacter()
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz*";
-        return chars[(int)((randomCharPointer++ / 2) % chars.Length)];
+        return chars[(int)(randomCharPointer++ / 2 % chars.Length)];
     }
 
     private partial class TestBeatmapStore : BeatmapStore
