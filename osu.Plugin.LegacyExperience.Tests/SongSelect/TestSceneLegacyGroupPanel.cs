@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Testing;
@@ -11,6 +12,10 @@ public partial class TestSceneLegacyGroupPanel : LocalSkinTestScene
 {
     private SkinProvidingContainer skinProvidingContainer = null!;
     private LegacyPanel? panel = null;
+
+    [Cached]
+    [SuppressMessage("Style", "IDE0051")]
+    private LegacyPanelColors panelColors { get; } = new LegacyPanelColors();
 
     [SetUpSteps]
     public void SetUpSteps()
