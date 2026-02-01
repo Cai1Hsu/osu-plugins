@@ -27,7 +27,9 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
 
     public ReadOnlySpan<Star> Stars => stars;
 
-    public Bindable<double> Current { get; set; } = new BindableDouble();
+    public Bindable<double> Current => ((IHasCurrentValue<double>)this).Current;
+
+    Bindable<double> IHasCurrentValue<double>.Current { get; set; } = new BindableDouble();
 
     public void UpdateStarColor(Color4 color, bool additive)
     {
