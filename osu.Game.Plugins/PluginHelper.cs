@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using osu.Framework;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
@@ -188,6 +189,15 @@ public static class PluginHelper
         return skin?.GetTexture(lookup) ?? textures?.GetAutoSized(string.IsNullOrEmpty(textureStoreLookupPrefix) ? lookup : $"{textureStoreLookupPrefix}/{lookup}");
     }
 
+    /// <summary>
+    /// Uses a disposable object within a using block and returns a value.
+    /// </summary>
+    /// <typeparam name="TDisposable">The type of the disposable object.</typeparam>
+    /// <typeparam name="TUsing">The type of the return value.</typeparam>
+    /// <param name="disposable">The disposable object to use.</param>
+    /// <param name="action">The action to perform using the disposable object.</param>
+    /// <returns>The result of the action.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TUsing Using<TDisposable, TUsing>(this TDisposable disposable, Func<TDisposable, TUsing> action)
         where TDisposable : IDisposable
     {
@@ -197,6 +207,13 @@ public static class PluginHelper
         }
     }
 
+    /// <summary>
+    /// Uses a disposable object within a using block.
+    /// </summary>
+    /// <typeparam name="TDisposable">The type of the disposable object.</typeparam>
+    /// <param name="disposable">The disposable object to use.</param>
+    /// <param name="action">The action to perform using the disposable object.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Using<TDisposable>(this TDisposable disposable, Action<TDisposable> action)
         where TDisposable : IDisposable
     {
