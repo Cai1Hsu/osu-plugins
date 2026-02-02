@@ -119,7 +119,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     {
         base.LoadComplete();
 
-        // We are not contained within a RulesetInputManager, so IKeyBindingHandler<OsuActoin> thing won't work here.
+        // We are not contained within a RulesetInputManager, so IKeyBindingHandler<OsuAction> thing won't work here.
         // Also, we have to add IKeyBindingHandler implementation for each ruleset if we want to support them all.
         // So we just manually bind to InputCountController's triggers here, this is how KeyCounter works as well.
         if (inputCountController is not null)
