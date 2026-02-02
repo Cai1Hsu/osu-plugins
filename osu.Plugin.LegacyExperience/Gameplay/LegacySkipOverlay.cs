@@ -135,22 +135,36 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
             foreach (var t in oldTriggers)
                 t.OnActivate -= onActivate;
 
-            // FIXME: change SkipOnSmokeAction during gameplay won't update existing triggers.
-            if (!SkipOnSmokeAction.Value)
-                newTriggers = newTriggers.Where(static t => !isOsuActionSmokeTrigger(t));
-
-            foreach (var t in newTriggers)
-                t.OnActivate += onActivate;
-
-            void onActivate(bool dontcare)
-            {
-                // avoid spamming skip requests when the intro is already skipped.
-                if (!skipOverlayContainer!.IsPresent || isGameStarted)
-                    return;
-
-                drawable.TriggerClick();
-            }
+            registerNewTriggers(newTriggers);
         }, true);
+
+        SkipOnSmokeAction.BindValueChanged(v =>
+        {
+            var triggers = gameplayTriggers.OfType<InputTrigger>();
+
+            foreach (var t in triggers)
+                t.OnActivate -= onActivate;
+
+            registerNewTriggers(triggers);
+        });
+
+        void registerNewTriggers(IEnumerable<InputTrigger> triggers)
+        {
+            if (!SkipOnSmokeAction.Value)
+                triggers = triggers.Where(static t => !isOsuActionSmokeTrigger(t));
+
+            foreach (var t in triggers)
+                t.OnActivate += onActivate;
+        }
+
+        void onActivate(bool dontcare)
+        {
+            // avoid spamming skip requests when the intro is already skipped.
+            if (!skipOverlayContainer!.IsPresent || isGameStarted)
+                return;
+
+            drawable.TriggerClick();
+        }
     }
 
     private static bool isOsuActionSmokeTrigger(InputTrigger trigger)
