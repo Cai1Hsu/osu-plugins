@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -50,6 +51,9 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     {
         Default = false,
     };
+
+    [SettingSource("Skip On Smoke Action", "Whether to trigger skip when the smoke action is triggered.")]
+    public BindableBool SkipOnSmokeAction { get; private set; } = new BindableBool(false);
 
     private LegacySkipDrawable drawable = null!;
 
@@ -131,7 +135,11 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
             foreach (var t in oldTriggers)
                 t.OnActivate -= onActivate;
 
-            foreach (var t in newTriggers.Where(static t => !isOsuActionSmokeTrigger(t)))
+            // FIXME: change SkipOnSmokeAction during gameplay won't update existing triggers.
+            if (!SkipOnSmokeAction.Value)
+                newTriggers = newTriggers.Where(static t => !isOsuActionSmokeTrigger(t));
+
+            foreach (var t in newTriggers)
                 t.OnActivate += onActivate;
 
             void onActivate(bool dontcare)
