@@ -22,7 +22,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     [Resolved]
     private DrawableRuleset drawableRuleset { get; set; } = null!;
 
-    private VisibilityContainer skipOverlayContainer = null!;
+    private VisibilityContainer? skipOverlayContainer = null!;
 
     [SettingSource("Lazer Skip Overlay Opacity", "The opacity of the skip overlay introduced in osu!lazer.")]
     public BindableFloat LazerSkipOverlayOpacity { get; private set; } = new BindableFloat(1)
@@ -134,7 +134,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
                 t.OnActivate += _ =>
                 {
                     // avoid spamming skip requests when the intro is already skipped.
-                    if (!skipOverlayContainer.IsPresent || isGameStarted)
+                    if (!skipOverlayContainer!.IsPresent || isGameStarted)
                         return;
 
                     drawable.TriggerClick();
@@ -174,7 +174,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     {
         base.Update();
 
-        if (!skipOverlayContainer.IsLoaded)
+        if (skipOverlayContainer is null || !skipOverlayContainer.IsLoaded)
             return;
 
         double fadeOutBeginTime = drawableRuleset.GameplayStartTime - MasterGameplayClockContainer.MINIMUM_SKIP_TIME;
