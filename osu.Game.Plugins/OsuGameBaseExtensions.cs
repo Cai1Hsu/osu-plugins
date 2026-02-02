@@ -1,11 +1,11 @@
-using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using AccessItEasy;
-using osu.Framework;
 using osu.Framework.Platform;
 
 namespace osu.Game.Plugins;
 
+[SuppressMessage("Style", "OFSG001", Justification = "This class doesn't contain classes intended to be used as Drawables")]
 public static class OsuGameBaseExtensions
 {
     extension(OsuGameBase @this)
@@ -17,20 +17,13 @@ public static class OsuGameBaseExtensions
         }
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public static Storage GetStorage(OsuGameBase gameBase)
+    public static Storage GetStorage(OsuGameBase gameBase) => OsuGameBaseDerived.get_Storage(gameBase);
+
+    // see OsuGameExtensions.OsuGameDerived for explanation.
+    private class OsuGameBaseDerived : OsuGameBase
     {
-        // `Storgae` can not broken by IgnoresAccessChecksToAttribute as it doesn't have internal modifier.
-        if (PluginHelper.IsIACTSupported)
-            return GetStorage_Accessor(gameBase);
-
-        return (Storage)storageGetter?.Invoke(gameBase, Array.Empty<object>())!;
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_Storage")]
-        static extern Storage GetStorage_Accessor(OsuGameBase gameBase);
+        internal static extern Storage get_Storage(OsuGameBase gameBase);
     }
-
-    private static readonly MethodInfo? storageGetter = typeof(OsuGameBase)
-        .GetProperty("Storage", BindingFlags.NonPublic | BindingFlags.Instance)?
-        .GetMethod;
 }
