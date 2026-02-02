@@ -7,6 +7,7 @@ using osu.Game.Configuration;
 using osu.Game.Rulesets.UI;
 using osu.Game.Screens.OnlinePlay.Multiplayer;
 using osu.Game.Screens.Play;
+using osu.Game.Screens.Play.HUD;
 using osu.Game.Skinning;
 
 namespace osu.Plugin.LegacyExperience.Gameplay;
@@ -20,6 +21,9 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
 
     [Resolved]
     private DrawableRuleset drawableRuleset { get; set; } = null!;
+
+    [Resolved]
+    private InputCountController? inputCountController { get; set; }
 
     private VisibilityContainer skipOverlayContainer = null!;
 
@@ -49,6 +53,8 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
         Default = false,
     };
 
+    private LegacySkipDrawable drawable = null!;
+
     [BackgroundDependencyLoader]
     private void load(Player player, ISkinSource? skin)
     {
@@ -65,7 +71,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
         {
             RelativeSizeAxes = Axes.Both,
             State = { Value = Visibility.Hidden },
-            Child = new LegacySkipDrawable()
+            Child = drawable = new LegacySkipDrawable()
             {
                 SkipRequested = skipOverlay?.RequestSkip,
             }
@@ -106,6 +112,66 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
             action?.Invoke(bindable.Value, skipOverlay);
         }
     }
+
+    private readonly IBindableList<InputTrigger> gameplayTriggers = new BindableList<InputTrigger>();
+
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        // We are not contained within a RulesetInputManager, so IKeyBindingHandler<OsuActoin> thing won't work here.
+        // Also, we have to add IKeyBindingHandler implementation for each ruleset if we want to support them all.
+        // So we just manually bind to InputCountController's triggers here, this is how KeyCounter works as well.
+        if (inputCountController is not null)
+            gameplayTriggers.BindTo(inputCountController.Triggers);
+
+        gameplayTriggers.BindCollectionChanged((_, __) =>
+        {
+            foreach (var t in gameplayTriggers.OfType<InputTrigger>())
+            {
+                // Although smoke is also considered as a skip trigger in stable,
+                // it feels bad when you just want to draw something but the game starts instead.
+                if (isOsuActionSmokeTrigger(t))
+                    continue;
+
+                t.OnActivate += _ =>
+                {
+                    // avoid spamming skip requests when the intro is already skipped.
+                    if (!skipOverlayContainer.IsPresent || isGameStarted)
+                        return;
+
+                    drawable.TriggerClick();
+                };
+            }
+        }, true);
+    }
+
+    private static bool isOsuActionSmokeTrigger(InputTrigger trigger)
+    {
+        // We use manual reflection here to avoid a hard dependency on osu.Game.Rulesets.Osu.
+        if (trigger.GetType() != KeyCounterActionTriggerOsuAction)
+            return false;
+
+        var action = KeyCounterActionTriggerOsuAction_Action_getter?.Invoke(trigger, Array.Empty<object?>());
+
+        if (action is null)
+            return false;
+
+        return (int)action is 2; // OsuAction.Smoke
+    }
+
+    private const string osuActionTypeFullyQualifiedName = "osu.Game.Rulesets.Osu.OsuAction, osu.Game.Rulesets.Osu";
+
+    private static readonly Type? KeyCounterActionTriggerOsuAction =
+        Type.GetType(osuActionTypeFullyQualifiedName) is Type osuActionType
+            ? typeof(KeyCounterActionTrigger<>).MakeGenericType(osuActionType)
+            : null;
+
+    private static readonly MethodInfo? KeyCounterActionTriggerOsuAction_Action_getter =
+        KeyCounterActionTriggerOsuAction?.GetProperty("Action", BindingFlags.Public | BindingFlags.Instance)?
+            .GetMethod;
+
+    private bool isGameStarted => gameplayClock.CurrentTime >= drawableRuleset.GameplayStartTime;
 
     protected override void Update()
     {
