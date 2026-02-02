@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -122,23 +123,24 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
         if (inputCountController is not null)
             gameplayTriggers.BindTo(inputCountController.Triggers);
 
-        gameplayTriggers.BindCollectionChanged((_, __) =>
+        gameplayTriggers.BindCollectionChanged((_, arg) =>
         {
-            foreach (var t in gameplayTriggers.OfType<InputTrigger>())
+            var oldTriggers = arg.OldItems?.OfType<InputTrigger>() ?? Array.Empty<InputTrigger>();
+            var newTriggers = arg.NewItems?.OfType<InputTrigger>() ?? Array.Empty<InputTrigger>();
+
+            foreach (var t in oldTriggers)
+                t.OnActivate -= onActivate;
+
+            foreach (var t in newTriggers)
+                t.OnActivate += onActivate;
+
+            void onActivate(bool dontcare)
             {
-                // Although smoke is also considered as a skip trigger in stable,
-                // it feels bad when you just want to draw something but the game starts instead.
-                if (isOsuActionSmokeTrigger(t))
-                    continue;
+                // avoid spamming skip requests when the intro is already skipped.
+                if (!skipOverlayContainer!.IsPresent || isGameStarted)
+                    return;
 
-                t.OnActivate += _ =>
-                {
-                    // avoid spamming skip requests when the intro is already skipped.
-                    if (!skipOverlayContainer!.IsPresent || isGameStarted)
-                        return;
-
-                    drawable.TriggerClick();
-                };
+                drawable.TriggerClick();
             }
         }, true);
     }
