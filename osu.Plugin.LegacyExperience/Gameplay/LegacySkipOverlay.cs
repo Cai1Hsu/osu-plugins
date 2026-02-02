@@ -22,9 +22,6 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     [Resolved]
     private DrawableRuleset drawableRuleset { get; set; } = null!;
 
-    [Resolved]
-    private InputCountController? inputCountController { get; set; }
-
     private VisibilityContainer skipOverlayContainer = null!;
 
     [SettingSource("Lazer Skip Overlay Opacity", "The opacity of the skip overlay introduced in osu!lazer.")]
@@ -56,7 +53,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     private LegacySkipDrawable drawable = null!;
 
     [BackgroundDependencyLoader]
-    private void load(Player player, ISkinSource? skin)
+    private void load(Player player, ISkinSource? skin, InputCountController? inputCountController)
     {
         RelativeSizeAxes = Axes.Both;
 
@@ -111,14 +108,14 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
 
             action?.Invoke(bindable.Value, skipOverlay);
         }
+
+        registerGameplayActionTriggers(inputCountController);
     }
 
     private readonly IBindableList<InputTrigger> gameplayTriggers = new BindableList<InputTrigger>();
 
-    protected override void LoadComplete()
+    private void registerGameplayActionTriggers(InputCountController? inputCountController)
     {
-        base.LoadComplete();
-
         // We are not contained within a RulesetInputManager, so IKeyBindingHandler<OsuAction> thing won't work here.
         // Also, we have to add IKeyBindingHandler implementation for each ruleset if we want to support them all.
         // So we just manually bind to InputCountController's triggers here, this is how KeyCounter works as well.
