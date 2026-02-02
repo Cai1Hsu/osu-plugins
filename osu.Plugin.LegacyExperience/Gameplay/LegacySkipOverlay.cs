@@ -131,7 +131,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
             foreach (var t in oldTriggers)
                 t.OnActivate -= onActivate;
 
-            foreach (var t in newTriggers)
+            foreach (var t in newTriggers.Where(static t => !isOsuActionSmokeTrigger(t)))
                 t.OnActivate += onActivate;
 
             void onActivate(bool dontcare)
