@@ -523,9 +523,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         switch (item.Model)
         {
-            case RankedStatusGroupDefinition:
-            case StarDifficultyGroupDefinition:
-            case RankDisplayGroupDefinition:
             case GroupDefinition:
                 return setupLegacyPanel(groupPanelPool.Get());
 
