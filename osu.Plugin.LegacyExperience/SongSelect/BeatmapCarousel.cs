@@ -262,12 +262,16 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private LegacyPanel? contextMenuActivePanel;
 
+    private CarouselItem? expandedSetItem;
+
     protected override void Update()
     {
         visibleHalfHeight = (DrawHeight + BleedBottom + BleedTop) / 2;
         frameRatio = Time.Elapsed / (1000 / 60f);
 
         Debug.Assert(visibleHalfHeight > 0, "visibleHalfHeight should be positive.");
+
+        expandedSetItem?.IsVisible = false;
 
         base.Update();
 
@@ -724,6 +728,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         base.HandleItemSelected(model);
 
+        if (previousExpandedBeatmapSet == ExpandedBeatmapSet)
+            return;
+
         // restore visibility of previously expanded set item.
         // To align with stable's behaviour, beatmap set item is hidden when it expands,
         // when it deselects, we need to restore its visibility.
@@ -734,20 +741,19 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             // only restore if the newly selected beatmap is in the same group
             previousExpandedBeatmapSet.Group == ExpandedBeatmapSet?.Group &&
             // skip if the expanded set has single beatmap
-            GetSingleBeatmap(previousExpandedBeatmapSet.BeatmapSet) is null &&
-            grouping.ItemMap.TryGetValue(previousExpandedBeatmapSet, out var prevSetItems))
+            GetSingleBeatmap(previousExpandedBeatmapSet.BeatmapSet) is null)
         {
-            (CarouselItem setItem, var _) = prevSetItems;
-
-            setItem.IsVisible = true;
+            expandedSetItem?.IsVisible = true;
         }
+
+        expandedSetItem = null;
 
         // ensure the newly selected set item is hidden when selected
         if (grouping.BeatmapSetsGroupedTogether &&
             ExpandedBeatmapSet is not null &&
             grouping.ItemMap.TryGetValue(ExpandedBeatmapSet, out var newSetItemValue))
         {
-            newSetItemValue.item.IsVisible = false;
+            expandedSetItem = newSetItemValue.item;
         }
     }
 
