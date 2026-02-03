@@ -22,6 +22,7 @@ using osu.Game.Database;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Cursor;
 using osu.Game.Online.API;
+using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Plugins;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
@@ -84,8 +85,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     private static readonly FieldInfo groupingField = typeof(BeatmapCarouselV2)
         .GetField("grouping", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
+    private readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
+    private readonly IBindable<RulesetInfo> ruleset = new Bindable<RulesetInfo>();
+
     [BackgroundDependencyLoader]
-    private void load()
+    private void load(IAPIProvider api, IBindable<RulesetInfo> ruleset)
     {
         disposePanelV2Pools();
 
@@ -101,8 +105,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         onSkinSourceChanged();
 
-        api.LocalUser.BindValueChanged(_ => registerRealmScoreNotifications());
-        ruleset.BindValueChanged(_ => registerRealmScoreNotifications(), true);
+        localUser.BindTo(api.LocalUser);
+        this.ruleset.BindTo(ruleset);
+
+        this.ruleset.BindValueChanged(_ => updateDisplayedPanels());
+        localUser.BindValueChanged(_ => registerRealmScoreNotifications(), true);
     }
 
     // These pools are used for SongSelectV2 panels, we don't need them anymore.
@@ -764,12 +771,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     [Resolved]
     private RealmAccess? realm { get; set; } = null!;
 
-    [Resolved]
-    private IAPIProvider api { get; set; } = null!;
-
-    [Resolved]
-    private IBindable<RulesetInfo> ruleset { get; set; } = null!;
-
     private IDisposable? realmSubscription;
 
     private void registerRealmScoreNotifications()
@@ -781,7 +782,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             return;
 
         realmSubscription = realm.RegisterForNotifications(r =>
-            r.GetAllLocalScoresForUser(api.LocalUser.Value.Id)
+            r.GetAllLocalScoresForUser(localUser.Value.Id)
                 .Filter($"{nameof(ScoreInfo.Ruleset)}.{nameof(RulesetInfo.ShortName)} == $0", ruleset.Value.ShortName),
             onLocalScoresChanged);
     }
