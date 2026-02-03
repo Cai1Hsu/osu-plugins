@@ -16,7 +16,7 @@ using osu.Framework.Graphics.UserInterface;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
-public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IHasInitialPosition, IHasContextMenu
+public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IHasContextMenu
 {
     internal const float TextureScale = 0.6f * 1.6f;
 
@@ -28,7 +28,6 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
 
     // Legacy carousel managed, used for bypass Carousel's damping
     public double DrawYPosition { get; set; }
-    public double? InitialXPosition { get; set; }
 
     public double SelectV2DrawYPosition
     {
@@ -169,9 +168,6 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
     {
         // returning to pool makes it invisible, so fade in on next use.
         this.FadeIn();
-
-        if (InitialXPosition is double xPos)
-            X = (float)xPos;
 
         UpdateBackgroundColor(0);
     }

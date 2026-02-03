@@ -517,7 +517,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 }
             }
 
-            panel.InitialXPosition = initialX;
+            float targetX = (float)initialX;
+            SchedulerAfterChildren.Add(() => panel.X = targetX);
 
             if (panel is LegacyPanelHasBeatmap beatmapPanel)
                 updateScoreInfoForDisplayedPanel(beatmapPanel, item);
