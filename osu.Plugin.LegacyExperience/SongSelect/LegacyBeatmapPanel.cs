@@ -16,7 +16,6 @@ public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
 {
     private OsuSpriteText difficultyText = null!;
     private StarDifficultyDisplay? starDisplay;
-    private LegacyLocalRankDisplay localRankDisplay = null!;
 
     [Resolved]
     private BeatmapDifficultyCache? difficultyCache { get; set; }
@@ -30,10 +29,11 @@ public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
     protected override Drawable CreatePlayInfo()
     {
         // in lazer, there's no case where play mode icon can be shown in legacy panel.
-        return localRankDisplay = new LegacyLocalRankDisplay
+        return new LegacyLocalRankDisplay
         {
             Anchor = Anchor.CentreLeft,
             Origin = Anchor.CentreLeft,
+            LocalBestScore = { BindTarget = LocalBestScore },
         };
     }
 
@@ -73,7 +73,6 @@ public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
     protected override void FreeAfterUse()
     {
         LocalBestScore.Value = null;
-        localRankDisplay.LocalBestScore.UnbindBindings();
 
         difficultyText.Text = string.Empty;
         clearStarDifficultyComputation();
@@ -88,7 +87,6 @@ public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
         difficultyText.Text = playBeatmap.DifficultyName;
 
         computeStarRating(playBeatmap);
-        localRankDisplay.LocalBestScore.BindTo(LocalBestScore);
 
         base.PrepareForUse();
     }
