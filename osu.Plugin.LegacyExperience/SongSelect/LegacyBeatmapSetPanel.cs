@@ -11,11 +11,9 @@ public partial class LegacyBeatmapSetPanel : LegacyPanelHasBeatmap
     {
         var groupedBeatmapSet = (GroupedBeatmapSet)model;
         var beatmapSetInfo = groupedBeatmapSet.BeatmapSet;
-        var metadata = beatmapSetInfo.Metadata;
 
         return new PanelDisplayPolicy(
-            new RomanisableString(metadata.TitleUnicode, metadata.Title),
-            new RomanisableString(metadata.ArtistUnicode, metadata.Artist),
+            beatmapSetInfo.Metadata,
             beatmapSetInfo.Beatmaps.MinBy(b => b.OnlineID)
         );
     }

@@ -177,8 +177,12 @@ public abstract partial class LegacyPanelHasBeatmap : LegacyPanel
 
         var displayPolicy = CreateDisplayPolicy(Item.Model);
 
-        titleText.Text = displayPolicy.Title;
-        artistText.Text = displayPolicy.Artist;
+        titleText.Text = new RomanisableString(displayPolicy.Metadata.TitleUnicode, displayPolicy.Metadata.Title);
+
+        var artist = new RomanisableString(displayPolicy.Metadata.ArtistUnicode, displayPolicy.Metadata.Artist);
+        var mapper = displayPolicy.Metadata.Author?.Username ?? "Unknown";
+
+        artistText.Text = LocalisableString.Format("{0} // {1}", artist, mapper);
 
         if (displayPolicy.CoverBeatmap is not null && beatmaps is not null)
         {
@@ -203,7 +207,7 @@ public abstract partial class LegacyPanelHasBeatmap : LegacyPanel
 
     protected abstract PanelDisplayPolicy CreateDisplayPolicy(object model);
 
-    public record PanelDisplayPolicy(RomanisableString Title, RomanisableString Artist, BeatmapInfo? CoverBeatmap);
+    public record PanelDisplayPolicy(IBeatmapMetadataInfo Metadata, BeatmapInfo? CoverBeatmap);
 
     protected partial class PanelBeatmapCoverContainer : Container
     {

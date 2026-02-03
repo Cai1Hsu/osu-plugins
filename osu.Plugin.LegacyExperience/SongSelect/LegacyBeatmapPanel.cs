@@ -91,9 +91,6 @@ public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
         localRankDisplay.LocalBestScore.BindTo(LocalBestScore);
 
         base.PrepareForUse();
-
-        var mapper = playBeatmap.Metadata.Author.Username ?? "Unknown";
-        artistText.Text = LocalisableString.Format("{0} // {1}", artistText.Text, mapper);
     }
 
     private IBindable<StarDifficulty>? starDifficultyBindable;
@@ -131,11 +128,9 @@ public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
     {
         var groupedBeatmap = (GroupedBeatmap)model;
         var beatmapInfo = groupedBeatmap.Beatmap;
-        var metadata = beatmapInfo.Metadata;
 
         return new PanelDisplayPolicy(
-            new RomanisableString(metadata.TitleUnicode, metadata.Title),
-            new RomanisableString(metadata.ArtistUnicode, metadata.Artist),
+            beatmapInfo.Metadata,
             // match stable behavior of picking the first beatmap in the set as cover if possible
             beatmapInfo.BeatmapSet?.Beatmaps.MinBy(b => b.OnlineID) ?? beatmapInfo
         );
