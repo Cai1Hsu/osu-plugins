@@ -256,7 +256,7 @@ public abstract partial class LegacyPanelHasBeatmap : LegacyPanel
 
         private partial class BeatmapCoverSprite : Sprite
         {
-            private WorkingBeatmap? working;
+            private WorkingBeatmap working;
 
             public BeatmapCoverSprite(WorkingBeatmap working)
             {
@@ -266,8 +266,7 @@ public abstract partial class LegacyPanelHasBeatmap : LegacyPanel
             [BackgroundDependencyLoader]
             private void load()
             {
-                if (working is not null)
-                    Texture = working.GetBackground();
+                Texture = working.GetBackground();
             }
         }
     }
