@@ -219,7 +219,7 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         base.FreeAfterUse();
     }
 
-    private const float background_update_debounce = 350;
+    private const float background_update_debounce = 250;
     private ScheduledDelegate? background_update_task;
 
     protected override void PrepareForUse()
