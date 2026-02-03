@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using AccessItEasy;
 using osu.Framework.Allocation;
 using osu.Framework.Audio.Sample;
+using osu.Framework.Bindables;
 using osu.Framework.Caching;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Cursor;
@@ -17,12 +18,17 @@ using osu.Framework.Input;
 using osu.Framework.Threading;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Database;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Cursor;
+using osu.Game.Online.API;
 using osu.Game.Plugins;
+using osu.Game.Rulesets;
+using osu.Game.Scoring;
 using osu.Game.Screens.SelectV2;
 using osu.Game.Skinning;
 using osuTK;
+using Realms;
 using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
 using PanelV2 = osu.Game.Screens.SelectV2.Panel;
 
@@ -94,6 +100,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             skin.SourceChanged += onSkinSourceChanged;
 
         onSkinSourceChanged();
+
+        ruleset.BindValueChanged(_ => registerRealmScoreNotifications(), true);
     }
 
     // These pools are used for SongSelectV2 panels, we don't need them anymore.
@@ -500,6 +508,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             }
 
             panel.InitialXPosition = initialX;
+
+            if (panel is LegacyBeatmapPanel beatmapPanel)
+                updateScoreInfoForDisplayedPanel(beatmapPanel, item);
+
             return panel;
         }
 
@@ -738,6 +750,125 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             return false;
 
         return ExpandedBeatmapSet.BeatmapSet.Equals(beatmap.Beatmap.BeatmapSet);
+    }
+
+    [Resolved]
+    private RealmAccess? realm { get; set; } = null!;
+
+    [Resolved]
+    private IAPIProvider api { get; set; } = null!;
+
+    [Resolved]
+    private IBindable<RulesetInfo> ruleset { get; set; } = null!;
+
+    private void registerRealmScoreNotifications()
+    {
+        if (realm is null)
+            return;
+
+        realm.RegisterForNotifications(r =>
+            r.GetAllLocalScoresForUser(api.LocalUser.Value.Id)
+                .Filter($"{nameof(ScoreInfo.Ruleset)}.{nameof(RulesetInfo.ShortName)} == $0", ruleset.Value.ShortName),
+            onLocalScoresChanged);
+    }
+
+    private Dictionary<BeatmapInfo, ScoreInfo?> localBestScores = new();
+
+    private void updateDisplayedPanels()
+    {
+        foreach (var child in Scroll.Panels.Children
+            .OfType<LegacyBeatmapPanel>()
+            .Where(static p => p.Item is not null))
+        {
+            updateScoreInfoForDisplayedPanel(child);
+        }
+    }
+
+    private void updateScoreInfoForDisplayedPanel(LegacyBeatmapPanel panel, CarouselItem? item = null)
+    {
+        item ??= panel.Item;
+
+        Debug.Assert(item is not null);
+
+        lock (localBestScores)
+        {
+            switch (item.Model)
+            {
+                case GroupedBeatmap beatmap:
+                    localBestScores.TryGetValue(beatmap.Beatmap, out var score);
+                    panel.LocalBestScore.Value = score;
+                    break;
+
+                case GroupedBeatmapSet beatmapSet:
+                    // for beatmapset, we only care whether we have played any beatmap in the set
+                    ScoreInfo? anyScore = GetAnyScoreForBeatmapSet(beatmapSet.BeatmapSet);
+                    panel.LocalBestScore.Value = anyScore;
+                    break;
+
+                default:
+                    panel.LocalBestScore.Value = null;
+                    break;
+            }
+        }
+
+        ScoreInfo? GetAnyScoreForBeatmapSet(BeatmapSetInfo set)
+        {
+            foreach (var b in set.Beatmaps.Where(static b => !b.Hidden))
+            {
+                if (localBestScores.TryGetValue(b, out var score))
+                    return score;
+            }
+
+            return null;
+        }
+    }
+
+    private void onLocalScoresChanged(IRealmCollection<ScoreInfo> sender, ChangeSet? changes)
+    {
+        lock (localBestScores)
+        {
+            // we are unable to determine which beatmaps are affected since they are DELETED,
+            // so we perform a full update.
+            if (changes is null || changes.DeletedIndices.Length > 0)
+            {
+                localBestScores.Clear();
+
+                var bestScores = sender
+                    .Where(static s => s.BeatmapInfo is not null)
+                    .GroupBy(static s => s.BeatmapInfo)
+                    .Select(g => g.MaxBy(info => (info.TotalScore, -info.Date.UtcDateTime.Ticks)));
+
+                foreach (var score in bestScores)
+                {
+                    localBestScores[score?.BeatmapInfo!] = score;
+                }
+            }
+            else
+            {
+                void updateBestScore(ScoreInfo? score)
+                {
+                    if (score?.BeatmapInfo is not BeatmapInfo beatmap)
+                        return;
+
+                    if (!localBestScores.TryGetValue(beatmap, out var existingScore) ||
+                        existingScore is null ||
+                        existingScore.TotalScore < score.TotalScore ||
+                        existingScore.Date.UtcDateTime > score.Date.UtcDateTime)
+                    {
+                        localBestScores[beatmap] = score;
+                    }
+                }
+
+                foreach (var index in changes.InsertedIndices)
+                    updateBestScore(sender[index]);
+
+                foreach (var index in changes.ModifiedIndices)
+                    updateBestScore(sender[index]);
+            }
+        }
+
+        // displayed panels may change in Update
+        SchedulerAfterChildren.Add(updateDisplayedPanels);
     }
 
     protected override void Dispose(bool isDisposing)
