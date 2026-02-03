@@ -230,12 +230,12 @@ public abstract partial class LegacyPanelHasBeatmap : LegacyPanel
                 (getBackgroundFileHash(this.working) == getBackgroundFileHash(working)))
                 return;
 
-            this.working = working;
-
             ClearBackground();
 
             if (working is null)
                 return;
+
+            this.working = working;
 
             loadCancellationSource = new CancellationTokenSource();
 
