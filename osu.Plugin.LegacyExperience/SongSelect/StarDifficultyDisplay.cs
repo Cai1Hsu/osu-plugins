@@ -2,7 +2,7 @@ using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Pooling;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.UserInterface;
@@ -13,7 +13,7 @@ using osuTK.Graphics;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
-public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<double>
+public partial class StarDifficultyDisplay : CompositeDrawable, IHasCurrentValue<double>
 {
     [Resolved]
     private ISkinSource? skin { get; set; }

@@ -48,9 +48,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     private LegacyPanelColors panelColors { get; set; } = new LegacyPanelColors();
 
     [Cached]
-    private DrawablePool<StarDifficultyDisplay> starDifficultyPool { get; set; } = new DrawablePool<StarDifficultyDisplay>(20);
-
-    [Cached]
     private LegacyRankSpritePool rankSpritePool { get; set; } = new LegacyRankSpritePool();
 
     public bool AllowPanelHoverSample => !AbsoluteScrolling &&
@@ -78,7 +75,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     public BeatmapCarousel()
     {
-        AddInternal(starDifficultyPool);
         AddInternal(rankSpritePool);
     }
 
