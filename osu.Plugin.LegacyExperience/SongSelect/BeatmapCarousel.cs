@@ -101,6 +101,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         onSkinSourceChanged();
 
+        api.LocalUser.BindValueChanged(_ => registerRealmScoreNotifications());
         ruleset.BindValueChanged(_ => registerRealmScoreNotifications(), true);
     }
 
