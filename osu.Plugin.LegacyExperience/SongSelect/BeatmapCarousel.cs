@@ -761,12 +761,17 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     [Resolved]
     private IBindable<RulesetInfo> ruleset { get; set; } = null!;
 
+    private IDisposable? realmSubscription;
+
     private void registerRealmScoreNotifications()
     {
+        realmSubscription?.Dispose();
+        realmSubscription = null;
+
         if (realm is null)
             return;
 
-        realm.RegisterForNotifications(r =>
+        realmSubscription = realm.RegisterForNotifications(r =>
             r.GetAllLocalScoresForUser(api.LocalUser.Value.Id)
                 .Filter($"{nameof(ScoreInfo.Ruleset)}.{nameof(RulesetInfo.ShortName)} == $0", ruleset.Value.ShortName),
             onLocalScoresChanged);
@@ -874,6 +879,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     protected override void Dispose(bool isDisposing)
     {
         base.Dispose(isDisposing);
+
+        realmSubscription?.Dispose();
 
         if (skin is not null)
             skin.SourceChanged -= onSkinSourceChanged;
