@@ -11,6 +11,7 @@ using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Scoring;
 using osu.Game.Screens.SelectV2;
 using osuTK;
 using osuTK.Graphics;
@@ -40,6 +41,8 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
     [Resolved]
     private ISongSelect? songSelect { get; set; }
+
+    public Bindable<ScoreInfo?> LocalBestScore { get; } = new Bindable<ScoreInfo?>();
 
     private static readonly Vector2 cover_position = new Vector2(5.2f, 0.25f);
     private static readonly Vector2 cover_size = new Vector2(80, 60) * 1.425f;
@@ -131,6 +134,8 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
         Selected.BindValueChanged(_ => updatePanelState());
         Expanded.BindValueChanged(_ => updatePanelState(), true);
+
+        LocalBestScore.BindValueChanged(_ => UpdateBackgroundColor());
     }
 
     protected override void SkinChanged()
@@ -171,10 +176,9 @@ public partial class LegacyBeatmapPanel : LegacyPanel
             (Carousel?.IsBeatmapPanelFromExpandedSet(this) ?? false))
             return PanelColors.Blue;
 
-        // TODO: stable uses orange color for played beatmaps.
-        // However, to determine whether a beatmap is played is a expensive operation in lazer.
-        // So for now we just always return pink for inactive panels.
-        return PanelColors.Pink;
+        return LocalBestScore.Value is null
+            ? PanelColors.Pink
+            : PanelColors.Orange;
     }
 
     private void clearStarDifficultyDisplay()
@@ -202,7 +206,8 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
     protected override void FreeAfterUse()
     {
-        base.FreeAfterUse();
+        LocalBestScore.Value = null;
+        localRankDisplay.LocalBestScore.UnbindBindings();
 
         difficultyText.Text = string.Empty;
         clearStarDifficultyComputation();
@@ -210,16 +215,12 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         cover.ClearBackground();
         background_update_task?.Cancel();
         background_update_task = null;
-        local_score_task?.Cancel();
-        local_score_task = null;
-        localRankDisplay.Beatmap = null;
+
+        base.FreeAfterUse();
     }
 
     private const float background_update_debounce = 350;
     private ScheduledDelegate? background_update_task;
-
-    private const float local_score_debounce = 150;
-    private ScheduledDelegate? local_score_task;
 
     protected override void PrepareForUse()
     {
@@ -241,15 +242,8 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
             addStarDifficultyDisplay();
             computeStarRating(playBeatmap);
-
-            void updateLocalRankDisplay()
-                => localRankDisplay.Beatmap = playBeatmap;
-
-            // Realm notification registration is VERY expensive and can NOT be done asynchronously.
-            // Generally we would cache the local scores for all beatmaps beforehand,
-            // but since we are just patching lazer's code instead of rewriting the whole song select, 
-            // we will just debounce the updates to reduce the number of registrations.
-            local_score_task = Scheduler.AddDelayed(updateLocalRankDisplay, local_score_debounce);
+            
+            localRankDisplay.LocalBestScore.BindTo(LocalBestScore);
         }
 
         if (displayPolicy.CoverBeatmap is not null && beatmaps is not null)
