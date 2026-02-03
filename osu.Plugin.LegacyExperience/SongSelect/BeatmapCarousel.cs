@@ -105,7 +105,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         localUser.BindTo(api.LocalUser);
         this.ruleset.BindTo(ruleset);
 
-        this.ruleset.BindValueChanged(_ => updateDisplayedPanels());
+        this.ruleset.BindValueChanged(_ => registerRealmScoreNotifications());
         localUser.BindValueChanged(_ => registerRealmScoreNotifications(), true);
     }
 
