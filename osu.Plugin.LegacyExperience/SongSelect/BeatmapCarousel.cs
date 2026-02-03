@@ -91,6 +91,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         AddInternal(groupPanelPool = new DrawablePool<LegacyGroupPanel>(pool_capacity));
         AddInternal(beatmapPanelPool = new DrawablePool<LegacyBeatmapPanel>(pool_capacity));
+        AddInternal(beatmapSetPanelPool = new DrawablePool<LegacyBeatmapSetPanel>(pool_capacity));
 
         grouping = (BeatmapCarouselFilterGrouping)groupingField.GetValue(this)!;
 
@@ -486,6 +487,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private DrawablePool<LegacyGroupPanel> groupPanelPool = null!;
     private DrawablePool<LegacyBeatmapPanel> beatmapPanelPool = null!;
+    private DrawablePool<LegacyBeatmapSetPanel> beatmapSetPanelPool = null!;
 
     protected override Drawable GetDrawableForDisplay(CarouselItem item)
     {
@@ -513,7 +515,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
             panel.InitialXPosition = initialX;
 
-            if (panel is LegacyBeatmapPanel beatmapPanel)
+            if (panel is LegacyPanelHasBeatmap beatmapPanel)
                 updateScoreInfoForDisplayedPanel(beatmapPanel, item);
 
             return panel;
@@ -528,8 +530,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 return setupLegacyPanel(groupPanelPool.Get());
 
             case GroupedBeatmap:
-            case GroupedBeatmapSet:
                 return setupLegacyPanel(beatmapPanelPool.Get());
+
+            case GroupedBeatmapSet:
+                return setupLegacyPanel(beatmapSetPanelPool.Get());
         }
 
         throw new InvalidOperationException($"Unsupported model type: {item.Model?.GetType()}");
@@ -678,7 +682,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         {
             // To filter out newly spawned panels is unnecessary,
             // there are only a few panels after all
-            foreach (var panel in Scroll.Panels.Children.OfType<LegacyBeatmapPanel>())
+            foreach (var panel in Scroll.Panels.Children.OfType<LegacyPanelHasBeatmap>())
                 panel.FinishBackgroundTask();
         });
     }
@@ -750,7 +754,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
     }
 
-    public bool IsBeatmapPanelFromExpandedSet(LegacyBeatmapPanel panel)
+    public bool IsBeatmapPanelFromExpandedSet(LegacyPanelHasBeatmap panel)
     {
         if (panel.Item is not CarouselItem item)
             return false;
@@ -788,14 +792,14 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     private void updateDisplayedPanels()
     {
         foreach (var child in Scroll.Panels.Children
-            .OfType<LegacyBeatmapPanel>()
+            .OfType<LegacyPanelHasBeatmap>()
             .Where(static p => p.Item is not null))
         {
             updateScoreInfoForDisplayedPanel(child);
         }
     }
 
-    private void updateScoreInfoForDisplayedPanel(LegacyBeatmapPanel panel, CarouselItem? item = null)
+    private void updateScoreInfoForDisplayedPanel(LegacyPanelHasBeatmap panel, CarouselItem? item = null)
     {
         item ??= panel.Item;
 
@@ -805,14 +809,16 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         {
             switch (item.Model)
             {
+
                 case GroupedBeatmap beatmap:
                     localBestScores.TryGetValue(beatmap.Beatmap, out var score);
                     panel.LocalBestScore.Value = score;
                     break;
 
                 case GroupedBeatmapSet beatmapSet:
-                    // for beatmapset, we only care whether we have played any beatmap in the set
-                    ScoreInfo? anyScore = GetAnyScoreForBeatmapSet(beatmapSet.BeatmapSet);
+                    var anyScore = beatmapSet.BeatmapSet.Beatmaps.Where(static b => !b.Hidden)
+                        .Select(b => localBestScores.TryGetValue(b, out var s) ? s : null)
+                        .FirstOrDefault(static s => s is not null);
                     panel.LocalBestScore.Value = anyScore;
                     break;
 
@@ -820,17 +826,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                     panel.LocalBestScore.Value = null;
                     break;
             }
-        }
-
-        ScoreInfo? GetAnyScoreForBeatmapSet(BeatmapSetInfo set)
-        {
-            foreach (var b in set.Beatmaps.Where(static b => !b.Hidden))
-            {
-                if (localBestScores.TryGetValue(b, out var score))
-                    return score;
-            }
-
-            return null;
         }
     }
 

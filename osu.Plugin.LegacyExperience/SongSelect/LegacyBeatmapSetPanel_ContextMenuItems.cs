@@ -22,7 +22,7 @@ using WebCommonStrings = osu.Game.Resources.Localisation.Web.CommonStrings;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
-partial class LegacyBeatmapPanel
+partial class LegacyBeatmapSetPanel
 {
     [Resolved]
     private BeatmapSetOverlay? beatmapOverlay { get; set; }
@@ -42,7 +42,7 @@ partial class LegacyBeatmapPanel
     [Resolved]
     private ManageCollectionsDialog? manageCollectionsDialog { get; set; }
 
-    MenuItem[] createMenuItemsForBeatmapSet(BeatmapSetInfo beatmapSet)
+    protected MenuItem[] createMenuItemsForBeatmapSet(BeatmapSetInfo beatmapSet)
     {
         List<MenuItem> items = new List<MenuItem>();
 
