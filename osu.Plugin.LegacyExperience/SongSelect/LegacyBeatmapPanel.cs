@@ -242,14 +242,17 @@ public partial class LegacyBeatmapPanel : LegacyPanel
 
             addStarDifficultyDisplay();
             computeStarRating(playBeatmap);
-            
+
             localRankDisplay.LocalBestScore.BindTo(LocalBestScore);
         }
 
         if (displayPolicy.CoverBeatmap is not null && beatmaps is not null)
         {
             void updateBackground()
-                => cover.UpdateBackground(beatmaps.GetWorkingBeatmap(displayPolicy.CoverBeatmap));
+            {
+                cover.UpdateBackground(beatmaps.GetWorkingBeatmap(displayPolicy.CoverBeatmap));
+                background_update_task = null;
+            }
 
             // The debounce is intended to reduce the number of background loading operations
             // when rapidly scrolling through the song select.
@@ -260,6 +263,11 @@ public partial class LegacyBeatmapPanel : LegacyPanel
         updatePanelState();
 
         FinishTransforms(true);
+    }
+
+    public void FinishBackgroundTask()
+    {
+        background_update_task?.RunTask();
     }
 
     private IBindable<StarDifficulty>? starDifficultyBindable;

@@ -670,6 +670,14 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             default:
                 break;
         }
+
+        SchedulerAfterChildren.Add(() =>
+        {
+            // To filter out newly spawned panels is unnecessary,
+            // there are only a few panels after all
+            foreach (var panel in Scroll.Panels.Children.OfType<LegacyBeatmapPanel>())
+                panel.FinishBackgroundTask();
+        });
     }
 
     public static BeatmapInfo? GetSingleBeatmap(BeatmapSetInfo set)
