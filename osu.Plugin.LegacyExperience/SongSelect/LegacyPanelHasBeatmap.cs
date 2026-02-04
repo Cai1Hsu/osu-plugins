@@ -85,6 +85,8 @@ public abstract partial class LegacyPanelHasBeatmap : LegacyPanel
 
         Selected.BindValueChanged(_ => updatePanelState());
         Expanded.BindValueChanged(_ => updatePanelState(), true);
+
+        LocalBestScore.BindValueChanged(_ => UpdateBackgroundColor());
     }
 
     protected virtual Drawable CreatePlayInfo() => Empty();

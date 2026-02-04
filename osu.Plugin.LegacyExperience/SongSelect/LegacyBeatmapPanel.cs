@@ -20,12 +20,6 @@ public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
     [Resolved]
     private BeatmapDifficultyCache? difficultyCache { get; set; }
 
-    [BackgroundDependencyLoader]
-    private void load()
-    {
-        LocalBestScore.BindValueChanged(_ => UpdateBackgroundColor());
-    }
-
     protected override Drawable CreatePlayInfo()
     {
         // in lazer, there's no case where play mode icon can be shown in legacy panel.
