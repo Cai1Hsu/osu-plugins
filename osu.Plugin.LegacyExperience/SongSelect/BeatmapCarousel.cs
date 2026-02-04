@@ -367,12 +367,14 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
     }
 
+    private double scrollTargetDistance => legacyScrollContainer?.TargetDistance ?? 0;
+
     // simulate stable's ExtendVisibleIndices behaviour, keep method name consistent
     // In stable this method is responsible for extending the visible indices,
     // but here we focus on updating panel X positions to match stable's logic.
     private void extendVisibleIndices(LegacyPanel[] panels)
     {
-        var defaultY = Scroll.Current - legacyScrollContainer?.TargetDistance ?? 0;
+        var defaultY = Scroll.Current - scrollTargetDistance;
 
         var stableMagicOffset = stablePanelOffset + panel_min_x_offset * LegacyExperiencePlugin.StableRatio;
         var defaultPosition = new Vector2d(stablePanelOffset, visibleHalfHeight);
@@ -452,7 +454,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         var scrollLocalYposition = toScrollLocalYPosition(item.CarouselYPosition);
 
-        return itemXOffsetByYPosition(scrollLocalYposition + BleedTop + legacyScrollContainer?.TargetDistance ?? 0)
+        return itemXOffsetByYPosition(scrollLocalYposition + BleedTop + scrollTargetDistance)
             + itemXDestinationWithoutOffset(panel);
     }
 
@@ -594,7 +596,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     {
         Vector2 posInScroll = Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre);
 
-        double xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop + legacyScrollContainer?.TargetDistance ?? 0);
+        double xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop + scrollTargetDistance);
         double offset = itemXDestinationWithoutOffset(panel);
 
         return xPosition + offset;
