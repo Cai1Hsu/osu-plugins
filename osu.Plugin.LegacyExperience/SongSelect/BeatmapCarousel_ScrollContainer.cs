@@ -40,7 +40,9 @@ partial class BeatmapCarousel
             if (e.Button is MouseButton.Right)
             {
                 absoluteScrolling = true;
-                return true;
+                
+                // don't block, context menu requires right click to propagate.
+                return false;
             }
 
             return base.OnMouseDown(e);
