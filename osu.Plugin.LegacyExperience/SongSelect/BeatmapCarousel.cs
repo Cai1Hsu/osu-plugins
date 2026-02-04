@@ -363,7 +363,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     {
         var defaultY = Scroll.Current - legacyScrollContainer?.TargetDistance ?? 0;
 
-        var stableMagicOffset = (stablePanelOffset + panel_min_x_offset) * LegacyExperiencePlugin.StableRatio;
+        var stableMagicOffset = stablePanelOffset + panel_min_x_offset * LegacyExperiencePlugin.StableRatio;
         var defaultPosition = new Vector2d(stablePanelOffset, visibleHalfHeight);
 
         // find a previously existing panel to anchor from.
@@ -372,48 +372,74 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         Vector2d referenceDestination = Vector2d.Zero;
         if (referenceIndex >= 0)
-            updateReferencePanel(panels[referenceIndex]);
+            updateReferencePanel(referenceIndex);
 
         for (int i = 0; i < referenceIndex; i++)
-            updatePanel(panels[i]);
+            updatePanel(i);
 
-        defaultPosition = new Vector2d(stablePanelOffset, 0) * LegacyExperiencePlugin.StableRatio;
+        defaultPosition = new Vector2d(stablePanelOffset, visibleHalfHeight);
         referenceIndex = Array.FindLastIndex(panels, static p => p.PoolableState is PoolableStates.InUse);
 
         if (referenceIndex >= 0)
-            updateReferencePanel(panels[referenceIndex]);
+            updateReferencePanel(referenceIndex);
 
         // update all visible panels
         if (referenceIndex < 0)
             referenceIndex = -1;
 
         for (int i = referenceIndex + 1; i < panels.Length; i++)
-            updatePanel(panels[i]);
+            updatePanel(i);
 
-        void updateReferencePanel(LegacyPanel panel)
+        void updateReferencePanel(int panelIndex)
         {
-            var pos = panel.DrawPosition;
+            var panel = panels[referenceIndex = panelIndex];
+            var pos = panel.Position;
 
             defaultPosition = new Vector2d(pos.X, pos.Y);
             referenceDestination.X = itemXDestinationWithoutOffset(panel);
             referenceDestination.Y = panel.Item!.CarouselYPosition; // this is a relative value
         }
 
-        void updatePanel(LegacyPanel panel)
+        void updatePanel(int panelIndex)
         {
+            var panel = panels[panelIndex];
+
+            Vector2 position;
+
             if (referenceIndex >= 0)
             {
                 double xOffset = itemXDestinationWithoutOffset(panel);
-                defaultPosition.X = Math.Min(defaultPosition.X - referenceDestination.X + xOffset, xOffset + stableMagicOffset);
+                // if we minus by (referenceDestination.X - xOffset) like stable does,
+                // we would have to call updateReferencePanel as commented out below.
+                // otherwise defaultPosition.X gets broken as we minus too much.
+                // We manually minus xOffset only for panel's position without touching defaultPosition.X.
+                defaultPosition.X = Math.Min(defaultPosition.X, xOffset + stableMagicOffset);
                 defaultPosition.Y += panel.Item!.CarouselYPosition - referenceDestination.Y;
+
+                position = new Vector2(
+                    (float)(defaultPosition.X - referenceDestination.X + xOffset),
+                    (float)defaultPosition.Y);
             }
             else
             {
-                defaultPosition.X = GetUndampedPanelXOffset(panel) + stableMagicOffset;
+                defaultPosition.X = itemXDestination(panel);
                 defaultPosition.Y = -defaultY;
-            }
 
-            panel.Position = new Vector2((float)defaultPosition.X, (float)defaultPosition.Y);
+                position = new Vector2((float)defaultPosition.X, (float)defaultPosition.Y);
+            }
+            // TODO: updating reference panel matches stable but makes scroll logic different from stable
+            // may need further investigation
+            // updateReferencePanel(panelIndex);
+            panel.Position = position;
+        }
+
+        // GetUndampedPanelXOffset requires correct Y position to calculate X offset
+        double itemXDestination(LegacyPanel panel)
+        {
+            var scrollLocalYposition = toScrollLocalYPosition(panel.Item!.CarouselYPosition);
+
+            return itemXOffsetByYPosition(scrollLocalYposition + BleedTop + legacyScrollContainer?.TargetDistance ?? 0)
+                + itemXDestinationWithoutOffset(panel);
         }
     }
 
@@ -642,7 +668,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             else
             {
                 // stable's deefault position, also used in ExtendVisibleIndices
-                panel.X = (float)((stablePanelOffset + panel_min_x_offset) * LegacyExperiencePlugin.StableRatio);
+                panel.X = (float)(stablePanelOffset + panel_min_x_offset * LegacyExperiencePlugin.StableRatio);
             }
 
             if (panel is LegacyPanelHasBeatmap beatmapPanel)
@@ -759,16 +785,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         Vector2 calculateSpawnPosition(CarouselItem item)
         {
-            double yPos = toScrollLocalYPosition();
+            double yPos = toScrollLocalYPosition(item.CarouselYPosition);
             double xPos = itemXOffsetByYPosition(yPos + BleedTop);
 
             return new Vector2((float)xPos, (float)yPos);
-
-            double toScrollLocalYPosition()
-            {
-                double scrollableExtent = -Scroll.Current + Scroll.ScrollableExtent * Scroll.ScrollContent.RelativeAnchorPosition.Y;
-                return item.CarouselYPosition + scrollableExtent;
-            }
         }
 
         switch (item.Model)
@@ -812,6 +832,12 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             foreach (var panel in Scroll.Panels.Children.OfType<LegacyPanelHasBeatmap>())
                 panel.FinishBackgroundTask();
         });
+    }
+
+    private double toScrollLocalYPosition(double carouselItemYPosition)
+    {
+        double scrollableExtent = -Scroll.Current + Scroll.ScrollableExtent * Scroll.ScrollContent.RelativeAnchorPosition.Y;
+        return carouselItemYPosition + scrollableExtent;
     }
 
     public static BeatmapInfo? GetSingleBeatmap(BeatmapSetInfo set)
