@@ -28,6 +28,8 @@ partial class BeatmapCarousel
 
         public void ScrollToAbsolutePosition(Vector2 screenSpacePosition, float decay = default_decay)
         {
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(decay, 1.0f);
+
             float fromScrollbarPosition = FromScrollbarPosition(screenSpacePosition.Y);
             float scrollbarCentreOffset = FromScrollbarPosition(Scrollbar.DrawHeight) * 0.5f;
 
