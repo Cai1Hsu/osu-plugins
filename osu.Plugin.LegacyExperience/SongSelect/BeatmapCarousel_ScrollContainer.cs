@@ -1,3 +1,4 @@
+using osu.Framework.Input;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
 using osuTK;
@@ -10,6 +11,15 @@ partial class BeatmapCarousel
     protected partial class LegacyScrollContainer : ScrollContainer
     {
         private const float default_decay = 0.996f;
+
+        private InputManager inputManager = null!;
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            inputManager = GetContainingInputManager();
+        }
 
         protected override void ScrollToAbsolutePosition(Vector2 screenSpacePosition)
         {
@@ -40,13 +50,22 @@ partial class BeatmapCarousel
             if (e.Button is MouseButton.Right)
             {
                 absoluteScrolling = true;
-                
-                // don't block, context menu requires right click to propagate.
-                return false;
+
+                bool shouldBlock = hasAnyPanelHovered()
+                    ? false  // don't block, context menu requires right click to propagate.
+                    : true; // prevent song select reveal
+
+                return shouldBlock;
             }
 
             return base.OnMouseDown(e);
         }
+
+        private bool hasAnyPanelHovered() 
+            => inputManager.HoveredDrawables
+                // TODO: may require Parent to be this.Panels
+                .OfType<LegacyPanel>()
+                .Any();
 
         protected override void OnMouseUp(MouseUpEvent e)
         {
