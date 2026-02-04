@@ -47,6 +47,8 @@ partial class BeatmapCarousel
         private double scrollVelocity;
         private double scrollDecay;
 
+        public double TargetDistance => -scrollVelocity / Math.Log(scrollDecay);
+
         protected override bool OnMouseDown(MouseDownEvent e)
         {
             if (e.Button is MouseButton.Right)
