@@ -295,8 +295,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         Debug.Assert(visibleHalfHeight > 0, "visibleHalfHeight should be positive.");
 
         var currentScrollTarget = GetScrollTarget();
-        lastScrollTarget = currentScrollTarget;
         bool hasScrollTargetChanged = lastScrollTarget != currentScrollTarget;
+        lastScrollTarget = currentScrollTarget;
 
         double? scrollDecay = hasScrollTargetChanged
             ? null // assume this is the Random select action to match stable's feel.
