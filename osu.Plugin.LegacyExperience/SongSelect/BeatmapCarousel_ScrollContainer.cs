@@ -61,6 +61,16 @@ partial class BeatmapCarousel
                 return true; // prevent song select reveal
             }
 
+            // stop scrolling
+            if (e.Button is MouseButton.Left)
+            {
+                scrollVelocity = 0.0;
+                scrollDecay = default_decay;
+
+                if (hasAnyPanelHovered())
+                    return true; // prevent song select reveal
+            }
+
             return base.OnMouseDown(e);
         }
 
