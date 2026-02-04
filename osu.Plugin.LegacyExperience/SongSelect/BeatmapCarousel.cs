@@ -286,6 +286,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private LegacyPanel? contextMenuActivePanel;
 
+    private List<LegacyPanel> visiblePanels = new();
+
     private double? lastScrollTarget;
     protected override void Update()
     {
@@ -329,18 +331,18 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         // expand the hovered panel and push others away
         double dampingFactor = Math.Pow(0.875, frameRatio);
 
-        var panels = scrollChildren
+        visiblePanels.Clear();
+        visiblePanels.AddRange(scrollChildren
             .OfType<LegacyPanel>()
             .Where(static p => p.Item is not null)
-            .OrderBy(static p => p.Item!.CarouselYPosition)
-            .ToArray();
+            .OrderBy(static p => p.Item!.CarouselYPosition));
 
-        extendVisibleIndices(panels);
+        extendVisibleIndices();
 
         // bypass Carousel's Y position damping
-        for (int i = 0; i < panels.Length; i++)
+        for (int i = 0; i < visiblePanels.Count; i++)
         {
-            var panel = panels[i];
+            var panel = visiblePanels[i];
             var item = panel.Item!;
 
             double targetY = item.CarouselYPosition;
@@ -372,7 +374,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     // simulate stable's ExtendVisibleIndices behaviour, keep method name consistent
     // In stable this method is responsible for extending the visible indices,
     // but here we focus on updating panel X positions to match stable's logic.
-    private void extendVisibleIndices(LegacyPanel[] panels)
+    private void extendVisibleIndices()
     {
         var defaultY = Scroll.Current - scrollTargetDistance;
 
@@ -381,7 +383,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         // find a previously existing panel to anchor from.
         // due to lazer's logic, all panels here are visible.
-        var referenceIndex = Array.FindIndex(panels, static p => p.PoolableState is PoolableStates.InUse);
+        var referenceIndex = visiblePanels.FindIndex(static p => p.PoolableState is PoolableStates.InUse);
 
         Vector2d referenceDestination = Vector2d.Zero;
         if (referenceIndex >= 0)
@@ -391,19 +393,19 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             updatePanel(i);
 
         defaultPosition = new Vector2d(stablePanelOffset, visibleHalfHeight);
-        referenceIndex = Array.FindLastIndex(panels, static p => p.PoolableState is PoolableStates.InUse);
+        referenceIndex = visiblePanels.FindLastIndex(static p => p.PoolableState is PoolableStates.InUse);
 
         if (referenceIndex >= 0)
             updateReferencePanel(referenceIndex);
         else
             referenceIndex = -1; // update all visible panels
 
-        for (int i = referenceIndex + 1; i < panels.Length; i++)
+        for (int i = referenceIndex + 1; i < visiblePanels.Count; i++)
             updatePanel(i);
 
         void updateReferencePanel(int panelIndex)
         {
-            var panel = panels[referenceIndex = panelIndex];
+            var panel = visiblePanels[referenceIndex = panelIndex];
             var pos = panel.Position;
 
             defaultPosition = new Vector2d(pos.X, pos.Y);
@@ -413,7 +415,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         void updatePanel(int panelIndex)
         {
-            var panel = panels[panelIndex];
+            var panel = visiblePanels[panelIndex];
 
             Vector2 position;
 
