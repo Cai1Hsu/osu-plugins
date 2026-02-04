@@ -287,16 +287,12 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private LegacyPanel? contextMenuActivePanel;
 
-    private CarouselItem? expandedSetItem;
-
     protected override void Update()
     {
         visibleHalfHeight = (DrawHeight + BleedBottom + BleedTop) / 2;
         frameRatio = Time.Elapsed / (1000 / 60f);
 
         Debug.Assert(visibleHalfHeight > 0, "visibleHalfHeight should be positive.");
-
-        expandedSetItem?.IsVisible = false;
 
         // There's a bug in osu!lazer's Carousel<T> implementation:
         // The Carousel uses scroll container's Current to determine the visible range,
@@ -761,9 +757,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         base.HandleItemSelected(model);
 
-        if (previousExpandedBeatmapSet == ExpandedBeatmapSet)
-            return;
-
         // restore visibility of previously expanded set item.
         // To align with stable's behaviour, beatmap set item is hidden when it expands,
         // when it deselects, we need to restore its visibility.
@@ -774,19 +767,20 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             // only restore if the newly selected beatmap is in the same group
             previousExpandedBeatmapSet.Group == ExpandedBeatmapSet?.Group &&
             // skip if the expanded set has single beatmap
-            GetSingleBeatmap(previousExpandedBeatmapSet.BeatmapSet) is null)
+            GetSingleBeatmap(previousExpandedBeatmapSet.BeatmapSet) is null &&
+            grouping.ItemMap.TryGetValue(previousExpandedBeatmapSet, out var prevSetItems))
         {
-            expandedSetItem?.IsVisible = true;
-        }
+            (CarouselItem setItem, var _) = prevSetItems;
 
-        expandedSetItem = null;
+            setItem.IsVisible = true;
+        }
 
         // ensure the newly selected set item is hidden when selected
         if (grouping.BeatmapSetsGroupedTogether &&
             ExpandedBeatmapSet is not null &&
             grouping.ItemMap.TryGetValue(ExpandedBeatmapSet, out var newSetItemValue))
         {
-            expandedSetItem = newSetItemValue.item;
+            newSetItemValue.item.IsVisible = false;
         }
     }
 
