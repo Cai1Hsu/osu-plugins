@@ -95,10 +95,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         scrollField.SetValue(this, legacyScrollContainer);
     }
 
-    public BeatmapCarousel(bool useLegacyScrollContainer = true)
+    public BeatmapCarousel()
     {
-        if (useLegacyScrollContainer)
-            applyLegacyScrollContainer();
+        applyLegacyScrollContainer();
 
         AddInternal(rankSpritePool);
     }
