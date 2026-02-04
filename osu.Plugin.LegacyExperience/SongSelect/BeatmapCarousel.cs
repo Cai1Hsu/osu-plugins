@@ -286,6 +286,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private LegacyPanel? contextMenuActivePanel;
 
+    private double? lastScrollTarget;
     protected override void Update()
     {
         visibleHalfHeight = (DrawHeight + BleedBottom + BleedTop) / 2;
@@ -293,12 +294,20 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         Debug.Assert(visibleHalfHeight > 0, "visibleHalfHeight should be positive.");
 
+        var currentScrollTarget = GetScrollTarget();
+        lastScrollTarget = currentScrollTarget;
+        bool hasScrollTargetChanged = lastScrollTarget != currentScrollTarget;
+
+        double? scrollDecay = hasScrollTargetChanged
+            ? null // assume this is the Random select action to match stable's feel.
+            : 0.992; // assume this is the return selection action to match stable's feel.
+
         // There's a bug in osu!lazer's Carousel<T> implementation:
         // The Carousel uses scroll container's Current to determine the visible range,
         // however the scroll container is updated AFTER Update() is called, resulting in incorrect visible range here.
         // This causes panels invisible when you rapidly scrolling for more than 5k+ beatamaps with absolute scrolling.
         // We workaround this by updating our legacy scroll container here.
-        legacyScrollContainer?.UpdateScrollPosition();
+        legacyScrollContainer?.UpdateScrollPosition(scrollDecay);
 
         base.Update();
 

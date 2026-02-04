@@ -23,6 +23,8 @@ partial class BeatmapCarousel
 
         protected override void ScrollToAbsolutePosition(Vector2 screenSpacePosition)
         {
+            // We are unable to determine what the exact decay value should be here,
+            // as we don't know the intention of the caller.
             ScrollToAbsolutePosition(screenSpacePosition, decay: default_decay);
         }
 
@@ -115,7 +117,7 @@ partial class BeatmapCarousel
             return true;
         }
 
-        public void UpdateScrollPosition()
+        public void UpdateScrollPosition(double? decay = null)
         {
             if (!IsDragged)
             {
@@ -133,7 +135,7 @@ partial class BeatmapCarousel
 
             // Catch any scroll request and manage it ourselves.
             if (Target != Current)
-                ScrollToPosition(Target);
+                ScrollToPosition(Target, decay ?? default_decay);
 
             if (DrawHeight > 0.0 && scrollDistance != 0.0)
             {
