@@ -678,8 +678,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
             if (initialX.HasValue)
             {
-                var targetY = (float)initialX.Value;
-                SchedulerAfterChildren.Add(() => panel.X = targetY);
+                var targetX = (float)initialX.Value;
+                SchedulerAfterChildren.Add(() => panel.X = targetX);
             }
 
             panel.X = (float)itemXDestination(panel, item);
