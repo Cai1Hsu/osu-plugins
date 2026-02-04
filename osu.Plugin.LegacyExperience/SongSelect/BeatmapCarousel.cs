@@ -30,6 +30,7 @@ using osu.Game.Screens.SelectV2;
 using osu.Game.Skinning;
 using osuTK;
 using Realms;
+using static osu.Plugin.LegacyExperience.SongSelect.LegacyPanel;
 using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
 using PanelV2 = osu.Game.Screens.SelectV2.Panel;
 
@@ -182,6 +183,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         panelColors.SyncFromSkin(skin);
         updatePanelBackground();
+        updateStablePanelOffset();
     }
 
     private static readonly FrozenDictionary<string, FieldInfo> sampleFields = typeof(BeatmapCarouselV2)
@@ -318,16 +320,19 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         // expand the hovered panel and push others away
         double dampingFactor = Math.Pow(0.875, frameRatio);
 
+        var panels = scrollChildren
+            .OfType<LegacyPanel>()
+            .Where(static p => p.Item is not null)
+            .OrderBy(static p => p.Item!.CarouselYPosition)
+            .ToArray();
+
+        extendVisibleIndices(panels);
+
         // bypass Carousel's Y position damping
-        for (int i = 0; i < scrollChildren.Count; i++)
+        for (int i = 0; i < panels.Length; i++)
         {
-            var child = scrollChildren[i];
-
-            if (child is not LegacyPanel panel)
-                continue;
-
-            if (panel.Item is not CarouselItem item)
-                continue;
+            var panel = panels[i];
+            var item = panel.Item!;
 
             double targetY = item.CarouselYPosition;
 
@@ -348,6 +353,67 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
             panel.SelectV2DrawYPosition = targetY - offsetY;
             panel.DrawYPosition = panel.SelectV2DrawYPosition;
+        }
+    }
+
+    // simulate stable's ExtendVisibleIndices behaviour, keep method name consistent
+    // In stable this method is responsible for extending the visible indices,
+    // but here we focus on updating panel X positions to match stable's logic.
+    private void extendVisibleIndices(LegacyPanel[] panels)
+    {
+        var defaultY = Scroll.Current - legacyScrollContainer?.TargetDistance ?? 0;
+
+        var stableMagicOffset = (stablePanelOffset + panel_min_x_offset) * LegacyExperiencePlugin.StableRatio;
+        var defaultPosition = new Vector2d(stablePanelOffset, visibleHalfHeight);
+
+        // find a previously existing panel to anchor from.
+        // due to lazer's logic, all panels here are visible.
+        var referenceIndex = Array.FindIndex(panels, static p => p.PoolableState is PoolableStates.InUse);
+
+        Vector2d referenceDestination = Vector2d.Zero;
+        if (referenceIndex >= 0)
+            updateReferencePanel(panels[referenceIndex]);
+
+        for (int i = 0; i < referenceIndex; i++)
+            updatePanel(panels[i]);
+
+        defaultPosition = new Vector2d(stablePanelOffset, 0) * LegacyExperiencePlugin.StableRatio;
+        referenceIndex = Array.FindLastIndex(panels, static p => p.PoolableState is PoolableStates.InUse);
+
+        if (referenceIndex >= 0)
+            updateReferencePanel(panels[referenceIndex]);
+
+        // update all visible panels
+        if (referenceIndex < 0)
+            referenceIndex = -1;
+
+        for (int i = referenceIndex + 1; i < panels.Length; i++)
+            updatePanel(panels[i]);
+
+        void updateReferencePanel(LegacyPanel panel)
+        {
+            var pos = panel.DrawPosition;
+
+            defaultPosition = new Vector2d(pos.X, pos.Y);
+            referenceDestination.X = itemXDestinationWithoutOffset(panel);
+            referenceDestination.Y = panel.Item!.CarouselYPosition; // this is a relative value
+        }
+
+        void updatePanel(LegacyPanel panel)
+        {
+            if (referenceIndex >= 0)
+            {
+                double xOffset = itemXDestinationWithoutOffset(panel);
+                defaultPosition.X = Math.Min(defaultPosition.X - referenceDestination.X + xOffset, xOffset + stableMagicOffset);
+                defaultPosition.Y += panel.Item!.CarouselYPosition - referenceDestination.Y;
+            }
+            else
+            {
+                defaultPosition.X = GetUndampedPanelXOffset(panel) + stableMagicOffset;
+                defaultPosition.Y = -defaultY;
+            }
+
+            panel.Position = new Vector2((float)defaultPosition.X, (float)defaultPosition.Y);
         }
     }
 
@@ -468,11 +534,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         return items;
     }
 
-    public double GetUndampedPanelXOffset(LegacyPanel panel)
+    private double itemXDestinationWithoutOffset(LegacyPanel panel)
     {
-        Vector2 posInScroll = Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre);
-        var xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop);
-
         double offset = 0;
 
         if (panel is LegacyGroupPanel)
@@ -485,21 +548,40 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         if (panel.IsHovered || ReferenceEquals(contextMenuActivePanel, panel))
             offset -= 45;
 
-        offset *= LegacyExperiencePlugin.StableRatio;
+        return offset * LegacyExperiencePlugin.StableRatio;
+    }
+
+    public double GetUndampedPanelXOffset(LegacyPanel panel)
+    {
+        Vector2 posInScroll = Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre);
+
+        double xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop + legacyScrollContainer?.TargetDistance ?? 0);
+        double offset = itemXDestinationWithoutOffset(panel);
 
         return xPosition + offset;
     }
 
+    private double stablePanelOffset;
+
+    private void updateStablePanelOffset()
+    {
+        stablePanelOffset = (640 - 340) /* XPosition */ + 500 /* XOffset */
+            // stable assume panels anchor and origin is Left-sided,
+            // But in lazer, we've set panels to TopRight anchor and origin.
+            - panelSize.X;
+    }
+
+    private const float panel_min_x_offset = 200;
+
     private double itemXOffsetByYPosition(double yPosition)
     {
-        // The following model from stable assume panels anchor and origin is Left-sided,
-        // But in lazer, we've set panels to TopRight anchor and origin.
-        double stablePanelOffset = 640 - 340 + 500 - panelSize.X; // stable: XPosition + XOffset
-
-        double stableValue = Math.Min(200, Math.Abs(yPosition / visibleHalfHeight - 1) * 0.5 * 75.0)
+        double stableValue = Math.Min(panel_min_x_offset, Math.Abs(yPosition / visibleHalfHeight - 1) * 0.5 * 75.0) * LegacyExperiencePlugin.StableRatio
+            // TODO: 
+            // LegacyExperiencePlugin.StableRatio should be applied to stablePanelOffset
+            // but this looks correct visually, need further investigation
             + stablePanelOffset;
 
-        return stableValue * LegacyExperiencePlugin.StableRatio;
+        return stableValue;
     }
 
     private double frameRatio;
@@ -535,10 +617,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     {
         LegacyPanel setupLegacyPanel(LegacyPanel panel)
         {
-            // FIXME: this value is continously damped in stable.
-            const double edge_panels_initial_x = 200 * LegacyExperiencePlugin.StableRatio;  // a random value
-
-            double initialX = edge_panels_initial_x;
+            double? initialX = null;
 
             if (spawnedItems.TryGetValue(item, out var source))
             {
@@ -555,8 +634,16 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 }
             }
 
-            float targetX = (float)initialX;
-            SchedulerAfterChildren.Add(() => panel.X = targetX);
+            if (initialX.HasValue)
+            {
+                var targetY = (float)initialX.Value;
+                SchedulerAfterChildren.Add(() => panel.X = targetY);
+            }
+            else
+            {
+                // stable's deefault position, also used in ExtendVisibleIndices
+                panel.X = (float)((stablePanelOffset + panel_min_x_offset) * LegacyExperiencePlugin.StableRatio);
+            }
 
             if (panel is LegacyPanelHasBeatmap beatmapPanel)
                 updateScoreInfoForDisplayedPanel(beatmapPanel, item);
