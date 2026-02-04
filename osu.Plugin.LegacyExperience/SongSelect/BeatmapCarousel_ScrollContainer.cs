@@ -9,12 +9,14 @@ partial class BeatmapCarousel
 {
     protected partial class LegacyScrollContainer : ScrollContainer
     {
+        private const float default_decay = 0.996f;
+
         protected override void ScrollToAbsolutePosition(Vector2 screenSpacePosition)
         {
-            ScrollToAbsolutePosition(screenSpacePosition);
+            ScrollToAbsolutePosition(screenSpacePosition, decay: default_decay);
         }
 
-        public void ScrollToAbsolutePosition(Vector2 screenSpacePosition, float decay = 0.996f)
+        public void ScrollToAbsolutePosition(Vector2 screenSpacePosition, float decay = default_decay)
         {
             float fromScrollbarPosition = FromScrollbarPosition(screenSpacePosition.Y);
             float scrollbarCentreOffset = FromScrollbarPosition(Scrollbar.DrawHeight) * 0.5f;
@@ -89,7 +91,7 @@ partial class BeatmapCarousel
                 if (Precision.AlmostEquals(scrollVelocity, 0, 0.01))
                 {
                     scrollVelocity = 0.0;
-                    scrollDecay = 0.996;
+                    scrollDecay = default_decay;
                 }
                 if (Precision.AlmostEquals(scrollDistance, 0, 0.01))
                     scrollDistance = 0;
@@ -106,7 +108,7 @@ partial class BeatmapCarousel
             }
         }
 
-        private void ScrollToPosition(double newPosition, double decay = 0.996)
+        private void ScrollToPosition(double newPosition, double decay = default_decay)
         {
             if (decay == 0.0)
             {
