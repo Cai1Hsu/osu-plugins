@@ -6,6 +6,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Utils;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
 using osuTK;
@@ -84,20 +85,13 @@ public partial class StarDifficultyDisplay : CompositeDrawable, IHasCurrentValue
             {
                 var star = stars[i];
 
-                // fully displayed star
                 Colour4 target_colour;
                 Vector2 target_scale;
 
-                if (i < value)
-                {
-                    target_colour = active_colour;
-                    target_scale = default_scale;
-                }
-                else
-                {
-                    target_colour = inactive_colour;
-                    target_scale = default_scale * 0.6f;
-                }
+                double appear_ratio = Math.Clamp(value - i, 0, 1);
+
+                target_colour = appear_ratio > 0 ? active_colour : inactive_colour;
+                target_scale = default_scale * (float)Interpolation.Lerp(0.6f, 1.0f, (float)appear_ratio);
 
                 star.FadeColour(target_colour, fade_duration)
                     .ScaleTo(target_scale, scale_duration, Easing.OutBack);
