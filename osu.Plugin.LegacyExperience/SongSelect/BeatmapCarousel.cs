@@ -1006,11 +1006,12 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 var bestScores = sender
                     .Where(static s => s.BeatmapInfo is not null)
                     .GroupBy(static s => s.BeatmapInfo)
-                    .Select(g => g.MaxBy(static info => (info.TotalScore, -info.Date.UtcDateTime.Ticks)));
+                    .Select(static g => g.MaxBy(static info => (info.TotalScore, -info.Date.UtcDateTime.Ticks)));
 
                 foreach (var score in bestScores)
                 {
-                    localBestScores[score?.BeatmapInfo!] = score;
+                    if (score?.BeatmapInfo is BeatmapInfo beatmapInfo)
+                        localBestScores[beatmapInfo] = score;
                 }
             }
             else
