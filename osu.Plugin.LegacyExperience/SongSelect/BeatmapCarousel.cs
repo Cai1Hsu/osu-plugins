@@ -247,8 +247,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private const float hover_expand_amount_y = 10;
 
-    private const float hover_expand_amount_x = 30;
-
     private InputManager inputManager = null!;
 
     protected override void LoadComplete()
@@ -476,20 +474,33 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         Vector2 posInScroll = Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre);
         var xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop);
 
-        if (panel.IsHovered || ReferenceEquals(contextMenuActivePanel, panel))
-            xPosition -= hover_expand_amount_x;
+        double offset = 0;
 
-        return xPosition;
+        if (panel is LegacyGroupPanel)
+            offset -= 50;
+        else if (panel is LegacyBeatmapSetPanel setPanel && setPanel.Expanded.Value)
+            offset -= 50;
+        else if (panel is LegacyBeatmapPanel beatmapPanel && IsBeatmapPanelFromExpandedSet(beatmapPanel))
+            offset -= 50;
+
+        if (panel.IsHovered || ReferenceEquals(contextMenuActivePanel, panel))
+            offset -= 45;
+
+        offset *= LegacyExperiencePlugin.StableRatio;
+
+        return xPosition + offset;
     }
 
     private double itemXOffsetByYPosition(double yPosition)
     {
         // The following model from stable assume panels anchor and origin is Left-sided,
         // But in lazer, we've set panels to TopRight anchor and origin.
-        double stable_panel_offset = 640 - panelSize.X;
+        double stablePanelOffset = 640 - 340 + 500 - panelSize.X; // stable: XPosition + XOffset
 
-        return (Math.Min(200.0, Math.Abs((yPosition / visibleHalfHeight - 1) * 75.0)) - stable_panel_offset)
-            * LegacyExperiencePlugin.StableRatio;
+        double stableValue = Math.Min(200, Math.Abs(yPosition / visibleHalfHeight - 1) * 0.5 * 75.0)
+            + stablePanelOffset;
+
+        return stableValue * LegacyExperiencePlugin.StableRatio;
     }
 
     private double frameRatio;
