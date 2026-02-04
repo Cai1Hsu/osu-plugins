@@ -26,6 +26,20 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
 
     public BindableBool KeyboardSelected { get; private set; } = new BindableBool();
 
+    public PoolableStates PoolableState
+    {
+        get
+        {
+            if (readyForUse)
+                return PoolableStates.InUse;
+
+            if (IsInUse)
+                return PoolableStates.Available;
+
+            return PoolableStates.InPool;
+        }
+    }
+
     // Legacy carousel managed, used for bypass Carousel's damping
     public double DrawYPosition { get; set; }
 
@@ -159,13 +173,18 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
 
     protected override void FreeAfterUse()
     {
+        readyForUse = false;
+
         base.FreeAfterUse();
 
         FinishTransforms(true);
     }
 
+    private bool readyForUse;
     protected override void PrepareForUse()
     {
+        readyForUse = true;
+
         // returning to pool makes it invisible, so fade in on next use.
         this.FadeIn();
 
@@ -195,5 +214,12 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
     private void updateBackgroundColor(Colour4 colour, int duration = 300)
     {
         backgroundSprite.FadeColour(colour, duration);
+    }
+
+    public enum PoolableStates
+    {
+        Available,
+        InUse,
+        InPool,
     }
 }
