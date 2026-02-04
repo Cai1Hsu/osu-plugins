@@ -362,6 +362,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
             panel.SelectV2DrawYPosition = targetY - offsetY;
             panel.DrawYPosition = panel.SelectV2DrawYPosition;
+
+            panel.X = (float)GetPanelXOffset(panel);
         }
     }
 
@@ -391,10 +393,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         if (referenceIndex >= 0)
             updateReferencePanel(referenceIndex);
-
-        // update all visible panels
-        if (referenceIndex < 0)
-            referenceIndex = -1;
+        else
+            referenceIndex = -1; // update all visible panels
 
         for (int i = referenceIndex + 1; i < panels.Length; i++)
             updatePanel(i);
@@ -441,15 +441,19 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             // updateReferencePanel(panelIndex);
             panel.Position = position;
         }
+    }
 
-        // GetUndampedPanelXOffset requires correct Y position to calculate X offset
-        double itemXDestination(LegacyPanel panel)
-        {
-            var scrollLocalYposition = toScrollLocalYPosition(panel.Item!.CarouselYPosition);
+    // GetUndampedPanelXOffset requires correct Y position to calculate X offset
+    double itemXDestination(LegacyPanel panel, CarouselItem? item = null)
+    {
+        item ??= panel.Item;
 
-            return itemXOffsetByYPosition(scrollLocalYposition + BleedTop + legacyScrollContainer?.TargetDistance ?? 0)
-                + itemXDestinationWithoutOffset(panel);
-        }
+        Debug.Assert(item is not null);
+
+        var scrollLocalYposition = toScrollLocalYPosition(item.CarouselYPosition);
+
+        return itemXOffsetByYPosition(scrollLocalYposition + BleedTop + legacyScrollContainer?.TargetDistance ?? 0)
+            + itemXDestinationWithoutOffset(panel);
     }
 
     protected override void HandleFilterCompleted()
@@ -638,10 +642,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     protected override float GetPanelXOffset(Drawable panel)
     {
-        if (panel is LegacyPanel legacyPanel)
-            return (float)GetPanelXOffset(legacyPanel);
-
-        return base.GetPanelXOffset(panel);
+        // don't touch it, we will calculate it later ourselves
+        // ensure proper state in extendVisibleIndices
+        return panel.X;
     }
 
     private DrawablePool<LegacyGroupPanel> groupPanelPool = null!;
@@ -674,11 +677,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 var targetY = (float)initialX.Value;
                 SchedulerAfterChildren.Add(() => panel.X = targetY);
             }
-            else
-            {
-                // stable's deefault position, also used in ExtendVisibleIndices
-                panel.X = (float)(stablePanelOffset + panel_min_x_offset * LegacyExperiencePlugin.StableRatio);
-            }
+
+            panel.X = (float)itemXDestination(panel, item);
 
             if (panel is LegacyPanelHasBeatmap beatmapPanel)
                 updateScoreInfoForDisplayedPanel(beatmapPanel, item);
