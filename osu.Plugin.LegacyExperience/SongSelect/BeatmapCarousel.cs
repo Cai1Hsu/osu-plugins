@@ -1036,7 +1036,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
 
         // displayed panels may change in Update
-        SchedulerAfterChildren.Add(updateDisplayedPanels);
+        SchedulerAfterChildren.AddOnce(updateDisplayedPanels);
     }
 
     protected override void Dispose(bool isDisposing)
