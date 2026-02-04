@@ -10,7 +10,7 @@ public partial class TestSceneStarDifficultyDisplay : LocalSkinTestScene
 {
     private double starDifficulty;
     private SkinProvidingContainer skinContainer = null!;
-    private StarDifficultyDisplay? starDifficultyDisplay = null!;
+    private StarDifficultyDisplay? starDifficultyDisplay;
 
     [BackgroundDependencyLoader]
     private void load()
