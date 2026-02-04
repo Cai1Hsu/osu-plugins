@@ -51,19 +51,18 @@ partial class BeatmapCarousel
         {
             if (e.Button is MouseButton.Right)
             {
+                // don't block, context menu requires right click to propagate.
+                if (hasAnyPanelHovered())
+                    return false;
+
                 absoluteScrolling = true;
-
-                bool shouldBlock = hasAnyPanelHovered()
-                    ? false  // don't block, context menu requires right click to propagate.
-                    : true; // prevent song select reveal
-
-                return shouldBlock;
+                return true; // prevent song select reveal
             }
 
             return base.OnMouseDown(e);
         }
 
-        private bool hasAnyPanelHovered() 
+        private bool hasAnyPanelHovered()
             => inputManager.HoveredDrawables
                 // TODO: may require Parent to be this.Panels
                 .OfType<LegacyPanel>()
