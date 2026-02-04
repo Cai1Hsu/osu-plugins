@@ -50,8 +50,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     [Cached]
     private LegacyRankSpritePool rankSpritePool { get; set; } = new LegacyRankSpritePool();
 
-    public bool AllowPanelHoverSample => !AbsoluteScrolling &&
-        (Scroll.Target == Scroll.Current || Scroll.UserScrolling);
+    public bool AllowPanelHoverSample => legacyScrollContainer is not null ? !legacyScrollContainer.AbsoluteScrolling
+        : !AbsoluteScrolling && (Scroll.Target == Scroll.Current || Scroll.UserScrolling);
 
     // stable does cooldown in AudioEngine, refer to AudioEngine.Click() you will see:
     // if (GameBase.Time - clickSoundTime > 50 || force)
@@ -73,8 +73,33 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private BeatmapCarouselFilterGrouping grouping = null!;
 
-    public BeatmapCarousel()
+    private static readonly FieldInfo scrollField = typeof(Carousel<BeatmapInfo>)
+        .GetField("Scroll", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private LegacyScrollContainer? legacyScrollContainer;
+
+    private void applyLegacyScrollContainer()
     {
+        legacyScrollContainer = new LegacyScrollContainer
+        {
+            Name = "Legacy Carousel Scroll",
+            Masking = false,
+            RelativeSizeAxes = Axes.Both,
+            ScrollbarPaddingBottom = Scroll.ScrollbarPaddingBottom,
+        };
+
+        AddInternal(legacyScrollContainer);
+        ChangeInternalChildDepth(legacyScrollContainer, Scroll.Depth);
+
+        RemoveInternal(Scroll, true); // dispose immediately to release resources
+        scrollField.SetValue(this, legacyScrollContainer);
+    }
+
+    public BeatmapCarousel(bool useLegacyScrollContainer = true)
+    {
+        if (useLegacyScrollContainer)
+            applyLegacyScrollContainer();
+
         AddInternal(rankSpritePool);
     }
 
@@ -272,6 +297,13 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         Debug.Assert(visibleHalfHeight > 0, "visibleHalfHeight should be positive.");
 
         expandedSetItem?.IsVisible = false;
+
+        // There's a bug in osu!lazer's Carousel<T> implementation:
+        // The Carousel uses scroll container's Current to determine the visible range,
+        // however the scroll container is updated AFTER Update() is called, resulting in incorrect visible range here.
+        // This causes panels invisible when you rapidly scrolling for more than 5k+ beatamaps with absolute scrolling.
+        // We workaround this by updating our legacy scroll container here.
+        legacyScrollContainer?.UpdateScrollPosition();
 
         base.Update();
 
