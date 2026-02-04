@@ -873,8 +873,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
 
         // ensure the newly selected set item is hidden when selected
-        if (grouping.BeatmapSetsGroupedTogether &&
-            ExpandedBeatmapSet is not null &&
+        if (ExpandedBeatmapSet is not null &&
             grouping.ItemMap.TryGetValue(ExpandedBeatmapSet, out var newSetItemValue))
         {
             newSetItemValue.item.IsVisible = false;
