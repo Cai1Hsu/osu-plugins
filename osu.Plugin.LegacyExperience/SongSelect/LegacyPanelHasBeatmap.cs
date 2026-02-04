@@ -199,7 +199,7 @@ public abstract partial class LegacyPanelHasBeatmap : LegacyPanel
 
         updatePanelState();
 
-        FinishTransforms(true);
+        FinishTransforms();
     }
 
     public void FinishBackgroundTask()

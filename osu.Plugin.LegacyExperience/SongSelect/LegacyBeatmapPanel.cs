@@ -15,7 +15,7 @@ namespace osu.Plugin.LegacyExperience.SongSelect;
 public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
 {
     private OsuSpriteText difficultyText = null!;
-    private StarDifficultyDisplay? starDisplay;
+    private StarDifficultyDisplay starDisplay = null!;
 
     [Resolved]
     private BeatmapDifficultyCache? difficultyCache { get; set; }
@@ -61,7 +61,7 @@ public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
         var difficultyColor = isActivated ? PanelColors.ActiveText : PanelColors.InactiveText;
 
         difficultyText.Colour = difficultyColor;
-        starDisplay?.UpdateStarColor(difficultyColor, additive: !isActivated);
+        starDisplay.UpdateStarColor(difficultyColor, additive: !isActivated);
     }
 
     protected override void FreeAfterUse()
@@ -109,9 +109,6 @@ public partial class LegacyBeatmapPanel : LegacyPanelHasBeatmap
         starDifficultyBindable = difficultyCache.GetBindableDifficulty(beatmap, starDifficultyCancellationSource.Token, SongSelectV2.DIFFICULTY_CALCULATION_DEBOUNCE);
         starDifficultyBindable.BindValueChanged(starDifficulty =>
         {
-            if (starDisplay is null)
-                return;
-
             starDisplay.Current.Value = starDifficulty.NewValue.Stars;
         }, true);
     }
