@@ -51,8 +51,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     [Cached]
     private LegacyRankSpritePool rankSpritePool { get; set; } = new LegacyRankSpritePool();
 
-    public bool AllowPanelHoverSample => legacyScrollContainer is not null ? !legacyScrollContainer.AbsoluteScrolling
-        : !AbsoluteScrolling && (Scroll.Target == Scroll.Current || Scroll.UserScrolling);
+    public bool AllowPanelHoverSample => !legacyScrollContainer.AbsoluteScrolling;
 
     // stable does cooldown in AudioEngine, refer to AudioEngine.Click() you will see:
     // if (GameBase.Time - clickSoundTime > 50 || force)
@@ -77,7 +76,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     private static readonly FieldInfo scrollField = typeof(Carousel<BeatmapInfo>)
         .GetField("Scroll", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-    private LegacyScrollContainer? legacyScrollContainer;
+    private LegacyScrollContainer legacyScrollContainer = null!;
 
     private void applyLegacyScrollContainer()
     {
@@ -309,7 +308,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         // however the scroll container is updated AFTER Update() is called, resulting in incorrect visible range here.
         // This causes panels invisible when you rapidly scrolling for more than 5k+ beatamaps with absolute scrolling.
         // We workaround this by updating our legacy scroll container here.
-        legacyScrollContainer?.UpdateScrollPosition(scrollDecay);
+        legacyScrollContainer.UpdateScrollPosition(scrollDecay);
 
         base.Update();
 
@@ -369,7 +368,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
     }
 
-    private double scrollTargetDistance => legacyScrollContainer?.TargetDistance ?? 0;
+    private double scrollTargetDistance => legacyScrollContainer.TargetDistance;
 
     // simulate stable's ExtendVisibleIndices behaviour, keep method name consistent
     // In stable this method is responsible for extending the visible indices,
