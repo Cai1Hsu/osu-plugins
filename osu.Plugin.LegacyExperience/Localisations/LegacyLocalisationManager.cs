@@ -143,7 +143,7 @@ public partial class LegacyLocalisationManager : Component
 
             try
             {
-                var response = await httpClient.GetAsync(url);
+                using var response = await httpClient.GetAsync(url);
 
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
