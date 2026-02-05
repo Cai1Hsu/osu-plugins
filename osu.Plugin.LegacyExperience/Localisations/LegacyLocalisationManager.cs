@@ -28,7 +28,6 @@ public partial class LegacyLocalisationManager : Component
     private LocalisationManager localisations { get; set; } = null!;
 
     public IBindable<LegacyLanguageCodes> CurrentLegacyLanguage => currentLegacyLanguage;
-    public ILocalisationStore CurrentStore => stores[currentLazerLanguage.Value.ToCultureCode()];
 
     private HttpClient httpClient = null!;
 
