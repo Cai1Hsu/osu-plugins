@@ -310,6 +310,8 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         // We workaround this by updating our legacy scroll container here.
         legacyScrollContainer.UpdateScrollPosition(scrollDecay);
 
+        calculateReferenceInfo();
+
         base.Update();
 
         var scrollChildren = Scroll.Panels.Children;
@@ -335,8 +337,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             .OfType<LegacyPanel>()
             .Where(static p => p.Item is not null)
             .OrderBy(static p => p.Item!.CarouselYPosition));
-
-        extendVisibleIndices();
 
         // bypass Carousel's Y position damping
         for (int i = 0; i < visiblePanels.Count; i++)
@@ -368,83 +368,34 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
     }
 
-    private double scrollTargetDistance => legacyScrollContainer.TargetDistance;
+    private ReferenceInfo? upwardsReference;
+    private ReferenceInfo? downwardsReference;
 
-    // simulate stable's ExtendVisibleIndices behaviour, keep method name consistent
-    // In stable this method is responsible for extending the visible indices,
-    // but here we focus on updating panel X positions to match stable's logic.
-    private void extendVisibleIndices()
+    private void calculateReferenceInfo()
     {
-        var defaultY = Scroll.Current - scrollTargetDistance;
+        // visiblePanels are from last frame, so all panels are in use here.
+        upwardsReference = visiblePanels.Select(toReferenceInfo).FirstOrDefault();
+        downwardsReference = visiblePanels.Select(toReferenceInfo).LastOrDefault();
 
-        var stableMagicOffset = stablePanelOffset + panel_min_x_offset * LegacyExperiencePlugin.StableRatio;
-        var defaultPosition = new Vector2d(stablePanelOffset, visibleHalfHeight);
-
-        // find a previously existing panel to anchor from.
-        // due to lazer's logic, all panels here are visible.
-        var referenceIndex = visiblePanels.FindIndex(static p => p.PoolableState is PoolableStates.InUse);
-
-        Vector2d referenceDestination = Vector2d.Zero;
-        if (referenceIndex >= 0)
-            updateReferencePanel(referenceIndex);
-
-        for (int i = 0; i < referenceIndex; i++)
-            updatePanel(i);
-
-        defaultPosition = new Vector2d(stablePanelOffset, visibleHalfHeight);
-        referenceIndex = visiblePanels.FindLastIndex(static p => p.PoolableState is PoolableStates.InUse);
-
-        if (referenceIndex >= 0)
-            updateReferencePanel(referenceIndex);
-        else
-            referenceIndex = -1; // update all visible panels
-
-        for (int i = referenceIndex + 1; i < visiblePanels.Count; i++)
-            updatePanel(i);
-
-        void updateReferencePanel(int panelIndex)
+        ReferenceInfo? toReferenceInfo(LegacyPanel panel)
         {
-            var panel = visiblePanels[referenceIndex = panelIndex];
-            var pos = panel.Position;
-
-            defaultPosition = new Vector2d(pos.X, pos.Y);
-            referenceDestination.X = itemXDestinationWithoutOffset(panel);
-            referenceDestination.Y = panel.Item!.CarouselYPosition; // this is a relative value
-        }
-
-        void updatePanel(int panelIndex)
-        {
-            var panel = visiblePanels[panelIndex];
-
-            Vector2 position;
-
-            if (referenceIndex >= 0)
+            return new ReferenceInfo
             {
-                double xOffset = itemXDestinationWithoutOffset(panel);
-                // if we minus by (referenceDestination.X - xOffset) like stable does,
-                // we would have to call updateReferencePanel as commented out below.
-                // otherwise defaultPosition.X gets broken as we minus too much.
-                // We manually minus xOffset only for panel's position without touching defaultPosition.X.
-                defaultPosition.X = Math.Min(defaultPosition.X, xOffset + stableMagicOffset);
-                defaultPosition.Y += panel.Item!.CarouselYPosition - referenceDestination.Y;
-
-                position = new Vector2(
-                    (float)(defaultPosition.X - referenceDestination.X + xOffset),
-                    (float)defaultPosition.Y);
-            }
-            else
-            {
-                defaultPosition.X = itemXDestination(panel);
-                defaultPosition.Y = -defaultY;
-
-                position = new Vector2((float)defaultPosition.X, (float)defaultPosition.Y);
-            }
-            // TODO: updating reference panel matches stable but makes scroll logic different from stable
-            // may need further investigation
-            // updateReferencePanel(panelIndex);
-            panel.Position = position;
+                Position = panel.Position,
+                ItemXDestinationWithoutOffset = itemXDestinationWithoutOffset(panel),
+                CarouselYPosition = panel.Item!.CarouselYPosition,
+            };
         }
     }
+
+    private struct ReferenceInfo
+    {
+        public Vector2 Position;
+        public double ItemXDestinationWithoutOffset;
+        public double CarouselYPosition;
+    }
+
+    private double scrollTargetDistance => legacyScrollContainer.TargetDistance;
 
     // GetUndampedPanelXOffset requires correct Y position to calculate X offset
     double itemXDestination(LegacyPanel panel, CarouselItem? item = null)
@@ -681,7 +632,23 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 SchedulerAfterChildren.Add(() => panel.X = targetX);
             }
 
-            panel.X = (float)itemXDestination(panel, item);
+            // apply reference info for better spawn position,
+            // simulates stable's ExtendVisibleIndices behaviour
+            if (upwardsReference is ReferenceInfo up && item.CarouselYPosition <= up.CarouselYPosition)
+                applyReferencePosition(up);
+            else if (downwardsReference is ReferenceInfo down && item.CarouselYPosition >= down.CarouselYPosition)
+                applyReferencePosition(down);
+
+            void applyReferencePosition(ReferenceInfo reference)
+            {
+                var stableMagicOffset = stablePanelOffset + panel_min_x_offset * LegacyExperiencePlugin.StableRatio;
+
+                double xOffset = itemXDestinationWithoutOffset(panel);
+
+                panel.Position = new Vector2(
+                    (float)Math.Min(reference.Position.X - reference.ItemXDestinationWithoutOffset + xOffset, xOffset + stableMagicOffset),
+                    (float)(reference.Position.Y + item.CarouselYPosition - reference.CarouselYPosition));
+            }
 
             if (panel is LegacyPanelHasBeatmap beatmapPanel)
                 updateScoreInfoForDisplayedPanel(beatmapPanel, item);
