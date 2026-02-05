@@ -148,11 +148,12 @@ public partial class LegacyLocalisationManager : Component
 
                 Logger.Log($"Successfully downloaded osu!stable localisation for {lang} ({filename})", LoggingTarget.Runtime, LogLevel.Verbose);
 
-                using (var fs = localisationStorage.CreateFileSafely(filename))
-                using (var sw = new StreamWriter(fs))
-                    await response.Content.CopyToAsync(fs);
+                var bytes = await response.Content.ReadAsByteArrayAsync();
 
-                return Encoding.UTF8.GetString(await response.Content.ReadAsByteArrayAsync());
+                using (var fs = localisationStorage.CreateFileSafely(filename))
+                    await fs.WriteAsync(bytes);
+
+                return Encoding.UTF8.GetString(bytes);
             }
             catch (Exception e)
             {
