@@ -99,7 +99,9 @@ public static class LegacyLanguageCodesExtensions
 
     public static string ToCultureCode(this LegacyLanguageCodes langCode)
     {
-        var lazerLang = lazerLanguages.FirstOrDefault(l => l.ToLegacy() == langCode, LazerLanguage.en);
+        var lazerLang = langCode is LegacyLanguageCodes.en
+            ? LazerLanguage.en
+            : lazerLanguages.FirstOrDefault(l => l.ToLegacy() == langCode, LazerLanguage.en);
         return lazerLang.ToCultureCode();
     }
 
@@ -108,7 +110,7 @@ public static class LegacyLanguageCodesExtensions
         try
         {
             // seems stable uses culture codes that are compatible with .NET's CultureInfo.
-            return new CultureInfo(langCode.ToLegacyCode());
+            return new CultureInfo(langCode.ToCultureCode());
         }
         catch (CultureNotFoundException)
         {
