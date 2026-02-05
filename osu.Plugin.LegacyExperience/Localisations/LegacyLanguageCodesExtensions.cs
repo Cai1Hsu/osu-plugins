@@ -107,6 +107,7 @@ public static class LegacyLanguageCodesExtensions
     {
         try
         {
+            // seems stable uses culture codes that are compatible with .NET's CultureInfo.
             return new CultureInfo(langCode.ToLegacyCode());
         }
         catch (CultureNotFoundException)

@@ -194,8 +194,7 @@ public partial class LegacyLocalisationManager : Component
 
         public LocalisationStore(LegacyLanguageCodes langCode)
         {
-            // seems stable uses culture codes that are compatible with .NET's CultureInfo.
-            EffectiveCulture = new CultureInfo(langCode.ToLegacyCode());
+            EffectiveCulture = langCode.GetEffectiveCultureInfo();
         }
 
         public void AssignLocalisationData(string rawLocalisation)
