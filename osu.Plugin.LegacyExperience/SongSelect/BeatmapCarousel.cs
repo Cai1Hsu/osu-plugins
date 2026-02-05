@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using AccessItEasy;
 using osu.Framework.Allocation;
 using osu.Framework.Audio.Sample;
+using osu.Framework.Bindables;
 using osu.Framework.Caching;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Cursor;
@@ -17,12 +18,19 @@ using osu.Framework.Input;
 using osu.Framework.Threading;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Database;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Cursor;
+using osu.Game.Online.API;
+using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Plugins;
+using osu.Game.Rulesets;
+using osu.Game.Scoring;
 using osu.Game.Screens.SelectV2;
 using osu.Game.Skinning;
 using osuTK;
+using Realms;
+using static osu.Plugin.LegacyExperience.SongSelect.LegacyPanel;
 using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
 using PanelV2 = osu.Game.Screens.SelectV2.Panel;
 
@@ -41,13 +49,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     private LegacyPanelColors panelColors { get; set; } = new LegacyPanelColors();
 
     [Cached]
-    private DrawablePool<StarDifficultyDisplay> starDifficultyPool { get; set; } = new DrawablePool<StarDifficultyDisplay>(20);
-
-    [Cached]
     private LegacyRankSpritePool rankSpritePool { get; set; } = new LegacyRankSpritePool();
 
-    public bool AllowPanelHoverSample => !AbsoluteScrolling &&
-        (Scroll.Target == Scroll.Current || Scroll.UserScrolling);
+    public bool AllowPanelHoverSample => !legacyScrollContainer.AbsoluteScrolling;
 
     // stable does cooldown in AudioEngine, refer to AudioEngine.Click() you will see:
     // if (GameBase.Time - clickSoundTime > 50 || force)
@@ -69,22 +73,49 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private BeatmapCarouselFilterGrouping grouping = null!;
 
+    private static readonly FieldInfo scrollField = typeof(Carousel<BeatmapInfo>)
+        .GetField("Scroll", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private LegacyScrollContainer legacyScrollContainer = null!;
+
+    private void applyLegacyScrollContainer()
+    {
+        legacyScrollContainer = new LegacyScrollContainer
+        {
+            Name = "Legacy Carousel Scroll",
+            Masking = false,
+            RelativeSizeAxes = Axes.Both,
+            ScrollbarPaddingBottom = Scroll.ScrollbarPaddingBottom,
+        };
+
+        AddInternal(legacyScrollContainer);
+        ChangeInternalChildDepth(legacyScrollContainer, Scroll.Depth);
+
+        RemoveInternal(Scroll, true); // dispose immediately to release resources
+        scrollField.SetValue(this, legacyScrollContainer);
+    }
+
     public BeatmapCarousel()
     {
-        AddInternal(starDifficultyPool);
+        applyLegacyScrollContainer();
+
         AddInternal(rankSpritePool);
     }
 
     private static readonly FieldInfo groupingField = typeof(BeatmapCarouselV2)
         .GetField("grouping", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
+    private readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
+    private readonly IBindable<RulesetInfo> ruleset = new Bindable<RulesetInfo>();
+
     [BackgroundDependencyLoader]
-    private void load()
+    private void load(IAPIProvider api, IBindable<RulesetInfo> ruleset)
     {
         disposePanelV2Pools();
 
         AddInternal(groupPanelPool = new DrawablePool<LegacyGroupPanel>(pool_capacity));
         AddInternal(beatmapPanelPool = new DrawablePool<LegacyBeatmapPanel>(pool_capacity));
+        AddInternal(beatmapSetPanelPool = new DrawablePool<LegacyBeatmapSetPanel>(pool_capacity));
 
         grouping = (BeatmapCarouselFilterGrouping)groupingField.GetValue(this)!;
 
@@ -94,6 +125,12 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             skin.SourceChanged += onSkinSourceChanged;
 
         onSkinSourceChanged();
+
+        localUser.BindTo(api.LocalUser);
+        this.ruleset.BindTo(ruleset);
+
+        this.ruleset.BindValueChanged(_ => registerRealmScoreNotifications());
+        localUser.BindValueChanged(_ => registerRealmScoreNotifications(), true);
     }
 
     // These pools are used for SongSelectV2 panels, we don't need them anymore.
@@ -145,6 +182,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         panelColors.SyncFromSkin(skin);
         updatePanelBackground();
+        updateStablePanelOffset();
     }
 
     private static readonly FrozenDictionary<string, FieldInfo> sampleFields = typeof(BeatmapCarouselV2)
@@ -209,8 +247,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private const float hover_expand_amount_y = 10;
 
-    private const float hover_expand_amount_x = 30;
-
     private InputManager inputManager = null!;
 
     protected override void LoadComplete()
@@ -249,12 +285,32 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     private LegacyPanel? contextMenuActivePanel;
 
+    private List<LegacyPanel> visiblePanels = new();
+
+    private double? lastScrollTarget;
     protected override void Update()
     {
         visibleHalfHeight = (DrawHeight + BleedBottom + BleedTop) / 2;
         frameRatio = Time.Elapsed / (1000 / 60f);
 
         Debug.Assert(visibleHalfHeight > 0, "visibleHalfHeight should be positive.");
+
+        var currentScrollTarget = GetScrollTarget();
+        bool hasScrollTargetChanged = lastScrollTarget != currentScrollTarget;
+        lastScrollTarget = currentScrollTarget;
+
+        double? scrollDecay = hasScrollTargetChanged
+            ? null // assume this is the Random select action to match stable's feel.
+            : 0.992; // assume this is the return selection action to match stable's feel.
+
+        // There's a bug in osu!lazer's Carousel<T> implementation:
+        // The Carousel uses scroll container's Current to determine the visible range,
+        // however the scroll container is updated AFTER Update() is called, resulting in incorrect visible range here.
+        // This causes panels invisible when you rapidly scrolling for more than 5k+ beatamaps with absolute scrolling.
+        // We workaround this by updating our legacy scroll container here.
+        legacyScrollContainer.UpdateScrollPosition(scrollDecay);
+
+        calculateReferenceInfo();
 
         base.Update();
 
@@ -276,16 +332,17 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         // expand the hovered panel and push others away
         double dampingFactor = Math.Pow(0.875, frameRatio);
 
+        visiblePanels.Clear();
+        visiblePanels.AddRange(scrollChildren
+            .OfType<LegacyPanel>()
+            .Where(static p => p.Item is not null)
+            .OrderBy(static p => p.Item!.CarouselYPosition));
+
         // bypass Carousel's Y position damping
-        for (int i = 0; i < scrollChildren.Count; i++)
+        for (int i = 0; i < visiblePanels.Count; i++)
         {
-            var child = scrollChildren[i];
-
-            if (child is not LegacyPanel panel)
-                continue;
-
-            if (panel.Item is not CarouselItem item)
-                continue;
+            var panel = visiblePanels[i];
+            var item = panel.Item!;
 
             double targetY = item.CarouselYPosition;
 
@@ -306,13 +363,60 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
             panel.SelectV2DrawYPosition = targetY - offsetY;
             panel.DrawYPosition = panel.SelectV2DrawYPosition;
+
+            panel.X = (float)GetPanelXOffset(panel);
         }
+    }
+
+    private ReferenceInfo? upwardsReference;
+    private ReferenceInfo? downwardsReference;
+
+    private void calculateReferenceInfo()
+    {
+        // visiblePanels are from last frame, so all panels are in use here.
+        upwardsReference = visiblePanels.Select(toReferenceInfo).FirstOrDefault();
+        downwardsReference = visiblePanels.Select(toReferenceInfo).LastOrDefault();
+
+        ReferenceInfo? toReferenceInfo(LegacyPanel panel)
+        {
+            return new ReferenceInfo
+            {
+                Position = panel.Position,
+                ItemXDestinationWithoutOffset = itemXDestinationWithoutOffset(panel),
+                CarouselYPosition = panel.Item!.CarouselYPosition,
+            };
+        }
+    }
+
+    private struct ReferenceInfo
+    {
+        public Vector2 Position;
+        public double ItemXDestinationWithoutOffset;
+        public double CarouselYPosition;
+    }
+
+    private double scrollTargetDistance => legacyScrollContainer.TargetDistance;
+
+    // GetUndampedPanelXOffset requires correct Y position to calculate X offset
+    double itemXDestination(LegacyPanel panel, CarouselItem? item = null)
+    {
+        item ??= panel.Item;
+
+        Debug.Assert(item is not null);
+
+        var scrollLocalYposition = toScrollLocalYPosition(item.CarouselYPosition);
+
+        return itemXOffsetByYPosition(scrollLocalYposition + BleedTop + scrollTargetDistance)
+            + itemXDestinationWithoutOffset(panel);
     }
 
     protected override void HandleFilterCompleted()
     {
         base.HandleFilterCompleted();
 
+        // group selection make all nested items visible,
+        // manually hide expanded set item to match stable's behaviour
+        ensureExpandedSetItemInvisible();
         Scheduler.Add(() => SchedulerAfterChildren.Add(makePanelsAppearFromScreenRightEdge));
     }
 
@@ -426,25 +530,54 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         return items;
     }
 
+    private double itemXDestinationWithoutOffset(LegacyPanel panel)
+    {
+        double offset = 0;
+
+        if (panel is LegacyGroupPanel)
+            offset -= 50;
+        else if (panel is LegacyBeatmapSetPanel setPanel && setPanel.Expanded.Value)
+            offset -= 50;
+        else if (panel is LegacyBeatmapPanel beatmapPanel && IsBeatmapPanelFromExpandedSet(beatmapPanel))
+            offset -= 50;
+
+        if (panel.IsHovered || ReferenceEquals(contextMenuActivePanel, panel))
+            offset -= 45;
+
+        return offset * LegacyExperiencePlugin.StableRatio;
+    }
+
     public double GetUndampedPanelXOffset(LegacyPanel panel)
     {
         Vector2 posInScroll = Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre);
-        var xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop);
 
-        if (panel.IsHovered || ReferenceEquals(contextMenuActivePanel, panel))
-            xPosition -= hover_expand_amount_x;
+        double xPosition = itemXOffsetByYPosition(posInScroll.Y + BleedTop + scrollTargetDistance);
+        double offset = itemXDestinationWithoutOffset(panel);
 
-        return xPosition;
+        return xPosition + offset;
     }
+
+    private double stablePanelOffset;
+
+    private void updateStablePanelOffset()
+    {
+        stablePanelOffset = (640 - 340) /* XPosition */ + 500 /* XOffset */
+            // stable assume panels anchor and origin is Left-sided,
+            // But in lazer, we've set panels to TopRight anchor and origin.
+            - panelSize.X;
+    }
+
+    private const float panel_min_x_offset = 200;
 
     private double itemXOffsetByYPosition(double yPosition)
     {
-        // The following model from stable assume panels anchor and origin is Left-sided,
-        // But in lazer, we've set panels to TopRight anchor and origin.
-        double stable_panel_offset = 640 - panelSize.X;
+        double stableValue = Math.Min(panel_min_x_offset, Math.Abs(yPosition / visibleHalfHeight - 1) * 0.5 * 75.0) * LegacyExperiencePlugin.StableRatio
+            // TODO: 
+            // LegacyExperiencePlugin.StableRatio should be applied to stablePanelOffset
+            // but this looks correct visually, need further investigation
+            + stablePanelOffset;
 
-        return (Math.Min(200.0, Math.Abs((yPosition / visibleHalfHeight - 1) * 75.0)) - stable_panel_offset)
-            * LegacyExperiencePlugin.StableRatio;
+        return stableValue;
     }
 
     private double frameRatio;
@@ -466,23 +599,20 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     protected override float GetPanelXOffset(Drawable panel)
     {
-        if (panel is LegacyPanel legacyPanel)
-            return (float)GetPanelXOffset(legacyPanel);
-
-        return base.GetPanelXOffset(panel);
+        // don't touch it, we will calculate it later ourselves
+        // ensure proper state in extendVisibleIndices
+        return panel.X;
     }
 
     private DrawablePool<LegacyGroupPanel> groupPanelPool = null!;
     private DrawablePool<LegacyBeatmapPanel> beatmapPanelPool = null!;
+    private DrawablePool<LegacyBeatmapSetPanel> beatmapSetPanelPool = null!;
 
     protected override Drawable GetDrawableForDisplay(CarouselItem item)
     {
         LegacyPanel setupLegacyPanel(LegacyPanel panel)
         {
-            // FIXME: this value is continously damped in stable.
-            const double edge_panels_initial_x = 200 * LegacyExperiencePlugin.StableRatio;  // a random value
-
-            double initialX = edge_panels_initial_x;
+            double? initialX = null;
 
             if (spawnedItems.TryGetValue(item, out var source))
             {
@@ -499,21 +629,49 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 }
             }
 
-            panel.InitialXPosition = initialX;
+            if (initialX.HasValue)
+            {
+                var targetX = (float)initialX.Value;
+                SchedulerAfterChildren.Add(() => panel.X = targetX);
+            }
+
+            // itemXDestinationWithoutOffset requires item info to determine if it's expanded
+            panel.Item = item;
+
+            // apply reference info for better spawn position,
+            // simulates stable's ExtendVisibleIndices behaviour
+            if (upwardsReference is ReferenceInfo up && item.CarouselYPosition <= up.CarouselYPosition)
+                applyReferencePosition(up);
+            else if (downwardsReference is ReferenceInfo down && item.CarouselYPosition >= down.CarouselYPosition)
+                applyReferencePosition(down);
+
+            void applyReferencePosition(ReferenceInfo reference)
+            {
+                var stableMagicOffset = stablePanelOffset + panel_min_x_offset * LegacyExperiencePlugin.StableRatio;
+
+                double xOffset = itemXDestinationWithoutOffset(panel);
+
+                panel.Position = new Vector2(
+                    (float)Math.Min(reference.Position.X - reference.ItemXDestinationWithoutOffset + xOffset, xOffset + stableMagicOffset),
+                    (float)(reference.Position.Y + item.CarouselYPosition - reference.CarouselYPosition));
+            }
+
+            if (panel is LegacyPanelHasBeatmap beatmapPanel)
+                updateScoreInfoForDisplayedPanel(beatmapPanel, item);
+
             return panel;
         }
 
         switch (item.Model)
         {
-            case RankedStatusGroupDefinition:
-            case StarDifficultyGroupDefinition:
-            case RankDisplayGroupDefinition:
             case GroupDefinition:
                 return setupLegacyPanel(groupPanelPool.Get());
 
             case GroupedBeatmap:
-            case GroupedBeatmapSet:
                 return setupLegacyPanel(beatmapPanelPool.Get());
+
+            case GroupedBeatmapSet:
+                return setupLegacyPanel(beatmapSetPanelPool.Get());
         }
 
         throw new InvalidOperationException($"Unsupported model type: {item.Model?.GetType()}");
@@ -612,16 +770,10 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
         Vector2 calculateSpawnPosition(CarouselItem item)
         {
-            double yPos = toScrollLocalYPosition();
+            double yPos = toScrollLocalYPosition(item.CarouselYPosition);
             double xPos = itemXOffsetByYPosition(yPos + BleedTop);
 
             return new Vector2((float)xPos, (float)yPos);
-
-            double toScrollLocalYPosition()
-            {
-                double scrollableExtent = -Scroll.Current + Scroll.ScrollableExtent * Scroll.ScrollContent.RelativeAnchorPosition.Y;
-                return item.CarouselYPosition + scrollableExtent;
-            }
         }
 
         switch (item.Model)
@@ -657,6 +809,20 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             default:
                 break;
         }
+
+        SchedulerAfterChildren.Add(() =>
+        {
+            // To filter out newly spawned panels is unnecessary,
+            // there are only a few panels after all
+            foreach (var panel in Scroll.Panels.Children.OfType<LegacyPanelHasBeatmap>())
+                panel.FinishBackgroundTask();
+        });
+    }
+
+    private double toScrollLocalYPosition(double carouselItemYPosition)
+    {
+        double scrollableExtent = -Scroll.Current + Scroll.ScrollableExtent * Scroll.ScrollContent.RelativeAnchorPosition.Y;
+        return carouselItemYPosition + scrollableExtent;
     }
 
     public static BeatmapInfo? GetSingleBeatmap(BeatmapSetInfo set)
@@ -718,15 +884,19 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
 
         // ensure the newly selected set item is hidden when selected
-        if (grouping.BeatmapSetsGroupedTogether &&
-            ExpandedBeatmapSet is not null &&
+        ensureExpandedSetItemInvisible();
+    }
+
+    private void ensureExpandedSetItemInvisible()
+    {
+        if (ExpandedBeatmapSet is not null &&
             grouping.ItemMap.TryGetValue(ExpandedBeatmapSet, out var newSetItemValue))
         {
             newSetItemValue.item.IsVisible = false;
         }
     }
 
-    public bool IsBeatmapPanelFromExpandedSet(LegacyBeatmapPanel panel)
+    public bool IsBeatmapPanelFromExpandedSet(LegacyPanelHasBeatmap panel)
     {
         if (panel.Item is not CarouselItem item)
             return false;
@@ -740,9 +910,122 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         return ExpandedBeatmapSet.BeatmapSet.Equals(beatmap.Beatmap.BeatmapSet);
     }
 
+    [Resolved]
+    private RealmAccess? realm { get; set; } = null!;
+
+    private IDisposable? realmSubscription;
+
+    private void registerRealmScoreNotifications()
+    {
+        realmSubscription?.Dispose();
+        realmSubscription = null;
+
+        if (realm is null)
+            return;
+
+        realmSubscription = realm.RegisterForNotifications(r =>
+            r.GetAllLocalScoresForUser(localUser.Value.Id)
+                .Filter($"{nameof(ScoreInfo.Ruleset)}.{nameof(RulesetInfo.ShortName)} == $0", ruleset.Value.ShortName),
+            onLocalScoresChanged);
+    }
+
+    private Dictionary<BeatmapInfo, ScoreInfo?> localBestScores = new();
+
+    private void updateDisplayedPanels()
+    {
+        foreach (var child in Scroll.Panels.Children
+            .OfType<LegacyPanelHasBeatmap>()
+            .Where(static p => p.Item is not null))
+        {
+            updateScoreInfoForDisplayedPanel(child);
+        }
+    }
+
+    private void updateScoreInfoForDisplayedPanel(LegacyPanelHasBeatmap panel, CarouselItem? item = null)
+    {
+        item ??= panel.Item;
+
+        Debug.Assert(item is not null);
+
+        lock (localBestScores)
+        {
+            switch (item.Model)
+            {
+
+                case GroupedBeatmap beatmap:
+                    localBestScores.TryGetValue(beatmap.Beatmap, out var score);
+                    panel.LocalBestScore.Value = score;
+                    break;
+
+                case GroupedBeatmapSet beatmapSet:
+                    var anyScore = beatmapSet.BeatmapSet.Beatmaps.Where(static b => !b.Hidden)
+                        .Select(b => localBestScores.TryGetValue(b, out var s) ? s : null)
+                        .FirstOrDefault(static s => s is not null);
+                    panel.LocalBestScore.Value = anyScore;
+                    break;
+
+                default:
+                    panel.LocalBestScore.Value = null;
+                    break;
+            }
+        }
+    }
+
+    private void onLocalScoresChanged(IRealmCollection<ScoreInfo> sender, ChangeSet? changes)
+    {
+        lock (localBestScores)
+        {
+            // we are unable to determine which beatmaps are affected since they are DELETED,
+            // so we perform a full update.
+            if (changes is null || changes.DeletedIndices.Length > 0)
+            {
+                localBestScores.Clear();
+
+                var bestScores = sender
+                    .Where(static s => s.BeatmapInfo is not null)
+                    .GroupBy(static s => s.BeatmapInfo)
+                    .Select(static g => g.MaxBy(static info => (info.TotalScore, -info.Date.UtcDateTime.Ticks)));
+
+                foreach (var score in bestScores)
+                {
+                    if (score?.BeatmapInfo is BeatmapInfo beatmapInfo)
+                        localBestScores[beatmapInfo] = score;
+                }
+            }
+            else
+            {
+                void updateBestScore(ScoreInfo? score)
+                {
+                    if (score?.BeatmapInfo is not BeatmapInfo beatmap)
+                        return;
+
+                    if (!localBestScores.TryGetValue(beatmap, out var existingScore) ||
+                        existingScore is null ||
+                        existingScore.TotalScore < score.TotalScore ||
+                        (existingScore.TotalScore == score.TotalScore &&
+                            existingScore.Date.UtcDateTime.Ticks > score.Date.UtcDateTime.Ticks))
+                    {
+                        localBestScores[beatmap] = score;
+                    }
+                }
+
+                foreach (var index in changes.InsertedIndices)
+                    updateBestScore(sender[index]);
+
+                foreach (var index in changes.ModifiedIndices)
+                    updateBestScore(sender[index]);
+            }
+        }
+
+        // displayed panels may change in Update
+        SchedulerAfterChildren.AddOnce(updateDisplayedPanels);
+    }
+
     protected override void Dispose(bool isDisposing)
     {
         base.Dispose(isDisposing);
+
+        realmSubscription?.Dispose();
 
         if (skin is not null)
             skin.SourceChanged -= onSkinSourceChanged;

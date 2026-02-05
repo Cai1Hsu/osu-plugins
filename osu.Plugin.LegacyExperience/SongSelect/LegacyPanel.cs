@@ -16,7 +16,7 @@ using osu.Framework.Graphics.UserInterface;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
-public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IHasInitialPosition, IHasContextMenu
+public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IHasContextMenu
 {
     internal const float TextureScale = 0.6f * 1.6f;
 
@@ -28,7 +28,6 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
 
     // Legacy carousel managed, used for bypass Carousel's damping
     public double DrawYPosition { get; set; }
-    public double? InitialXPosition { get; set; }
 
     public double SelectV2DrawYPosition
     {
@@ -83,11 +82,11 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
     {
         base.LoadComplete();
 
-        Selected.BindValueChanged(_ => updateBackgroundColor());
-        Expanded.BindValueChanged(_ => updateBackgroundColor());
+        Selected.BindValueChanged(_ => UpdateBackgroundColor());
+        Expanded.BindValueChanged(_ => UpdateBackgroundColor());
         KeyboardSelected.BindValueChanged(v =>
         {
-            UpdateBackgroundColor(getBackgroundColor(), 50);
+            updateBackgroundColor(getBackgroundColor(), 50);
 
             if (v.NewValue)
                 flashBackground();
@@ -100,11 +99,11 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
         backgroundSprite.FlashColour(color, 1000);
     }
 
-    private void updateBackgroundColor(int duration = 300)
+    protected void UpdateBackgroundColor(int duration = 300)
     {
         var targetColor = getBackgroundColor();
 
-        UpdateBackgroundColor(targetColor, duration);
+        updateBackgroundColor(targetColor, duration);
     }
 
     private ISample? hoverSample;
@@ -158,15 +157,19 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
         backgroundSprite.FlashColour(PanelColors.White, 200, Easing.Out);
     }
 
+    protected override void FreeAfterUse()
+    {
+        base.FreeAfterUse();
+
+        FinishTransforms(true);
+    }
+
     protected override void PrepareForUse()
     {
         // returning to pool makes it invisible, so fade in on next use.
         this.FadeIn();
 
-        if (InitialXPosition is double xPos)
-            X = (float)xPos;
-
-        updateBackgroundColor(0);
+        UpdateBackgroundColor(0);
     }
 
     protected override void Dispose(bool isDisposing)
@@ -189,7 +192,7 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
 
     protected abstract Colour4 GetBackgroundColor();
 
-    protected void UpdateBackgroundColor(Colour4 colour, int duration = 300)
+    private void updateBackgroundColor(Colour4 colour, int duration = 300)
     {
         backgroundSprite.FadeColour(colour, duration);
     }

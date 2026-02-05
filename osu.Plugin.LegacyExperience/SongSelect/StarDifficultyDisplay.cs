@@ -2,10 +2,11 @@ using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Pooling;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Utils;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
 using osuTK;
@@ -13,7 +14,7 @@ using osuTK.Graphics;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
-public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<double>
+public partial class StarDifficultyDisplay : CompositeDrawable, IHasCurrentValue<double>
 {
     [Resolved]
     private ISkinSource? skin { get; set; }
@@ -47,9 +48,9 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
             var star = new Star
             {
                 Anchor = Anchor.CentreLeft,
-                Origin = Anchor.CentreLeft,
-                Position = new Vector2(i * 12, 0), // TODO: spacing
-                Scale = default_scale, // TODO: investigate scale?
+                Origin = Anchor.Centre,
+                Scale = new Vector2(base_scale),
+                Colour = inactive_colour,
             };
 
             stars[i] = star;
@@ -63,7 +64,7 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
         onSkinChanged(); // update textures initially
     }
 
-    private static readonly Vector2 default_scale = new Vector2(0.35f);
+    private const float base_scale = 0.35f;
 
     private static readonly Colour4 active_colour = Colour4.White;
     private static readonly Colour4 inactive_colour = Colour4.White.Opacity(30 / 255f);
@@ -75,41 +76,45 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
     {
         base.LoadComplete();
 
-        Current.BindValueChanged(v =>
+        Current.BindValueChanged(updateStarState, true);
+    }
+
+    private void updateStarState(ValueChangedEvent<double> v)
+    {
+        double targetStars = Math.Clamp(v.NewValue, 0, star_count);
+
+        for (int i = 0; i < stars.Length; i++)
         {
-            double value = v.NewValue;
+            double starFillAmount = targetStars - i;
 
-            // TODO: this animation is not exactly faithful to the stable's implementation.
-            for (int i = 0; i < stars.Length; i++)
-            {
-                var star = stars[i];
+            // FIXME: stable uses a much more complex formula as commented below.
+            // But that gives a very weird scaling effect for some stars, so we uses a simpler one for now.
+            float scale = base_scale * (float)Interpolation.Lerp(0.6f, 1.0f, (float)Math.Clamp(starFillAmount, 0.0, 1.0));
 
-                // fully displayed star
-                Colour4 target_colour;
-                Vector2 target_scale;
+            // float scale = (starFillAmount <= 0.0)
+            //     ? 0.6f
+            //     : (0.6f * (float)Math.Max(0.5, Math.Min(1.0, starFillAmount) + i * 0.04));
 
-                if (i < value)
-                {
-                    target_colour = active_colour;
-                    target_scale = default_scale;
-                }
-                else
-                {
-                    target_colour = inactive_colour;
-                    target_scale = default_scale * 0.6f;
-                }
+            int starsAppearanceOffset = (int)Math.Floor(i - Math.Min(targetStars, v.OldValue));
+            int delaySteps = (v.OldValue <= targetStars)
+                ? starsAppearanceOffset
+                : ((int)Math.Floor(v.OldValue - targetStars) - starsAppearanceOffset - 1);
 
-                star.FadeColour(target_colour, fade_duration)
-                    .ScaleTo(target_scale, scale_duration, Easing.OutBack);
-            }
-        }, true);
+            var color = starFillAmount > 0.0 ? active_colour : inactive_colour;
+
+            stars[i].Delay(delaySteps * 80)
+                .FadeColour(color, fade_duration)
+                .ScaleTo(scale, scale_duration, Easing.OutBack);
+        }
     }
 
     private void onSkinChanged()
     {
-        float offsetX = 0;
-
         var texture = skin.GetSkinTexture("star", textures, "UI");
+
+        Debug.Assert(texture is not null, "Failed to load star texture from skin.");
+
+        var starSize = texture.DisplaySize * 0.625f * 0.6f;
 
         for (int i = 0; i < stars.Length; i++)
         {
@@ -122,10 +127,7 @@ public partial class StarDifficultyDisplay : PoolableDrawable, IHasCurrentValue<
             star.Size = texture.DisplaySize;
 
             // reposition stars based on texture size
-            star.X = offsetX * LegacyExperiencePlugin.StableRatio;
-
-            // Although textures are expected to be the same, we use the actual width to be safe.
-            offsetX += texture.DisplayWidth * 0.625f * 0.6f;
+            star.Position = new Vector2((0.5f + i) * starSize.X, 0) * 1.6f;
         }
     }
 
