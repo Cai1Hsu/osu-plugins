@@ -414,6 +414,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     {
         base.HandleFilterCompleted();
 
+        // group selection make all nested items visible,
+        // manually hide expanded set item to match stable's behaviour
+        ensureExpandedSetItemInvisible();
         Scheduler.Add(() => SchedulerAfterChildren.Add(makePanelsAppearFromScreenRightEdge));
     }
 
@@ -881,6 +884,11 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
         }
 
         // ensure the newly selected set item is hidden when selected
+        ensureExpandedSetItemInvisible();
+    }
+
+    private void ensureExpandedSetItemInvisible()
+    {
         if (ExpandedBeatmapSet is not null &&
             grouping.ItemMap.TryGetValue(ExpandedBeatmapSet, out var newSetItemValue))
         {
