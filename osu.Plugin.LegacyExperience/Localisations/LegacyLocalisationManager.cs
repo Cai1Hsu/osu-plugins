@@ -184,11 +184,11 @@ public partial class LegacyLocalisationManager : Component
 
         if (newlyCreated)
         {
-            using (var fs = localisationStorage.CreateFileSafely("Important README.txt"))
+            using (var fs = localisationStorage.CreateFileSafely("IMPORTANT README.txt"))
             using (var sw = new StreamWriter(fs))
             {
                 sw.WriteLine("This folder is used to store localisations for the legacy experience plugin.");
-                sw.WriteLine("All files in this folder is automatically downloaded from osu!stable server.");
+                sw.WriteLine("All files in this folder are automatically downloaded from osu!stable server.");
             }
         }
 
