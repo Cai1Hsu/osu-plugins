@@ -226,8 +226,7 @@ public partial class LegacyLocalisationManager : Component
                 // avoid conflicts with any existing resources in the game by prefixing all keys with a unique string.
                 key = GetKey(key);
 
-                // FIXME: investigate if this is correct
-                localisations[key] = WebUtility.HtmlDecode(value);
+                localisations[key] = value;
             }
 
             this.localisations = localisations.ToFrozenDictionary();
