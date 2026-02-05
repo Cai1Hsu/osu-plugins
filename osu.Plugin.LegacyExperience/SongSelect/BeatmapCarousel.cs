@@ -635,9 +635,9 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
             // apply reference info for better spawn position,
             // simulates stable's ExtendVisibleIndices behaviour
             if (upwardsReference is ReferenceInfo up && item.CarouselYPosition <= up.CarouselYPosition)
-                applyReferencePosition(up);
+                SchedulerAfterChildren.Add(applyReferencePosition, up);
             else if (downwardsReference is ReferenceInfo down && item.CarouselYPosition >= down.CarouselYPosition)
-                applyReferencePosition(down);
+                SchedulerAfterChildren.Add(applyReferencePosition, down);
 
             void applyReferencePosition(ReferenceInfo reference)
             {
@@ -647,7 +647,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
                 panel.Position = new Vector2(
                     (float)Math.Min(reference.Position.X - reference.ItemXDestinationWithoutOffset + xOffset, xOffset + stableMagicOffset),
-                    (float)(reference.Position.Y + item.CarouselYPosition - reference.CarouselYPosition));
+                    (float)(reference.Position.Y + panel.Item!.CarouselYPosition - reference.CarouselYPosition));
             }
 
             if (panel is LegacyPanelHasBeatmap beatmapPanel)
