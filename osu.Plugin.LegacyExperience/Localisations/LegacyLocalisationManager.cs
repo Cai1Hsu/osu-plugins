@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
@@ -34,13 +35,17 @@ public partial class LegacyLocalisationManager : Component
     private readonly IBindable<LazerLanguage> currentLazerLanguage = new Bindable<LazerLanguage>();
     private readonly Bindable<LegacyLanguageCodes> currentLegacyLanguage = new Bindable<LegacyLanguageCodes>();
 
+    private Bindable<string> frameworkLocale = null!;
+
     [BackgroundDependencyLoader]
-    private void load(Storage storage)
+    private void load(Storage storage, FrameworkConfigManager config)
     {
         httpClient = new HttpClient()
         {
             Timeout = TimeSpan.FromSeconds(10)
         };
+
+        frameworkLocale = config.GetBindable<string>(FrameworkSetting.Locale);
 
         // osu framework requires localisation stores to be there beforehand.
         var stores = new Dictionary<string, LocalisationStore>();
@@ -82,10 +87,7 @@ public partial class LegacyLocalisationManager : Component
         localisationLoadCancellation?.Dispose();
         localisationLoadCancellation = new CancellationTokenSource();
 
-        Task.Run(async () => await loadLocalisations(lang, store), localisationLoadCancellation.Token)
-            // osu framework requires localisation data ready or the localisation texts will be broken.
-            // Currently we just block the thread until the localisation is loaded.
-            .Wait();
+        _ = Task.Run(async () => await loadLocalisations(lang, store), localisationLoadCancellation.Token);
     }
 
     private readonly ConcurrentDictionary<LegacyLanguageCodes, LocalisationStore> loadedStores = new();
@@ -104,6 +106,16 @@ public partial class LegacyLocalisationManager : Component
         {
             store.AssignLocalisationData(rawLocalisation);
             loadedStores[lang] = store;
+
+            // Trigger the framework to reload localisation data
+            Scheduler.Add(() =>
+            {
+                var locale = frameworkLocale.Value;
+                frameworkLocale.Value = string.Empty;
+                frameworkLocale.Value = locale;
+            });
+
+            Logger.Log($"Localisation data for {lang} loaded successfully!", LoggingTarget.Information, LogLevel.Verbose);
         }
         catch (Exception e)
         {
@@ -113,7 +125,7 @@ public partial class LegacyLocalisationManager : Component
 
         void fail(string? message = null)
         {
-            Logger.Log($"Failed to load localisation, falling back to English. {message}", LoggingTarget.Runtime, LogLevel.Error);
+            Logger.Log($"Failed to load localisation for {lang}, falling back to English. {message}", LoggingTarget.Information, LogLevel.Important);
         }
     }
 
@@ -125,7 +137,7 @@ public partial class LegacyLocalisationManager : Component
 
         if (!localisationStorage.Exists(filename))
         {
-            Logger.Log($"Begin downloading osu!stable localisation for {lang} ({filename})", LoggingTarget.Runtime, LogLevel.Verbose);
+            Logger.Log($"Downloading localisation data for {lang}...", LoggingTarget.Information, LogLevel.Important);
 
             var url = new Uri($"{stable_resource_base_url}{filename}?{DateTime.Today.ToFileTimeUtc()}");
 
