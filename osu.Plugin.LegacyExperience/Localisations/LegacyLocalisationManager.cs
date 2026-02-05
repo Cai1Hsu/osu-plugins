@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Globalization;
-using System.Net;
+using System.Resources;
 using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -54,13 +54,16 @@ public partial class LegacyLocalisationManager : Component
         {
             var cultureCode = lang.ToCultureCode();
 
-            if (stores.ContainsKey(cultureCode))
+            if (stores.ContainsKey(cultureCode) || cultureCode == "debug")
                 continue;
 
             var store = new LocalisationStore(lang.ToLegacy());
 
             stores.Add(cultureCode, store);
-            localisations.AddLanguage(cultureCode, store);
+
+            // no osu instance handling localisation, add our store to the framework's localisation manager directly.
+            if (!tryAddToOsuResourceManager(cultureCode, store))
+                localisations.AddLanguage(cultureCode, store);
         }
 
         this.stores = stores.ToFrozenDictionary();
@@ -254,6 +257,20 @@ public partial class LegacyLocalisationManager : Component
         }
 
 #nullable enable
+    }
+
+    private class LocalisationResourceManager : ResourceManager
+    {
+        private readonly LocalisationStore store;
+
+        public LocalisationResourceManager(LocalisationStore store)
+        {
+            this.store = store;
+        }
+
+        public override string? GetString(string name) => store.Get(GetKey(name));
+
+        public override string? GetString(string key, CultureInfo? culture = null) => GetString(key);
     }
 
     public static string GetKey(string key) => $"{RESOURCE_PREFIX}:{key}";
