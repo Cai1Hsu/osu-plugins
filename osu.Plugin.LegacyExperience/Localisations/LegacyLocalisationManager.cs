@@ -87,14 +87,14 @@ public partial class LegacyLocalisationManager : Component
         localisationLoadCancellation?.Dispose();
         localisationLoadCancellation = new CancellationTokenSource();
 
-        _ = Task.Run(async () => await loadLocalisations(lang, store), localisationLoadCancellation.Token);
+        _ = Task.Run(async () => await loadLocalisations(lang, store, localisationLoadCancellation.Token), localisationLoadCancellation.Token);
     }
 
     private readonly ConcurrentDictionary<LegacyLanguageCodes, LocalisationStore> loadedStores = new();
 
-    private async Task loadLocalisations(LegacyLanguageCodes lang, LocalisationStore store)
+    private async Task loadLocalisations(LegacyLanguageCodes lang, LocalisationStore store, CancellationToken cancellationToken = default)
     {
-        var rawLocalisation = await loadRawLocalisation(lang);
+        var rawLocalisation = await loadRawLocalisation(lang, cancellationToken);
 
         if (rawLocalisation is null)
         {
@@ -131,7 +131,7 @@ public partial class LegacyLocalisationManager : Component
 
     private const string stable_resource_base_url = "https://m1.ppy.sh/release/Localisation/";
 
-    private async Task<string?> loadRawLocalisation(LegacyLanguageCodes lang)
+    private async Task<string?> loadRawLocalisation(LegacyLanguageCodes lang, CancellationToken cancellationToken = default)
     {
         string filename = Path.ChangeExtension(lang.ToLegacyCode(), ".txt");
 
@@ -143,7 +143,7 @@ public partial class LegacyLocalisationManager : Component
 
             try
             {
-                using var response = await httpClient.GetAsync(url);
+                using var response = await httpClient.GetAsync(url, cancellationToken);
 
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
@@ -160,9 +160,10 @@ public partial class LegacyLocalisationManager : Component
 
                 Logger.Log($"Successfully downloaded osu!stable localisation for {lang} ({filename})", LoggingTarget.Runtime, LogLevel.Verbose);
 
-                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
 
                 using (var fs = localisationStorage.CreateFileSafely(filename))
+                    // don't apply cancellationToken, or the file may end up being created but with incomplete data
                     await fs.WriteAsync(bytes);
 
                 return Encoding.UTF8.GetString(bytes);
@@ -178,7 +179,7 @@ public partial class LegacyLocalisationManager : Component
 
         using (var fs = localisationStorage.GetStream(filename))
         using (var sr = new StreamReader(fs))
-            return await sr.ReadToEndAsync();
+            return await sr.ReadToEndAsync(cancellationToken);
     }
 
     private const string localisation_folder = "Localisation"; // matches osu!stable's localisation folder name.
