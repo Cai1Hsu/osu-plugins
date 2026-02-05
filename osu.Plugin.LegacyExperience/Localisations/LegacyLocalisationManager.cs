@@ -250,4 +250,13 @@ public partial class LegacyLocalisationManager : Component
     }
 
     public static string GetKey(string key) => $"{RESOURCE_PREFIX}:{key}";
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        // user may create this object and dispose it without adding it to the scene graph,
+        // so null check here just to be safe.
+        httpClient?.Dispose();
+    }
 }
