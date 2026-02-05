@@ -225,6 +225,8 @@ public partial class LegacyLocalisationManager : Component
             this.localisations = localisations.ToFrozenDictionary();
         }
 
+#nullable disable // ILocalisationStore and IResourceStore expect nullability to be disabled
+
         public string Get(string name) => localisations?.TryGetValue(name, out var value) ?? false ? value : null!;
 
         public Task<string> GetAsync(string name, CancellationToken cancellationToken = default)
@@ -243,6 +245,8 @@ public partial class LegacyLocalisationManager : Component
         public void Dispose()
         {
         }
+
+#nullable enable
     }
 
     public static string GetKey(string key) => $"{RESOURCE_PREFIX}:{key}";
