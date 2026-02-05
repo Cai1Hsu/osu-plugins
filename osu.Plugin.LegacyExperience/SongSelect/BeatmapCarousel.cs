@@ -632,12 +632,15 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
                 SchedulerAfterChildren.Add(() => panel.X = targetX);
             }
 
+            // itemXDestinationWithoutOffset requires item info to determine if it's expanded
+            panel.Item = item;
+
             // apply reference info for better spawn position,
             // simulates stable's ExtendVisibleIndices behaviour
             if (upwardsReference is ReferenceInfo up && item.CarouselYPosition <= up.CarouselYPosition)
-                SchedulerAfterChildren.Add(applyReferencePosition, up);
+                applyReferencePosition(up);
             else if (downwardsReference is ReferenceInfo down && item.CarouselYPosition >= down.CarouselYPosition)
-                SchedulerAfterChildren.Add(applyReferencePosition, down);
+                applyReferencePosition(down);
 
             void applyReferencePosition(ReferenceInfo reference)
             {
@@ -647,7 +650,7 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
                 panel.Position = new Vector2(
                     (float)Math.Min(reference.Position.X - reference.ItemXDestinationWithoutOffset + xOffset, xOffset + stableMagicOffset),
-                    (float)(reference.Position.Y + panel.Item!.CarouselYPosition - reference.CarouselYPosition));
+                    (float)(reference.Position.Y + item.CarouselYPosition - reference.CarouselYPosition));
             }
 
             if (panel is LegacyPanelHasBeatmap beatmapPanel)
