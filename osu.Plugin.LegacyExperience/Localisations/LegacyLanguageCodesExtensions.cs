@@ -77,7 +77,7 @@ public static class LegacyLanguageCodesExtensions
             LazerLanguage.no => LegacyLanguageCodes.no,
             LazerLanguage.pl => LegacyLanguageCodes.pl,
             LazerLanguage.pt => LegacyLanguageCodes.pt,
-            LazerLanguage.pt_br => LegacyLanguageCodes.pt, // FIXME: don't know if this is correct
+            LazerLanguage.pt_br => LegacyLanguageCodes.br,
             LazerLanguage.ro => LegacyLanguageCodes.ro,
             LazerLanguage.ru => LegacyLanguageCodes.ru,
             LazerLanguage.sk => LegacyLanguageCodes.sk,
