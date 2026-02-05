@@ -19,10 +19,15 @@ public partial class TestSceneLegacyLocalisations : OsuTestScene
     [Resolved]
     private OsuGameBase game { get; set; } = null!;
 
+    [Resolved]
+    private LegacyLocalisationManager legacyLocalisationManager { get; set; } = null!;
+
     [BackgroundDependencyLoader]
     private void load(Storage storage)
     {
         FillFlowContainer stringsContainer;
+
+        OsuTextFlowContainer cultureInfoText = null!;
 
         Add(new FillFlowContainer
         {
@@ -35,6 +40,12 @@ public partial class TestSceneLegacyLocalisations : OsuTestScene
             Spacing = new Vector2(0, 10),
             Children = new Drawable[]
             {
+                cultureInfoText = new OsuTextFlowContainer()
+                {
+                    Anchor = Anchor.TopCentre,
+                    Origin = Anchor.TopCentre,
+                    AutoSizeAxes = Axes.Both,
+                },
                 new SettingsButton
                 {
                     Text = "Open game storage folder",
@@ -71,6 +82,15 @@ public partial class TestSceneLegacyLocalisations : OsuTestScene
                     new TranslatableString(LegacyLocalisationManager.GetKey(key), @"LOAD FAILED", data)),
             });
         }
+        
+        legacyLocalisationManager.CurrentLegacyLanguage.BindValueChanged(lang =>
+        {
+            var cultureInfo = lang.NewValue.GetEffectiveCultureInfo();
+
+            cultureInfoText.Clear();
+            cultureInfoText.AddParagraph($"Current Legacy Language: {lang.NewValue}\n"
+                + $"Culture Info: {cultureInfo.Name} - {cultureInfo.EnglishName} - {cultureInfo.NativeName}");
+        }, true);
     }
 
     private static (string, object?[]) entry(string key, params object?[] args) => (key, args);
