@@ -79,6 +79,7 @@ public partial class LegacyLocalisationManager : Component
             return;
 
         localisationLoadCancellation?.Cancel();
+        localisationLoadCancellation?.Dispose();
         localisationLoadCancellation = new CancellationTokenSource();
 
         Task.Run(async () => await loadLocalisations(lang, store), localisationLoadCancellation.Token)
@@ -258,5 +259,7 @@ public partial class LegacyLocalisationManager : Component
         // user may create this object and dispose it without adding it to the scene graph,
         // so null check here just to be safe.
         httpClient?.Dispose();
+        localisationLoadCancellation?.Cancel();
+        localisationLoadCancellation?.Dispose();
     }
 }
