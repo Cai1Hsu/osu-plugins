@@ -145,13 +145,6 @@ public partial class LegacyLocalisationManager : Component
             {
                 using var response = await httpClient.GetAsync(url, cancellationToken);
 
-                if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    // fallback to English if the localisation for the current language doesn't exist in osu!stable.
-                    currentLegacyLanguage.Value = LegacyLanguageCodes.en;
-                    return null;
-                }
-
                 if (!response.IsSuccessStatusCode)
                 {
                     // if the request fails for other reasons (e.g. network issues), we just keep the current localisation (which may be outdated) and try again next time.
