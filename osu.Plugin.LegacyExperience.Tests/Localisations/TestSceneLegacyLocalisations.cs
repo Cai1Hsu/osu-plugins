@@ -63,47 +63,51 @@ public partial class TestSceneLegacyLocalisations : OsuTestScene
             }
         });
 
-        foreach (var key in legacy_strings)
+        foreach (var (key, data) in legacy_strings)
         {
             stringsContainer.Add(new OsuSpriteText
             {
                 Text = LocalisableString.Format("{0}={1}", key,
-                    new TranslatableString(LegacyLocalisationManager.GetKey(key), @"LOAD FAILED")),
+                    new TranslatableString(LegacyLocalisationManager.GetKey(key), @"LOAD FAILED", data)),
             });
         }
     }
 
+    private static (string, object?[]) entry(string key, params object?[] args) => (key, args);
+
     // some samples of strings that were used in osu!stable
-    private static readonly string[] legacy_strings = new[]
+    private static readonly (string, object?[])[] legacy_strings = new[]
     {
-        "Lets_Do_This",
-        "General_Cancel",
-        "General_Confirm",
-        "General_Back",
-        "General_Never",
-        "General_Always",
-        "Options_Audio_Effect",
-        "Options_Audio_Master",
-        "Options_Audio_Music",
-        "Options_Audio_Offset",
-        "Options_Audio_OffsetWizard",
-        "Options_Audio_Offset_Description",
-        "Options_Audio_Volume",
-        "Options_DeleteAllUnrankedMaps",
-        // "Options_DeleteWarning", // this string requires a parameter 
-        "Options_ForceFolderPermissions",
-        "Options_ForceFolderPermissions_Successful",
-        "Options_ForceFolderPermissions_Tooltip",
-        "Options_Graphics_Combo",
-        "Options_Graphics_Combo_Tooltip",
-        "Options_Graphics_CustomResolution",
-        "Options_Graphics_ResolutionBorderless",
-        "Options_Graphics_Detail",
-        "Options_Graphics_DirectX_Tooltip",
-        "Options_Graphics_Fire",
-        "Options_Graphics_Fire_Tooltip",
-        "Options_Graphics_FpsCounter",
-        "Options_Graphics_FpsCounter_Tooltip",
-        "Options_Graphics_LowEnd_Tooltip",
+        entry("Options_LoggedIn", Environment.UserName),
+        entry("Lets_Do_This"),
+        entry("General_Cancel"),
+        entry("General_Confirm"),
+        entry("General_Back"),
+        entry("General_Never"),
+        entry("General_Always"),
+        entry("Options_Audio_Effect"),
+        entry("Options_Audio_Master"),
+        entry("Options_Audio_Music"),
+        entry("Options_Audio_Offset"),
+        entry("Options_Audio_OffsetWizard"),
+        entry("Options_Audio_Offset_Description"),
+        entry("Options_Audio_Volume"),
+        entry("Options_DeleteAllUnrankedMaps"),
+        entry("Options_DeleteWarning", 42),
+        entry("Options_ForceFolderPermissions"),
+        entry("Options_ForceFolderPermissions_Successful"),
+        entry("Options_ForceFolderPermissions_Tooltip"),
+        entry("Options_Graphics_Combo"),
+        entry("Options_Graphics_Combo_Tooltip"),
+        entry("Options_Graphics_CustomResolution"),
+        entry("Options_Graphics_ResolutionBorderless"),
+        entry("Options_Graphics_Detail"),
+        entry("Options_Graphics_DirectX_Tooltip"),
+        entry("Options_Graphics_Fire"),
+        entry("Options_Graphics_Fire_Tooltip"),
+        entry("Options_Graphics_FpsCounter"),
+        entry("Options_Graphics_FpsCounter_Tooltip"),
+        entry("Options_Graphics_LowEnd_Tooltip"),
+        entry("Player_ToggleScoreboard", "Tab"),
     };
 }
