@@ -19,6 +19,7 @@ using osu.Framework.Localisation;
 using osu.Plugin.LegacyExperience.Localisations;
 using osu.Game.Input.Bindings;
 using osu.Game.Input;
+using osu.Game.Online.Leaderboards;
 
 namespace osu.Plugin.LegacyExperience.Leaderboards;
 
@@ -52,6 +53,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         Anchor = Anchor.CentreLeft;
         Origin = Anchor.CentreLeft;
     }
+
+    [Resolved]
+    private LeaderboardManager leaderboardManager { get; set; } = null!;
 
     private Container explosionContainer = null!;
     private EntryPool entryPool = null!;
@@ -194,6 +198,10 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
             if (trackingScore is not null)
                 trackingDisplayOrder.BindTo(trackingScore.ProviderDisplayOrder);
+
+            // we don't want to spam tip when scores are being loaded, so only show tip when the first batch of scores are loaded.
+            if (leaderboardManager.Scores.Value?.IsPartial ?? true)
+                return;
 
             Scheduler.Add(() =>
             {
