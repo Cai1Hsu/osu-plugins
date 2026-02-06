@@ -133,30 +133,38 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
         AddToggleStep("toggle size reference", v => sizeReference?.Alpha = v ? 1 : 0);
 
         AddSliderStep("Set max entries", 1, 24, 6, v => maxEntries.Value = v);
+
+        AddStep("sort", provider.Sort);
     }
 
     private void clearScores() => provider.Scores.Clear();
 
-    private void createOtherScores(int count)
+    private void setup_scores_step(int count, Action<GameplayLeaderboardScore>? trackingScoreSetup = null)
     {
-        for (int i = 0; i < count; i++)
+        var scores = Enumerable.Range(0, count).Select(i => provider.CreateRandomScore(new APIUser { Username = $"Player {i + 1}" })).ToList();
+        var trackingScore = provider.CreateRandomScore(API.LocalUser.Value, true);
+        trackingScoreSetup?.Invoke(trackingScore);
+        scores.Add(trackingScore);
+
+        AddStep("setup scores", () =>
         {
-            var score = provider.CreateRandomScore(new APIUser { Username = $"Player {i + 1}" });
-            AddSliderStep($"player{i + 1} score", 0, 5_000_000, score.TotalScore.Value, v => score.TotalScore.Value = v);
-        }
+            clearScores();
+
+            foreach (var score in scores)
+                provider.Scores.Add(score);
+        });
+
+        foreach (var score in scores)
+            AddSliderStep($"{score.User.Username} score", 0, 5_000_000, score.TotalScore.Value, v => score.TotalScore.Value = v);
     }
 
     [Test]
     public void TestPlayersPosition()
     {
-        clearScores();
-
-        var tracking = provider.CreateLeaderboardScore(new BindableLong(2_000_000), API.LocalUser.Value, true);
-
-        createOtherScores(3);
-        AddSliderStep("tracking score", 0, 5_000_000, 2_000_000, v => tracking.TotalScore.Value = v);
-
-        AddStep("sort", provider.Sort);
+        setup_scores_step(3, trackingScore =>
+        {
+            trackingScore.TotalScore.Value = 0;
+        });
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Constructor)]
@@ -181,15 +189,11 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
     {
         IBindableList<GameplayLeaderboardScore> IGameplayLeaderboardProvider.Scores => Scores;
 
-        public GameplayLeaderboardScore CreateRandomScore(APIUser user)
-            => CreateLeaderboardScore(new BindableLong(RNG.Next(0, 5_000_000)), user);
+        public GameplayLeaderboardScore CreateRandomScore(APIUser user, bool isTracked = false)
+            => CreateLeaderboardScore(new BindableLong(RNG.Next(0, 5_000_000)), user, isTracked);
 
         public GameplayLeaderboardScore CreateLeaderboardScore(BindableLong totalScore, APIUser user, bool isTracked = false)
-        {
-            var score = CreateScore(user, isTracked, totalScore);
-            Scores.Add(score);
-            return score;
-        }
+            => CreateScore(user, isTracked, totalScore);
 
         public bool UseZeroBasedDisplayOrder { get; set; } = true;
 
