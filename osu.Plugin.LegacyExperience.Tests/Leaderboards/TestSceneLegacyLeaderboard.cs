@@ -1,0 +1,206 @@
+using System.Runtime.CompilerServices;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
+using osu.Framework.Allocation;
+using osu.Framework.Testing;
+using osu.Framework.Utils;
+using osu.Framework.Bindables;
+using osu.Game.Skinning;
+using osu.Game.Screens.Select.Leaderboards;
+using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Users;
+using osu.Game.Screens.Play;
+using osu.Game.Tests.Gameplay;
+using osu.Game.Rulesets.Osu;
+using NUnit.Framework;
+using osu.Plugin.LegacyExperience.Leaderboards;
+using osu.Game.Configuration;
+using osu.Framework.Input.Bindings;
+using osu.Game.Input.Bindings;
+using osu.Framework.Input.Events;
+using osu.Game.Graphics.Containers;
+using System.Diagnostics.CodeAnalysis;
+
+namespace osu.Plugin.LegacyExperience.Tests.Leaderboards;
+
+public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindingHandler<GlobalAction>
+{
+    private SkinProvidingContainer skinContainer = null!;
+    private readonly BindableInt maxEntries = new BindableInt(6);
+
+    [Cached(typeof(IGameplayLeaderboardProvider))]
+    private readonly TestGameplayLeaderboardProvider provider = new TestGameplayLeaderboardProvider();
+
+    [Cached]
+    [SuppressMessage("CodeQuality", "IDE0052", Justification = "DI usage")]
+    private readonly GameplayState gameplayState = TestGameplayState.Create(new OsuRuleset());
+
+    [Cached(typeof(ILocalUserPlayInfo))]
+    private readonly TestLocalUserPlayInfo localUserPlayInfo = new TestLocalUserPlayInfo();
+
+    private Bindable<bool> showLeaderboard = null!;
+
+    private OsuTextFlowContainer displayInfo = null!;
+
+    [BackgroundDependencyLoader]
+    private void load(OsuConfigManager osuConfig)
+    {
+        Add(displayInfo = new OsuTextFlowContainer
+        {
+            Anchor = Anchor.TopCentre,
+            Origin = Anchor.TopCentre,
+        });
+
+        Add(skinContainer = new SkinProvidingContainer(new DefaultLegacySkin(this))
+        {
+            Anchor = Anchor.Centre,
+            Origin = Anchor.Centre,
+            RelativeSizeAxes = Axes.Both,
+        });
+
+        showLeaderboard = osuConfig.GetBindable<bool>(OsuSetting.GameplayLeaderboard);
+
+        showLeaderboard.BindValueChanged(_ => updateDisplayInfo());
+        localUserPlayInfo.PlayingState.BindValueChanged(_ => updateDisplayInfo(), true);
+
+        var playStates = Enum.GetValues<LocalUserPlayingState>();
+
+        foreach (var state in playStates)
+        {
+            AddStep($"set {state} state", () => localUserPlayInfo.PlayingState.Value = state);
+        }
+
+        AddStep("next play state", () =>
+        {
+            localUserPlayInfo.PlayingState.Value =
+                (LocalUserPlayingState)(((int)localUserPlayInfo.PlayingState.Value + 1) % playStates.Length);
+        });
+
+        AddStep("toggle leaderboard", () => showLeaderboard.Value = !showLeaderboard.Value);
+
+        void updateDisplayInfo()
+        {
+            displayInfo.Text = $"Show leaderboard: {showLeaderboard.Value}\n" +
+                               $"Local user play state: {localUserPlayInfo.PlayingState.Value}";
+        }
+    }
+
+    [SetUpSteps]
+    public void SetUpSteps()
+    {
+        Box? sizeReference = null;
+
+        AddStep("Create leaderboard", () =>
+        {
+            skinContainer.Child = new Container
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                AutoSizeAxes = Axes.Both,
+                Children = new Drawable[]
+                {
+                    sizeReference = new Box
+                    {
+                        Name = "Size reference",
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = Colour4.DarkGray.Opacity(0.3f),
+                    },
+                    new LegacyLeaderboard
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        MaxEntries = { BindTarget = maxEntries },
+                    }
+                }
+            };
+        });
+
+        AddToggleStep("toggle size reference", v => sizeReference?.Alpha = v ? 1 : 0);
+
+        AddSliderStep("Set max entries", 1, 24, 6, v => maxEntries.Value = v);
+    }
+
+    private void clearScores() => provider.Scores.Clear();
+
+    private void createOtherScores(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            var score = provider.CreateRandomScore(new APIUser { Username = $"Player {i + 1}" });
+            AddSliderStep($"player{i + 1} score", 0, 5_000_000, score.TotalScore.Value, v => score.TotalScore.Value = v);
+        }
+    }
+
+    [Test]
+    public void TestPlayersPosition()
+    {
+        clearScores();
+
+        var tracking = provider.CreateLeaderboardScore(new BindableLong(2_000_000), API.LocalUser.Value, true);
+
+        createOtherScores(3);
+        AddSliderStep("tracking score", 0, 5_000_000, 2_000_000, v => tracking.TotalScore.Value = v);
+
+        AddStep("sort", provider.Sort);
+    }
+
+    [UnsafeAccessor(UnsafeAccessorKind.Constructor)]
+    public static extern GameplayLeaderboardScore CreateScore(IUser user, bool tracked, Bindable<long> displayScore);
+
+    public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+    {
+        if (!e.Repeat && e.Action is GlobalAction.ToggleInGameLeaderboard)
+        {
+            showLeaderboard.Value = !showLeaderboard.Value;
+            return true;
+        }
+
+        return false;
+    }
+
+    public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+    {
+    }
+
+    private class TestGameplayLeaderboardProvider : IGameplayLeaderboardProvider
+    {
+        IBindableList<GameplayLeaderboardScore> IGameplayLeaderboardProvider.Scores => Scores;
+
+        public GameplayLeaderboardScore CreateRandomScore(APIUser user)
+            => CreateLeaderboardScore(new BindableLong(RNG.Next(0, 5_000_000)), user);
+
+        public GameplayLeaderboardScore CreateLeaderboardScore(BindableLong totalScore, APIUser user, bool isTracked = false)
+        {
+            var score = CreateScore(user, isTracked, totalScore);
+            Scores.Add(score);
+            return score;
+        }
+
+        public BindableList<GameplayLeaderboardScore> Scores { get; private set; } = new();
+
+        public void Sort()
+        {
+            var sorted = Scores
+                .OrderByDescending(s => s.TotalScore.Value)
+                .ToArray();
+
+            for (int i = 0; i < sorted.Length; i++)
+            {
+                var score = sorted[i];
+
+                score.DisplayOrder.Value = i; // FIXME: is this correct?
+                score.Position.Value = i + 1;
+            }
+        }
+    }
+
+    private class TestLocalUserPlayInfo : ILocalUserPlayInfo
+    {
+        public Bindable<LocalUserPlayingState> PlayingState { get; } = new Bindable<LocalUserPlayingState>();
+
+        IBindable<LocalUserPlayingState> ILocalUserPlayInfo.PlayingState => PlayingState;
+    }
+}
