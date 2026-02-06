@@ -242,7 +242,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         displayScore.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort));
 
         // in case position is already available, sort immediately.
-        if (displayScore.ProviderDisplayOrder.Value is not 0) // 0 is default uninitialised value, the order is 1-based.
+        if (displayScore.ScorePosition.Value.HasValue)
             Scheduler.AddOnce(sort);
     }
 
@@ -265,25 +265,25 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     /// <param name="score">The score item to get index for.</param>
     /// <param name="displayCount">The maximum number of entries to be displayed.</param>
     /// <returns>The display index, negative value indicates not displayed.</returns>
-    private long GetScoreDisplayIndex(DisplayScoreItem score, int displayCount)
+    private long GetScoreDisplayIndex(DisplayScoreItem score, int displayCount, long firstPositionIndex)
     {
-        var providerDisplayOrderIndex = score.ProviderDisplayOrder.Value - 1;
+        var providerDisplayOrderIndex = score.ProviderDisplayOrder.Value;
 
         if (providerDisplayOrderIndex < 0)
             return -1; // uninitialized
 
         if (displayCount > 1)
         {
-            if (providerDisplayOrderIndex is 0)
+            if (providerDisplayOrderIndex == firstPositionIndex)
                 return 0; // first place
 
-            long cutoffBegin = 1; // if no tracking, display higher scores as possible
+            long cutoffBegin = firstPositionIndex + 1; // if no tracking, display higher scores as possible
             long remainingSlot = displayCount - 1; // first place already taken
 
             if (trackingScore is not null)
             {
                 // ensure tracking is always displayed, so cutoff index is based on its position
-                long trackingIndex = trackingScore.ProviderDisplayOrder.Value - 1;
+                long trackingIndex = trackingScore.ProviderDisplayOrder.Value;
 
                 Debug.Assert(trackingIndex >= 0); // don't call this method when tracking is uninitialised
 
@@ -301,7 +301,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             return -displayIndex; // too low to be displayed
         }
 
-        if ((trackingScore is null && providerDisplayOrderIndex is 0) || (trackingScore == score))
+        if ((trackingScore is null && providerDisplayOrderIndex == firstPositionIndex) || (trackingScore == score))
             return 0;
 
         return -1; // semantic value is unnecessary, as only one entry is shown, and always the tracking one.
@@ -391,9 +391,21 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         // Bindable should never be less than 1 due to min value restriction.
         Debug.Assert(displayCount >= 1);
 
-        // skip this sort, leaderboard not ready yet
-        if (trackingScore?.ProviderDisplayOrder.Value is 0)
-            return;
+        long firstPositionIndex = long.MaxValue;
+
+        for (int i = 0; i < scores.Count; i++)
+        {
+            var score = scores[i];
+
+            // skip this sort, leaderboard not ready yet
+            if (!score.ScorePosition.Value.HasValue)
+                return;
+
+            firstPositionIndex = Math.Min(firstPositionIndex, score.ProviderDisplayOrder.Value);
+        }
+
+        if (firstPositionIndex >= scores.Count)
+            return; // no score to display
 
         // first invisible after last displayed
         // FIXME: investigate how stable actually handles this case
@@ -402,7 +414,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         for (int i = 0; i < scores.Count; i++)
         {
             var score = scores[i];
-            long displayIndex = GetScoreDisplayIndex(score, displayCount);
+            long displayIndex = GetScoreDisplayIndex(score, displayCount, firstPositionIndex);
 
             if (displayIndex < 0)
             {
