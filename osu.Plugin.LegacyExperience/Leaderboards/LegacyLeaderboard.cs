@@ -54,9 +54,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         Origin = Anchor.CentreLeft;
     }
 
-    [Resolved]
-    private LeaderboardManager leaderboardManager { get; set; } = null!;
-
     private Container explosionContainer = null!;
     private EntryPool entryPool = null!;
 
@@ -128,7 +125,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             _ => throw new ArgumentOutOfRangeException(),
         };
 
-        if (!showTip)
+        if (!showTip || scores.Count == 0)
             return;
 
         if (visibility.Value != showLeaderboardConfig.Value && !showLeaderboardConfig.Value)
@@ -200,9 +197,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
                 trackingDisplayOrder.BindTo(trackingScore.ProviderDisplayOrder);
 
             // we don't want to spam tip when scores are being loaded, so only show tip when the first batch of scores are loaded.
-            if (leaderboardManager.Scores.Value?.IsPartial ?? true)
-                return;
-
             if (toggleTipDisplayed)
                 return;
 
