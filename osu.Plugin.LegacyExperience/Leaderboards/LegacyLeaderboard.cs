@@ -72,25 +72,28 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     {
         scoresList.BindTo(leaderboardProvider.Scores);
 
-        AddInternal(content = new Container
+        AddRangeInternal(new Drawable[]
         {
-            RelativeSizeAxes = Axes.Both,
-            Children = new Drawable[]
+            entryPool = new EntryPool(this, MaxEntries.Value),
+            explosion2Pool = new DrawablePool<Explosion2>(1),
+            explosion1Pool = new DrawablePool<Explosion1>(1),
+            content = new Container
             {
-                entryPool = new EntryPool(this, MaxEntries.Value),
-                explosion2Pool = new DrawablePool<Explosion2>(1),
-                explosion1Pool = new DrawablePool<Explosion1>(1),
-                explosionContainer = new Container
+                RelativeSizeAxes = Axes.Both,
+                Children = new Drawable[]
                 {
-                    Anchor = Anchor.TopLeft,
-                    Origin = Anchor.TopLeft,
-                    RelativeSizeAxes = Axes.Both,
-                },
-                entriesContainer = new Container<PoolableLeaderboardEntry>
-                {
-                    Anchor = Anchor.TopLeft,
-                    Origin = Anchor.TopLeft,
-                    RelativeSizeAxes = Axes.Both,
+                    explosionContainer = new Container
+                    {
+                        Anchor = Anchor.TopLeft,
+                        Origin = Anchor.TopLeft,
+                        RelativeSizeAxes = Axes.Both,
+                    },
+                    entriesContainer = new Container<PoolableLeaderboardEntry>
+                    {
+                        Anchor = Anchor.TopLeft,
+                        Origin = Anchor.TopLeft,
+                        RelativeSizeAxes = Axes.Both,
+                    }
                 }
             }
         });
