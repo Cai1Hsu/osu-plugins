@@ -85,13 +85,16 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
             updateDisplayInfo();
         });
 
-        updateDisplayInfo();
+        AddToggleStep("auto sort", v => provider.AutoSort.Value = v);
+
+        provider.AutoSort.BindValueChanged(_ => updateDisplayInfo(), true);
 
         void updateDisplayInfo()
         {
             displayInfo.Text = $"Show leaderboard: {showLeaderboard.Value}\n" +
                                $"Local user play state: {localUserPlayInfo.PlayingState.Value}\n" +
-                               $"Use zero-based display order: {provider.UseZeroBasedDisplayOrder}";
+                               $"Use zero-based display order: {provider.UseZeroBasedDisplayOrder}\n" +
+                               $"Auto sort: {provider.AutoSort.Value}";
         }
     }
 
@@ -191,6 +194,35 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
         public bool UseZeroBasedDisplayOrder { get; set; } = true;
 
         public BindableList<GameplayLeaderboardScore> Scores { get; private set; } = new();
+
+        public readonly BindableBool AutoSort = new BindableBool(true);
+
+        public TestGameplayLeaderboardProvider()
+        {
+            Scores.BindCollectionChanged((_, __) =>
+            {
+                var autoSort = AutoSort.Value;
+                AutoSort.Value = false; // unbind events to avoid leaking and unintended side effects
+
+                foreach(var score in Scores)
+                    trackingScores.Add(score.TotalScore.GetBoundCopy());
+
+                AutoSort.Value = autoSort; // rebind events
+            }, true);
+
+            AutoSort.BindValueChanged(v =>
+            {
+                foreach (var score in trackingScores)
+                {
+                    if (v.NewValue)
+                        score.BindValueChanged(_ => Sort(), true);
+                    else
+                        score.UnbindEvents();
+                }
+            }, true);
+        }
+
+        private List<Bindable<long>> trackingScores = new();
 
         public void Sort()
         {
