@@ -197,7 +197,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
                 trackingDisplayOrder.BindTo(trackingScore.ProviderDisplayOrder);
 
             // we don't want to spam tip when scores are being loaded, so only show tip when the first batch of scores are loaded.
-            if (toggleTipDisplayed)
+            if (toggleTipDisplayed || 
+                scoresList.Count == 0) // the provider may fire event for clearing scores, in which case we don't want to show tip as well.
                 return;
 
             toggleTipDisplayed = true;
