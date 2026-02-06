@@ -21,8 +21,6 @@ using osu.Game.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Game.Graphics.Containers;
 using System.Diagnostics.CodeAnalysis;
-using osu.Game.Online.Leaderboards;
-using osu.Game.Scoring;
 
 namespace osu.Plugin.LegacyExperience.Tests.Leaderboards;
 
@@ -141,9 +139,6 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
 
     private void clearScores() => provider.Scores.Clear();
 
-    [Resolved]
-    private LeaderboardManager leaderboardManager { get; set; } = null!;
-
     private void setup_scores_step(int count, Action<GameplayLeaderboardScore>? trackingScoreSetup = null)
     {
         var scores = Enumerable.Range(0, count).Select(i => provider.CreateRandomScore(new APIUser { Username = $"Player {i + 1}" })).ToList();
@@ -157,8 +152,6 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
 
             for (int i = 0; i < scores.Count; i++)
             {
-                // this is how lazer's tests do it, ugly but at least it mimics the actual flow of data from the API to the leaderboard provider.
-                ((Bindable<LeaderboardScores?>)leaderboardManager.Scores).Value = LeaderboardScores.Success(Array.Empty<ScoreInfo>(), i + 1, scores.Count, null);
                 provider.Scores.Add(scores[i]);
             }
         });
