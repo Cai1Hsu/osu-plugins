@@ -12,6 +12,13 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Game.Plugins;
 using osu.Framework.Graphics.Pooling;
+using osu.Game.Screens.Play;
+using osu.Game.Graphics.Sprites;
+using osu.Game.Graphics;
+using osu.Framework.Localisation;
+using osu.Plugin.LegacyExperience.Localisations;
+using osu.Game.Input.Bindings;
+using osu.Game.Input;
 
 namespace osu.Plugin.LegacyExperience.Leaderboards;
 
@@ -52,43 +59,115 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     private DrawablePool<Explosion2> explosion2Pool = null!;
     private DrawablePool<Explosion1> explosion1Pool = null!;
 
+    private readonly IBindable<LocalUserPlayingState> localUserPlayingState = new Bindable<LocalUserPlayingState>();
+    private IBindable<bool> showLeaderboardConfig = null!;
+
+    private readonly Bindable<bool> visibility = new BindableBool();
+
+    private Container content = null!;
+    private OsuSpriteText? tipText = null!;
+
     [BackgroundDependencyLoader]
-    private void load()
+    private void load(ILocalUserPlayInfo localUserPlayInfo, OsuConfigManager osuConfig)
     {
         scoresList.BindTo(leaderboardProvider.Scores);
 
-        InternalChildren = new Drawable[]
+        AddInternal(content = new Container
         {
-            entryPool = new EntryPool(this, MaxEntries.Value),
-            explosion2Pool = new DrawablePool<Explosion2>(1),
-            explosion1Pool = new DrawablePool<Explosion1>(1),
-            explosionContainer = new Container
+            RelativeSizeAxes = Axes.Both,
+            Children = new Drawable[]
             {
-                Anchor = Anchor.TopLeft,
-                Origin = Anchor.TopLeft,
-            },
-            entriesContainer = new Container<PoolableLeaderboardEntry>
-            {
-                Anchor = Anchor.TopLeft,
-                Origin = Anchor.TopLeft,
+                entryPool = new EntryPool(this, MaxEntries.Value),
+                explosion2Pool = new DrawablePool<Explosion2>(1),
+                explosion1Pool = new DrawablePool<Explosion1>(1),
+                explosionContainer = new Container
+                {
+                    Anchor = Anchor.TopLeft,
+                    Origin = Anchor.TopLeft,
+                    RelativeSizeAxes = Axes.Both,
+                },
+                entriesContainer = new Container<PoolableLeaderboardEntry>
+                {
+                    Anchor = Anchor.TopLeft,
+                    Origin = Anchor.TopLeft,
+                    RelativeSizeAxes = Axes.Both,
+                }
             }
-        };
+        });
 
         MaxEntries.BindValueChanged(_ =>
         {
             updateSize();
             Scheduler.AddOnce(sort);
         });
+
+        localUserPlayingState.BindTo(localUserPlayInfo.PlayingState);
+        showLeaderboardConfig = osuConfig.GetBindable<bool>(OsuSetting.GameplayLeaderboard);
+
+        showLeaderboardConfig.BindValueChanged(_ => updateVisibilityValue(true));
+        localUserPlayingState.BindValueChanged(_ => updateVisibilityValue(false), true);
+
+        visibility.BindValueChanged(_ => updateVisibility());
+        updateVisibility(); // don't animate on load
+    }
+
+    private void updateVisibilityValue(bool showTip)
+    {
+        visibility.Value = localUserPlayingState.Value switch
+        {
+            LocalUserPlayingState.Break => true,
+            LocalUserPlayingState.NotPlaying or
+            LocalUserPlayingState.Playing => showLeaderboardConfig.Value,
+            _ => throw new ArgumentOutOfRangeException(),
+        };
+
+        if (!showTip)
+            return;
+
+        if (visibility.Value != showLeaderboardConfig.Value && !showLeaderboardConfig.Value)
+            displayTip(LegacyStrings.Player_ScoreBoardShowStatus);
+        else if (visibility.Value)
+            displayTip(LegacyStrings.Player_ScoreBoardShowStatus2);
+    }
+
+    private void updateVisibility()
+    {
+        // stable updates alpha by 0.08 every 16.6ms.
+        const double frame_duration = 1000.0 / 60;
+        const double transition_count = 1 / 0.08;
+        const double transition_duration = frame_duration * transition_count;
+
+        Scheduler.Add(() => content.FadeTo(visibility.Value ? 1 : 0, transition_duration));
+    }
+
+    private void displayTip(LocalisableString text)
+    {
+        Scheduler.Add(() =>
+        {
+            tipText?.FadeOut(100)
+                .Expire();
+
+            content.Add(tipText = new OsuSpriteText
+            {
+                Anchor = Anchor.TopLeft,
+                Origin = Anchor.BottomLeft,
+                BypassAutoSizeAxes = Axes.Both,
+                Font = OsuFont.Default.With(size: 12 * stable_ratio, weight: FontWeight.SemiBold),
+                Text = text,
+            });
+
+            tipText.FadeOutFromOne(6000)
+                .Expire();
+        });
     }
 
     private void updateSize()
     {
-        Vector2 size = new Vector2(LegacyLeaderboardEntry.WIDTH, entry_height * MaxEntries.Value);
-
-        entriesContainer.Size = size;
-        explosionContainer.Size = size;
-        Size = size;
+        Size = new Vector2(LegacyLeaderboardEntry.WIDTH, entry_height * MaxEntries.Value);
     }
+
+    [Resolved]
+    private RealmKeyBindingStore keyBindingStore { get; set; } = null!;
 
     protected override void LoadComplete()
     {
@@ -106,6 +185,15 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
             if (trackingScore is not null)
                 trackingDisplayOrder.BindTo(trackingScore.ProviderDisplayOrder);
+
+            Scheduler.Add(() =>
+            {
+                if (scoresList.Count > 0 && visibility.Value)
+                {
+                    displayTip(LegacyStrings.Player_ToggleScoreboard(
+                        keyBindingStore.GetBindingsStringFor(GlobalAction.ToggleInGameLeaderboard)));
+                }
+            });
         }, true);
 
         trackingDisplayOrder.BindValueChanged(handleTrackingExplosion);
