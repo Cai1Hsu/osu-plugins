@@ -403,9 +403,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             firstPositionIndex = Math.Min(firstPositionIndex, score.ProviderDisplayOrder.Value);
         }
 
-        if (firstPositionIndex >= scores.Count)
-            return; // no score to display
-
         // first invisible after last displayed
         // FIXME: investigate how stable actually handles this case
         int invisibleIndex = displayCount;
