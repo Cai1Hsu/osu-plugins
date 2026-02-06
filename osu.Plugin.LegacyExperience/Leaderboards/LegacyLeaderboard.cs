@@ -203,6 +203,11 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             if (leaderboardManager.Scores.Value?.IsPartial ?? true)
                 return;
 
+            if (toggleTipDisplayed)
+                return;
+
+            toggleTipDisplayed = true;
+
             Scheduler.Add(() =>
             {
                 if (scoresList.Count > 0 && showLeaderboardConfig.Value)
@@ -215,6 +220,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         trackingDisplayOrder.BindValueChanged(handleTrackingExplosion);
     }
+
+    private bool toggleTipDisplayed;
 
     private void clearScores()
     {
