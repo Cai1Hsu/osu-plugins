@@ -28,8 +28,6 @@ internal partial class DisplayScoreItem : IDisposable
 
     public void Dispose()
     {
-        Model = null;
-
         ScorePosition.UnbindAll();
         ProviderDisplayOrder.UnbindAll();
     }
