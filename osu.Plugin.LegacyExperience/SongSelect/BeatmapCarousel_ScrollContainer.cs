@@ -135,7 +135,10 @@ partial class BeatmapCarousel
 
             // Catch any scroll request and manage it ourselves.
             if (Target != Current)
+            {
+                scrollDistance = 0; // clear distance as we're going to jump to the new target.
                 ScrollToPosition(Target, decay ?? default_decay);
+            }
 
             if (DrawHeight > 0.0 && scrollDistance != 0.0)
             {
