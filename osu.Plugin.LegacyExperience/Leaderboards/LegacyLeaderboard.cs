@@ -197,7 +197,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
                 trackingDisplayOrder.BindTo(trackingScore.ProviderDisplayOrder);
 
             // we don't want to spam tip when scores are being loaded, so only show tip when the first batch of scores are loaded.
-            if (toggleTipDisplayed || 
+            if (toggleTipDisplayed ||
                 scoresList.Count == 0) // the provider may fire event for clearing scores, in which case we don't want to show tip as well.
                 return;
 
@@ -252,8 +252,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         displayScore.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort));
 
         // in case position is already available, sort immediately.
-        if (displayScore.ScorePosition.Value.HasValue)
-            Scheduler.AddOnce(sort);
+        Scheduler.AddOnce(sort);
     }
 
     private const float transition_duration = 600;
@@ -406,10 +405,6 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         for (int i = 0; i < scores.Count; i++)
         {
             var score = scores[i];
-
-            // skip this sort, leaderboard not ready yet
-            if (!score.ScorePosition.Value.HasValue)
-                return;
 
             firstPositionIndex = Math.Min(firstPositionIndex, score.ProviderDisplayOrder.Value);
         }
