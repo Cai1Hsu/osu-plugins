@@ -22,6 +22,14 @@ partial class LegacyLocalisationManager
     // so we have to inject our own ResourceManager into the existing osu!lazer system.
     private bool tryAddToOsuResourceManager(string cultureCode, LocalisationStore store)
     {
+        if (locales_Field is null || resourceManagers_Field is null)
+        {
+            Logger.Log("legacy localisation will not work. See log for details.", LoggingTarget.Runtime, LogLevel.Error);
+            Logger.Log($"Could not find required fields via reflection. {nameof(locales_Field)}: {locales_Field != null}, {nameof(resourceManagers_Field)}: {resourceManagers_Field != null}", LoggingTarget.Runtime, LogLevel.Verbose);
+
+            return true;
+        }
+
         frameworkLocales ??= (Dictionary<string, LocaleMapping>)locales_Field.GetValue(localisations)!;
 
         Debug.Assert(frameworkLocales is not null);
@@ -31,8 +39,8 @@ partial class LegacyLocalisationManager
 
         if (mapping.Storage is not ResourceManagerLocalisationStore resourceManagerStore)
         {
-            Logger.Log($"Legacy localisation will not work for culture {cultureCode}, see log for details.", level: LogLevel.Error);
-            Logger.Log($"Expected {nameof(ResourceManagerLocalisationStore)}, got {mapping.Storage.GetType().FullName}", level: LogLevel.Error);
+            Logger.Log($"Legacy localisation will not work for culture {cultureCode}, see log for details.", LoggingTarget.Runtime, LogLevel.Error);
+            Logger.Log($"Expected {nameof(ResourceManagerLocalisationStore)}, got {mapping.Storage.GetType().FullName}", LoggingTarget.Runtime, LogLevel.Verbose);
 
             // don't allow AddLanguage call.
             return true;
