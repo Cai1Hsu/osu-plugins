@@ -65,7 +65,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     private readonly Bindable<bool> visibility = new BindableBool();
 
     private Container content = null!;
-    private OsuSpriteText? tipText = null!;
+    private OsuSpriteText? tipText;
 
     [BackgroundDependencyLoader]
     private void load(ILocalUserPlayInfo localUserPlayInfo, OsuConfigManager osuConfig)
