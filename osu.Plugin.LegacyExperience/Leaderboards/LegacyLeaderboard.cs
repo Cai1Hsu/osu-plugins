@@ -191,7 +191,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
             Scheduler.Add(() =>
             {
-                if (scoresList.Count > 0 && visibility.Value)
+                if (scoresList.Count > 0 && showLeaderboardConfig.Value)
                 {
                     displayTip(LegacyStrings.Player_ToggleScoreboard(
                         keyBindingStore.GetBindingsStringFor(GlobalAction.ToggleInGameLeaderboard)));
