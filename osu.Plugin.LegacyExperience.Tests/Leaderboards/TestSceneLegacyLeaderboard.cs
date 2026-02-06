@@ -62,7 +62,7 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
         showLeaderboard = osuConfig.GetBindable<bool>(OsuSetting.GameplayLeaderboard);
 
         showLeaderboard.BindValueChanged(_ => updateDisplayInfo());
-        localUserPlayInfo.PlayingState.BindValueChanged(_ => updateDisplayInfo(), true);
+        localUserPlayInfo.PlayingState.BindValueChanged(_ => updateDisplayInfo());
 
         var playStates = Enum.GetValues<LocalUserPlayingState>();
 
@@ -79,7 +79,13 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
 
         AddStep("toggle leaderboard", () => showLeaderboard.Value = !showLeaderboard.Value);
 
-        AddToggleStep("use zero-based display order", v => provider.UseZeroBasedDisplayOrder = v);
+        AddToggleStep("use zero-based display order", v =>
+        {
+            provider.UseZeroBasedDisplayOrder = v;
+            updateDisplayInfo();
+        });
+
+        updateDisplayInfo();
 
         void updateDisplayInfo()
         {
