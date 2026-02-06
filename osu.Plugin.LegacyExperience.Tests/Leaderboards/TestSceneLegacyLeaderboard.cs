@@ -79,10 +79,13 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
 
         AddStep("toggle leaderboard", () => showLeaderboard.Value = !showLeaderboard.Value);
 
+        AddToggleStep("use zero-based display order", v => provider.UseZeroBasedDisplayOrder = v);
+
         void updateDisplayInfo()
         {
             displayInfo.Text = $"Show leaderboard: {showLeaderboard.Value}\n" +
-                               $"Local user play state: {localUserPlayInfo.PlayingState.Value}";
+                               $"Local user play state: {localUserPlayInfo.PlayingState.Value}\n" +
+                               $"Use zero-based display order: {provider.UseZeroBasedDisplayOrder}";
         }
     }
 
@@ -179,6 +182,8 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
             return score;
         }
 
+        public bool UseZeroBasedDisplayOrder { get; set; } = true;
+
         public BindableList<GameplayLeaderboardScore> Scores { get; private set; } = new();
 
         public void Sort()
@@ -191,7 +196,8 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
             {
                 var score = sorted[i];
 
-                score.DisplayOrder.Value = i; // FIXME: is this correct?
+                // MultiplayerLeaderboardProvider uses 0-based, but other providers use 1-based.
+                score.DisplayOrder.Value = i + (UseZeroBasedDisplayOrder ? 0 : 1);
                 score.Position.Value = i + 1;
             }
         }
