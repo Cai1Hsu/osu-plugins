@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Resources;
 using osu.Framework.Localisation;
+using osu.Framework.Logging;
 using osu.Game.Localisation;
 
 namespace osu.Plugin.LegacyExperience.Localisations;
@@ -29,7 +30,13 @@ partial class LegacyLocalisationManager
             return false;
 
         if (mapping.Storage is not ResourceManagerLocalisationStore resourceManagerStore)
-            throw new InvalidOperationException($"Expected {nameof(ResourceManagerLocalisationStore)}, got {mapping.Storage.GetType().FullName}");
+        {
+            Logger.Log($"Legacy localisation will not work for culture {cultureCode}, see log for details.", level: LogLevel.Error);
+            Logger.Log($"Expected {nameof(ResourceManagerLocalisationStore)}, got {mapping.Storage.GetType().FullName}", level: LogLevel.Error);
+
+            // don't allow AddLanguage call.
+            return true;
+        }
 
         var resourceManagers = (Dictionary<string, ResourceManager>)resourceManagers_Field.GetValue(resourceManagerStore)!;
 
