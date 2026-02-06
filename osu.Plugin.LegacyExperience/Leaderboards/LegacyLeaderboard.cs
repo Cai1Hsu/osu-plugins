@@ -110,8 +110,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         showLeaderboardConfig.BindValueChanged(_ => updateVisibilityValue(true));
         localUserPlayingState.BindValueChanged(_ => updateVisibilityValue(false), true);
 
-        visibility.BindValueChanged(_ => updateVisibility());
-        updateVisibility(); // don't animate on load
+        visibility.BindValueChanged(_ => updateVisibility(), true);
     }
 
     private void updateVisibilityValue(bool showTip)
