@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Globalization;
-using System.Net;
 using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -54,13 +53,16 @@ public partial class LegacyLocalisationManager : Component
         {
             var cultureCode = lang.ToCultureCode();
 
-            if (stores.ContainsKey(cultureCode))
+            if (stores.ContainsKey(cultureCode) || cultureCode == "debug")
                 continue;
 
             var store = new LocalisationStore(lang.ToLegacy());
 
             stores.Add(cultureCode, store);
-            localisations.AddLanguage(cultureCode, store);
+
+            // no osu instance handling localisation, add our store to the framework's localisation manager directly.
+            if (!tryAddToOsuResourceManager(cultureCode, store))
+                localisations.AddLanguage(cultureCode, store);
         }
 
         this.stores = stores.ToFrozenDictionary();
