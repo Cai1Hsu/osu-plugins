@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Globalization;
-using System.Resources;
 using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -257,20 +256,6 @@ public partial class LegacyLocalisationManager : Component
         }
 
 #nullable enable
-    }
-
-    private class LocalisationResourceManager : ResourceManager
-    {
-        private readonly LocalisationStore store;
-
-        public LocalisationResourceManager(LocalisationStore store)
-        {
-            this.store = store;
-        }
-
-        public override string? GetString(string name) => store.Get(GetKey(name));
-
-        public override string? GetString(string key, CultureInfo? culture = null) => GetString(key);
     }
 
     public static string GetKey(string key) => $"{RESOURCE_PREFIX}:{key}";

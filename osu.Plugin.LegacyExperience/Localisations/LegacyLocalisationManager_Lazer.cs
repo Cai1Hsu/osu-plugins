@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Resources;
 using osu.Framework.Localisation;
@@ -43,5 +44,19 @@ partial class LegacyLocalisationManager
         }
 
         return true;
+    }
+
+    private class LocalisationResourceManager : ResourceManager
+    {
+        private readonly LocalisationStore store;
+
+        public LocalisationResourceManager(LocalisationStore store)
+        {
+            this.store = store;
+        }
+
+        public override string? GetString(string name) => store.Get(GetKey(name));
+
+        public override string? GetString(string key, CultureInfo? culture = null) => GetString(key);
     }
 }
