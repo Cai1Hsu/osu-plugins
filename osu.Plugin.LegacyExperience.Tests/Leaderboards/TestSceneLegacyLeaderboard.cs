@@ -204,8 +204,8 @@ public partial class TestSceneLegacyLeaderboard : LocalSkinTestScene, IKeyBindin
                 var autoSort = AutoSort.Value;
                 AutoSort.Value = false; // unbind events to avoid leaking and unintended side effects
 
-                foreach(var score in Scores)
-                    trackingScores.Add(score.TotalScore.GetBoundCopy());
+                trackingScores.Clear();
+                trackingScores.AddRange(Scores.Select(static s => s.TotalScore.GetBoundCopy()));
 
                 AutoSort.Value = autoSort; // rebind events
             }, true);
