@@ -133,17 +133,20 @@ partial class BeatmapCarousel
                     scrollDistance = 0;
             }
 
-            // Catch any scroll request and manage it ourselves.
-            if (Target != Current)
-            {
-                scrollDistance = 0; // clear distance as we're going to jump to the new target.
-                ScrollToPosition(Target, decay ?? default_decay);
-            }
+            var previousCurrent = Current;
+            var previousTarget = Target;
 
             if (DrawHeight > 0.0 && scrollDistance != 0.0)
             {
                 // use ScrollTo here to ensure OsuScrollContainer don't touch Current
                 ScrollTo(Current + scrollDistance, false);
+            }
+
+            // Catch any scroll request and manage it ourselves.
+            if (previousCurrent != previousTarget)
+            {
+                scrollDistance = 0; // clear distance as we're going to jump to the new target.
+                ScrollToPosition(previousTarget, decay ?? default_decay);
             }
         }
 
