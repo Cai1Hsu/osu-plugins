@@ -138,9 +138,15 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         // stable updates alpha by 0.08 every 16.6ms.
         const double frame_duration = 1000.0 / 60;
         const double transition_count = 1 / 0.08;
-        const double transition_duration = frame_duration * transition_count;
+        const double full_transition_duration = frame_duration * transition_count;
 
-        Scheduler.Add(() => content.FadeTo(visibility.Value ? 1 : 0, transition_duration));
+        Scheduler.Add(() =>
+        {
+            var targetAlpha = visibility.Value ? 1 : 0;
+            var delta = Math.Abs(content.Alpha - targetAlpha);
+
+            content.FadeTo(targetAlpha, full_transition_duration * delta);
+        });
     }
 
     private void displayTip(LocalisableString text)
