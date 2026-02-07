@@ -228,7 +228,7 @@ public partial class LegacyLocalisationManager : Component
                 // avoid conflicts with any existing resources in the game by prefixing all keys with a unique string.
                 key = GetKey(key);
 
-                localisations[key] = value;
+                localisations[key] = value.Replace("\\n", Environment.NewLine); // stable only performs this replacement.
             }
 
             this.localisations = localisations.ToFrozenDictionary();
