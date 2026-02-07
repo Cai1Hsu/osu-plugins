@@ -14,6 +14,12 @@ public static class LegacyStrings
 
     #endregion // Player
 
+    #region General
+
+    public static LocalisableString General_Close => new TranslatableString(getKey(nameof(General_Close)), "Close");
+
+    #endregion // General
+
     #region ModSelection
 
     public static LocalisableString ModSelection_Title => new TranslatableString(getKey(nameof(ModSelection_Title)), "Mods provide different ways to enjoy gameplay. Some have an effect on the score you can achieve during ranked play. Others are just for fun.");
