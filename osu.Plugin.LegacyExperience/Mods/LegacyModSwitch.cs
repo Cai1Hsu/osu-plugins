@@ -1,11 +1,14 @@
 using osu.Framework.Allocation;
+using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game.Audio;
 using osu.Game.Rulesets;
+using osu.Game.Skinning;
 using osu.Plugin.LegacyExperience.Localisations;
 using osuTK;
 using osuTK.Input;
@@ -34,6 +37,9 @@ public partial class LegacyModSwitch : CompositeDrawable
 
     private InputManager inputManager = null!;
 
+    [Resolved]
+    private ISkinSource? skin { get; set; }
+
     [BackgroundDependencyLoader]
     private void load()
     {
@@ -56,6 +62,21 @@ public partial class LegacyModSwitch : CompositeDrawable
             modDisplays[i] = display;
             AddInternal(display);
         }
+
+        updateSkin();
+        skin?.SourceChanged += updateSkin;
+    }
+
+    private static readonly SampleInfo checkOnSampleInfo = new SampleInfo("UI/check-on");
+    private static readonly SampleInfo checkOffSampleInfo = new SampleInfo("UI/check-off");
+
+    private ISample? checkOnSample;
+    private ISample? checkOffSample;
+
+    private void updateSkin()
+    {
+        checkOnSample = skin?.GetSample(checkOnSampleInfo);
+        checkOffSample = skin?.GetSample(checkOffSampleInfo);
     }
 
     protected override void LoadComplete()
@@ -100,9 +121,15 @@ public partial class LegacyModSwitch : CompositeDrawable
         var next = modDisplays.ElementAtOrDefault(CurrentSelection);
 
         if (next is not null)
+        {
             activateMod(next);
+            checkOnSample?.Play();
+        }
         else
+        {
             resetMod(modDisplays[DisplayIndex]);
+            checkOffSample?.Play();
+        }
     }
 
     private void resetMod(ClickableModDisplay mod)
@@ -126,6 +153,13 @@ public partial class LegacyModSwitch : CompositeDrawable
         mod.FadeOut(100)
            .ScaleTo(1f, 400, Easing.OutElastic)
            .RotateTo(0f, 400, Easing.OutElastic);
+    }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        skin?.SourceChanged -= updateSkin;
     }
 
     private partial class ClickableModDisplay : ClickableContainer, IHasLegacyTooltip
