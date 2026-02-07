@@ -82,10 +82,7 @@ public partial class LegacyModSwitch : CompositeDrawable
 
     private void onModClick()
     {
-        var current = modDisplays.ElementAtOrDefault(currentSelection);
-
-        if (current is not null)
-            deactivateMod(current);
+        deactivateMod(modDisplays[DisplayIndex]);
 
         // stable uses contains instead of checking the activation button,
         // this means when you click with right button previously pressed, the direction will still be backwards.
