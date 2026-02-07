@@ -1,4 +1,3 @@
-using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
@@ -12,7 +11,7 @@ using osuTK;
 
 namespace osu.Plugin.LegacyExperience;
 
-public partial class LegacyTooltip : CompositeDrawable, ITooltip<LocalisableString>
+public partial class LegacyTooltip : VisibilityContainer, ITooltip<LocalisableString>
 {
     public void Move(Vector2 pos) => Position = pos;
 
@@ -43,6 +42,20 @@ public partial class LegacyTooltip : CompositeDrawable, ITooltip<LocalisableStri
         Masking = true;
         BorderColour = new Colour4(80, 80, 80, 255);
         BorderThickness = 1f;
+    }
+
+    protected override void PopIn()
+    {
+        // stable actually has a fade in animation of 200ms for the first display of the tooltip.
+        // when moving from one tooltip target to another quickly, the tooltip will just change its content and position without fading out and in again.
+        // if we apply fade in for every content change, it will look very weird when moving the mouse across multiple tooltip targets quickly.
+        // since we can't determine whether the tooltip is being displayed for the first time or not, we just fade in immedately without animation, which looks better in general.
+        this.FadeIn();
+    }
+
+    protected override void PopOut()
+    {
+        this.FadeOut(200);
     }
 
     private partial class TooltipTextFlowContainer : OsuTextFlowContainer

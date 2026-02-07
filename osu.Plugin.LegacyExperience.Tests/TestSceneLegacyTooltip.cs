@@ -51,7 +51,8 @@ public partial class TestSceneLegacyTooltip : OsuTestScene
                         TextFlow =
                         {
                             Text = "Legacy Experience Tooltip",
-                        }
+                        },
+                        State = { Value = Visibility.Visible },
                     },
                     textBox = new TooltipFeedbackTextBox
                     {
