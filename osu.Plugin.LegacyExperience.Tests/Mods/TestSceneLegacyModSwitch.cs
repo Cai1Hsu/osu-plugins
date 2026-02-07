@@ -4,6 +4,9 @@ using osu.Game.Skinning;
 using osu.Framework.Testing;
 using NUnit.Framework;
 using osu.Plugin.LegacyExperience.Mods;
+using osu.Game;
+using osu.Game.Localisation;
+using osu.Game.Overlays.Settings;
 
 namespace osu.Plugin.LegacyExperience.Tests.Mods;
 
@@ -12,8 +15,18 @@ public partial class TestSceneLegacyModSwitch : LocalSkinTestScene
     private SkinProvidingContainer content = null!;
 
     [BackgroundDependencyLoader]
-    private void load()
+    private void load(OsuGameBase game)
     {
+        // for tooltip localisation testing purposes
+        Add(new SettingsEnumDropdown<Language>()
+        {
+            Anchor = Anchor.TopCentre,
+            Origin = Anchor.TopCentre,
+            AlwaysShowSearchBar = true,
+            LabelText = "Game language",
+            Current = { BindTarget = game.CurrentLanguage },
+        });
+
         Add(content = new SkinProvidingContainer(new DefaultLegacySkin(this))
         {
             RelativeSizeAxes = Axes.Both,
