@@ -31,7 +31,6 @@ public static class LegacyModExtensions
             ModHidden => LegacyMod.Hidden,
             ModNoFail => LegacyMod.NoFail,
             ModPerfect => LegacyMod.Perfect,
-            ModRandom => LegacyMod.Random,
             ModRelax => LegacyMod.Relax,
             ModSuddenDeath => LegacyMod.SuddenDeath,
             _ => null,
