@@ -76,7 +76,7 @@ public partial class LegacyModSwitch : CompositeDrawable
     public int TotalSelections => mods.Length + 1;
 
     /// <summary>
-    /// The currently activated mod. This will be null when no mod is selected (DisplayIndex == mods.Length + 1).
+    /// The currently activated mod. This will be null when no mod is selected (CurrentSelection == mods.Length).
     /// </summary>
     public LegacyMod? SelectedMod => currentSelection < mods.Length ? mods[currentSelection] : null;
 
