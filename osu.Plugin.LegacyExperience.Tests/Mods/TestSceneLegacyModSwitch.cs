@@ -79,7 +79,7 @@ public partial class TestSceneLegacyModSwitch : LocalSkinTestScene
         LegacyMod.Flashlight,
         LegacyMod.HalfTime,
         LegacyMod.HardRock,
-        LegacyMod.Hidden, // HD is single combination is some rulesets
+        LegacyMod.Hidden, // HD is single combination in some rulesets
         LegacyMod.KeyCoop,
         LegacyMod.Mirror,
         LegacyMod.Nightcore,
