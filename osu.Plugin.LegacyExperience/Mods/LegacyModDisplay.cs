@@ -20,6 +20,9 @@ public partial class LegacyModDisplay : Sprite
     }
 
     [Resolved]
+    private IModHoverManager? hoverManager { get; set; }
+
+    [Resolved]
     private TextureStore textures { get; set; } = null!;
 
     [Resolved]
@@ -52,7 +55,9 @@ public partial class LegacyModDisplay : Sprite
 
     protected override bool OnHover(HoverEvent e)
     {
-        sampleHover?.Play();
+        if (hoverManager?.RequestHoverSample() ?? true)
+            sampleHover?.Play();
+
         return base.OnHover(e);
     }
 
