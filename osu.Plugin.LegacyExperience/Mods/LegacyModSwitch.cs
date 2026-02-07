@@ -13,7 +13,7 @@ namespace osu.Plugin.LegacyExperience.Mods;
 
 public partial class LegacyModSwitch : CompositeDrawable
 {
-    private LegacyMod[] mods;
+    private readonly LegacyMod[] mods;
 
     public LegacyModSwitch(LegacyMod[] mods)
     {
