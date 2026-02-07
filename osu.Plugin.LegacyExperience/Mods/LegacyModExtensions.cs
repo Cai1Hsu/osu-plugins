@@ -71,7 +71,7 @@ public static class LegacyModExtensions
 
     public static readonly Type? ManiaModFadeIn = Type.GetType("osu.Game.Rulesets.Mania.Mods.ManiaModFadeIn, osu.Game.Rulesets.Mania");
 
-    public static Type? ManiaModKeys(int keyCount) => modKeys[keyCount - 1];
+    public static Type? ManiaModKeys(int keyCount) => keyCount < 1 || keyCount > 9 ? null : modKeys[keyCount - 1];
 
     public static readonly Type? ManiaModMirror = Type.GetType("osu.Game.Rulesets.Mania.Mods.ManiaModMirror, osu.Game.Rulesets.Mania");
 
