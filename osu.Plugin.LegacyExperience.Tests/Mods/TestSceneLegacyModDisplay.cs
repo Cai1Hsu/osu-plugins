@@ -2,6 +2,7 @@ using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Testing;
 using osu.Game.Graphics.Containers;
 using osu.Game.Skinning;
 using osu.Plugin.LegacyExperience.Mods;
@@ -20,6 +21,12 @@ public partial class TestSceneLegacyModDisplay : LocalSkinTestScene
         {
             RelativeSizeAxes = Axes.Both,
         });
+    }
+
+    [SetUpSteps]
+    public void SetupSteps()
+    {
+        AddStep("clear", () => content.Clear());
     }
 
     [Test]
