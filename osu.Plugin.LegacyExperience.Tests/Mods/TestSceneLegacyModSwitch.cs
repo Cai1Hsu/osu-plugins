@@ -7,12 +7,30 @@ using osu.Plugin.LegacyExperience.Mods;
 using osu.Game;
 using osu.Game.Localisation;
 using osu.Game.Overlays.Settings;
+using osu.Framework.Bindables;
+using osu.Game.Rulesets;
 
 namespace osu.Plugin.LegacyExperience.Tests.Mods;
 
 public partial class TestSceneLegacyModSwitch : LocalSkinTestScene
 {
     private SkinProvidingContainer content = null!;
+
+    [Cached(typeof(IBindable<Ruleset>))]
+    private readonly Bindable<Ruleset> currentRuleset = new Bindable<Ruleset>();
+
+    private static readonly RulesetInfo[] rulesets = new[]
+    {
+        createRulesetInfo(0, "Osu"),
+        createRulesetInfo(1, "Taiko"),
+        createRulesetInfo(2, "Catch"),
+        createRulesetInfo(3, "Mania"),
+        createRulesetInfo(-1, "Custom")
+    };
+
+    private static RulesetInfo createRulesetInfo(int id, string name) => new RulesetInfo(name, name, "unused", id);
+
+    private void setRuleset(int id) => currentRuleset.Value = new TestRuleset(rulesets.First(r => r.OnlineID == id));
 
     [BackgroundDependencyLoader]
     private void load(OsuGameBase game)
@@ -31,6 +49,13 @@ public partial class TestSceneLegacyModSwitch : LocalSkinTestScene
         {
             RelativeSizeAxes = Axes.Both,
         });
+
+        // ruleset affects some mods' tooltip text
+        AddStep("set ruleset to osu!standard", () => setRuleset(0));
+        AddStep("set ruleset to osu!taiko", () => setRuleset(1));
+        AddStep("set ruleset to osu!catch", () => setRuleset(2));
+        AddStep("set ruleset to osu!mania", () => setRuleset(3));
+        AddStep("set ruleset to custom", () => setRuleset(-1));
     }
 
     [SetUpSteps]
