@@ -20,20 +20,20 @@ public static class LegacyModExtensions
         {
             // match ruleset-specific legacy mods first since they may derive from other mods, for example, mania's fadein mod derives from hidden mod.
             _ when mapRulesetSpecificLegacyMod(mod) is LegacyMod rulesetSpecific => rulesetSpecific,
-            ModCinema => LegacyMod.cinema, // cinema derives from autoplay
-            ModAutoplay => LegacyMod.autoplay,
-            ModNightcore => LegacyMod.nightcore, // nightcore derives from doubletime
-            ModDoubleTime => LegacyMod.doubletime,
-            ModEasy => LegacyMod.easy,
-            ModFlashlight => LegacyMod.flashlight,
-            ModHalfTime => LegacyMod.halftime,
-            ModHardRock => LegacyMod.hardrock,
-            ModHidden => LegacyMod.hidden,
-            ModNoFail => LegacyMod.nofail,
-            ModPerfect => LegacyMod.perfect,
-            ModRandom => LegacyMod.random,
-            ModRelax => LegacyMod.relax,
-            ModSuddenDeath => LegacyMod.suddendeath,
+            ModCinema => LegacyMod.Cinema, // cinema derives from autoplay
+            ModAutoplay => LegacyMod.Autoplay,
+            ModNightcore => LegacyMod.Nightcore, // nightcore derives from doubletime
+            ModDoubleTime => LegacyMod.DoubleTime,
+            ModEasy => LegacyMod.Easy,
+            ModFlashlight => LegacyMod.Flashlight,
+            ModHalfTime => LegacyMod.HalfTime,
+            ModHardRock => LegacyMod.HardRock,
+            ModHidden => LegacyMod.Hidden,
+            ModNoFail => LegacyMod.NoFail,
+            ModPerfect => LegacyMod.Perfect,
+            ModRandom => LegacyMod.Random,
+            ModRelax => LegacyMod.Relax,
+            ModSuddenDeath => LegacyMod.SuddenDeath,
             _ => null,
         };
 
@@ -47,21 +47,21 @@ public static class LegacyModExtensions
 
         return mod switch
         {
-            _ when modType == ManiaModFadeIn => LegacyMod.fadein,
-            _ when modType == ManiaModKeys(1) => LegacyMod.key1,
-            _ when modType == ManiaModKeys(2) => LegacyMod.key2,
-            _ when modType == ManiaModKeys(3) => LegacyMod.key3,
-            _ when modType == ManiaModKeys(4) => LegacyMod.key4,
-            _ when modType == ManiaModKeys(5) => LegacyMod.key5,
-            _ when modType == ManiaModKeys(6) => LegacyMod.key6,
-            _ when modType == ManiaModKeys(7) => LegacyMod.key7,
-            _ when modType == ManiaModKeys(8) => LegacyMod.key8,
-            _ when modType == ManiaModKeys(9) => LegacyMod.key9, // key10 is not supported in stable
-            _ when modType == ManiaModMirror => LegacyMod.mirror, // do not get confused with OsuModMirror
-            _ when modType == ManiaModRandom => LegacyMod.random, // do not get confused with OsuModRandom
-            _ when modType == OsuModAutopilot => LegacyMod.relax2,
-            _ when modType == OsuModSpunOut => LegacyMod.spunout,
-            _ when modType == OsuModTarget => LegacyMod.target,
+            _ when modType == ManiaModFadeIn => LegacyMod.FadeIn,
+            _ when modType == ManiaModKeys(1) => LegacyMod.Key1,
+            _ when modType == ManiaModKeys(2) => LegacyMod.Key2,
+            _ when modType == ManiaModKeys(3) => LegacyMod.Key3,
+            _ when modType == ManiaModKeys(4) => LegacyMod.Key4,
+            _ when modType == ManiaModKeys(5) => LegacyMod.Key5,
+            _ when modType == ManiaModKeys(6) => LegacyMod.Key6,
+            _ when modType == ManiaModKeys(7) => LegacyMod.Key7,
+            _ when modType == ManiaModKeys(8) => LegacyMod.Key8,
+            _ when modType == ManiaModKeys(9) => LegacyMod.Key9, // key10 is not supported in stable
+            _ when modType == ManiaModMirror => LegacyMod.Mirror, // do not get confused with OsuModMirror
+            _ when modType == ManiaModRandom => LegacyMod.Random, // do not get confused with OsuModRandom
+            _ when modType == OsuModAutopilot => LegacyMod.Relax2,
+            _ when modType == OsuModSpunOut => LegacyMod.SpunOut,
+            _ when modType == OsuModTarget => LegacyMod.Target,
             // key10 is not supported in stable
             // fade out is no longer used in both stable and lazer, so we don't support it either.
             // key coop is not yet supported in lazer

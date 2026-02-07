@@ -31,11 +31,13 @@ public partial class LegacyModDisplay : Sprite
 
     private void updateTexture()
     {
-        var texture = skin.GetSkinTexture($"selection-mod-{Mod}", textures, "UI");
+        var texture = skin.GetSkinTexture($"selection-mod-{textureName}", textures, "UI");
 
         Debug.Assert(texture is not null); // we've packed default icons, so this should never be null.
 
         Texture = texture;
         Size = Texture.DisplaySize;
     }
+
+    private string textureName => Mod.ToString().ToLowerInvariant();
 }

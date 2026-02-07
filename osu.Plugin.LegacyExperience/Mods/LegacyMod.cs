@@ -1,39 +1,36 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace osu.Plugin.LegacyExperience.Mods;
 
-[SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "We want the enum values to match the stable mod names for easier mapping.")]
 public enum LegacyMod
 {
-    autoplay,
-    cinema,
-    doubletime,
-    easy,
-    fadein,
-    fadeout,
-    flashlight,
-    halftime,
-    hardrock,
-    hidden,
-    key1,
-    key2,
-    key3,
-    key4,
-    key5,
-    key6,
-    key7,
-    key8,
-    key9,
-    keycoop,
-    mirror, // ManiaModMirror, do not get confused with OsuModMirror.
-    nightcore,
-    nofail,
-    perfect,
-    random, // ManiaModRandom, do not get confused with OsuModRandom.
-    relax,
-    relax2, // autopilot
-    scorev2,
-    spunout,
-    suddendeath,
-    target,
+    Autoplay,
+    Cinema,
+    DoubleTime,
+    Easy,
+    FadeIn,
+    FadeOut,
+    Flashlight,
+    HalfTime,
+    HardRock,
+    Hidden,
+    Key1,
+    Key2,
+    Key3,
+    Key4,
+    Key5,
+    Key6,
+    Key7,
+    Key8,
+    Key9,
+    KeyCoop,
+    Mirror, // ManiaModMirror, do not get confused with OsuModMirror.
+    Nightcore,
+    NoFail,
+    Perfect,
+    Random, // ManiaModRandom, do not get confused with OsuModRandom.
+    Relax,
+    Relax2, // autopilot
+    ScoreV2,
+    SpunOut,
+    SuddenDeath,
+    Target,
 }
