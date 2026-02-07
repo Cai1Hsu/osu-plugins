@@ -40,4 +40,11 @@ public partial class LegacyModDisplay : Sprite
     }
 
     private string textureName => Mod.ToString().ToLowerInvariant();
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        skin?.SourceChanged -= updateTexture;
+    }
 }
