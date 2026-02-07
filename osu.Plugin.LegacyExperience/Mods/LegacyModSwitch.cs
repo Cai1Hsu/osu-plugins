@@ -7,6 +7,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Rulesets;
 using osu.Plugin.LegacyExperience.Localisations;
+using osuTK;
 using osuTK.Input;
 
 namespace osu.Plugin.LegacyExperience.Mods;
@@ -21,6 +22,11 @@ public partial class LegacyModSwitch : CompositeDrawable
 
         this.mods = mods;
         this.currentSelection = mods.Length; // start with no mod selected
+
+        // LegacyModSwitch can't be auto-sized because has to keep mod displays' position consistent,
+        // so we set a fixed size that can fit all mod displays.
+        // This is the grid size used in mod selection in stable(previously 85x60).
+        Size = new Vector2(66, 60) * LegacyExperiencePlugin.StableRatio;
     }
 
     private int currentSelection;
