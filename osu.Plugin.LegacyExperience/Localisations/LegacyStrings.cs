@@ -77,7 +77,7 @@ public static class LegacyStrings
     public static LocalisableString ModSelection_Mod_Easy_Taiko => new TranslatableString(getKey(nameof(ModSelection_Mod_Easy_Taiko)), "Reduces overall difficulty - notes move slower, less accuracy required.");
 
     // This string exists in osu!common.OsuString, but is not localised in osu!stable. We still provide a translation for it in the future.
-    public static LocalisableString ModSelection_Mod_ScoreV2 => new TranslatableString(getKey(nameof(ModSelection_Mod_ScoreV2)), "Try the future scoring system!\n** UNRANKED **");
+    public static LocalisableString ModSelection_Mod_ScoreV2 => new TranslatableString(getKey(nameof(ModSelection_Mod_ScoreV2)), "Try the future scoring system.\n** UNRANKED **");
 
     #endregion // ModSelection_Mod
 
