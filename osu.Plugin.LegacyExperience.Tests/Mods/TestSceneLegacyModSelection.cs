@@ -4,6 +4,8 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
+using osu.Game.Graphics;
+using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays.Mods;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Catch;
@@ -26,9 +28,17 @@ public partial class TestSceneLegacyModSelection : LocalSkinTestScene
     [BackgroundDependencyLoader]
     private void load()
     {
+        OsuSpriteText selectedModsText;
+
         Add(content = new SkinProvidingContainer(new DefaultLegacySkin(this))
         {
             RelativeSizeAxes = Axes.Both,
+        });
+        Add(selectedModsText = new OsuSpriteText
+        {
+            Anchor = Anchor.BottomCentre,
+            Origin = Anchor.BottomCentre,
+            Font = OsuFont.Default.With(size: 16),
         });
 
         AddStep("clear mods", () => SelectedMods.Value = Array.Empty<Mod>());
@@ -37,6 +47,12 @@ public partial class TestSceneLegacyModSelection : LocalSkinTestScene
         AddStep("set ruleset to taiko", () => setRuleset(new TaikoRuleset()));
         AddStep("set ruleset to catch", () => setRuleset(new CatchRuleset()));
         AddStep("set ruleset to mania", () => setRuleset(new ManiaRuleset()));
+
+        SelectedMods.BindValueChanged(v =>
+        {
+            var acronyms = string.Join(string.Empty, v.NewValue.Select(m => m.Acronym));
+            selectedModsText.Text = $"Selected mods: {(string.IsNullOrEmpty(acronyms) ? "None" : acronyms)}";
+        }, true);
     }
 
     private void setRuleset(Ruleset ruleset) => this.ruleset.Value = ruleset.RulesetInfo;
@@ -88,7 +104,7 @@ public partial class TestSceneLegacyModSelection : LocalSkinTestScene
         {
             // make sure overlay appears at the top of the hierarchy to avoid being covered by the dialog.
             clearLazerOverlay();
-            
+
             content.Add(lazerSelect = new UserModSelectOverlay()
             {
                 RelativeSizeAxes = Axes.Both,
