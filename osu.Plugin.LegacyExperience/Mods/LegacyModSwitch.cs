@@ -206,10 +206,6 @@ public partial class LegacyModSwitch : CompositeDrawable
         int direction = backwards ? -1 : 1;
         int newSelection = (currentSelection + direction + TotalSelections) % TotalSelections;
 
-        // If cycling would reach disabled state, go to no selection instead
-        if (newSelection == DisabledSelection)
-            newSelection = NoModSelection;
-
         setSelection(newSelection);
     }
 
