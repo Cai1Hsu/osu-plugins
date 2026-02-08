@@ -6,6 +6,24 @@ namespace osu.Plugin.LegacyExperience.Mods;
 public static class LegacyModExtensions
 {
     /// <summary>
+    /// Gets the <see cref="LegacyModType"/> of a <see cref="LegacyMod"/>. This is used to categorize legacy mods in the mod selection screen.
+    /// </summary>
+    /// <param name="mod">The legacy mod.</param>
+    /// <returns>>The type of the legacy mod.</returns>s
+    public static LegacyModType GetModType(this LegacyMod mod) => mod switch
+    {
+        LegacyMod.Easy or
+        LegacyMod.NoFail or
+        LegacyMod.HalfTime => LegacyModType.Reduction,
+        LegacyMod.HardRock or
+        LegacyMod.SuddenDeath or LegacyMod.Perfect or
+        LegacyMod.DoubleTime or LegacyMod.Nightcore or
+        LegacyMod.FadeIn or LegacyMod.Hidden or
+        LegacyMod.Flashlight => LegacyModType.Increase,
+        _ => LegacyModType.Special,
+    };
+
+    /// <summary>
     /// Tries to get the corresponding <see cref="LegacyMod"/> for a given <see cref="Mod"/>. This is used to map the mods used in stable replays to their corresponding legacy mods.
     /// </summary>
     /// <remarks>
