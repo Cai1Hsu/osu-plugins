@@ -41,7 +41,11 @@ public partial class TestSceneLegacyModSelection : LocalSkinTestScene
     [SetUpSteps]
     public void SetupSteps()
     {
-        AddStep("clear", () => content.Clear());
+        AddStep("clear overlay", () =>
+        {
+            clearLazerOverlay();
+            content.Clear();
+        });
     }
 
     [Test]
@@ -62,24 +66,33 @@ public partial class TestSceneLegacyModSelection : LocalSkinTestScene
         AddStep("hide dialog", () => dialog?.Hide());
     }
 
+    private void clearLazerOverlay()
+    {
+        if (lazerSelect == null)
+            return;
+
+        content.Remove(lazerSelect, true);
+        lazerSelect = null;
+    }
+
+    private UserModSelectOverlay? lazerSelect = null;
+
     // test consistency of mod selection overlay with lazer's mod selection overlay.
     [Test]
-    public void AddLazerModSelectOverlay()
+    public void TestAddLazerModSelectOverlay()
     {
-        UserModSelectOverlay? overlay = null;
-
-        AddStep("add overlay", () =>
+        AddStep("show overlay", () =>
         {
-            if (overlay is not null)
-                return;
-
-            content.Add(overlay = new UserModSelectOverlay()
+            // make sure overlay appears at the top of the hierarchy to avoid being covered by the dialog.
+            clearLazerOverlay();
+            
+            content.Add(lazerSelect = new UserModSelectOverlay()
             {
                 RelativeSizeAxes = Axes.Both,
+                State = { Value = Visibility.Visible },
                 SelectedMods = { BindTarget = SelectedMods }
             });
         });
-        AddStep("show overlay", () => overlay?.Show());
-        AddStep("hide overlay", () => overlay?.Hide());
+        AddStep("hide overlay", () => lazerSelect?.Hide());
     }
 }
