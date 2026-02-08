@@ -54,7 +54,7 @@ public partial class LegacyButton : ClickableContainer
 
     private OsuSpriteText label;
 
-    private Container backgroundContainer = null!;
+    private BufferedContainer backgroundContainer = null!;
 
     private readonly Vector2 dimensions;
 
@@ -63,7 +63,9 @@ public partial class LegacyButton : ClickableContainer
         this.dimensions = dimensions;
         Children = new Drawable[]
         {
-            backgroundContainer = new Container
+            // We made a litte overlap to ensure the button textures can cover the whole button area without gaps.
+            // However, this little overlap looks bad when alpha is not 0 or 1(blending issue).
+            backgroundContainer = new BufferedContainer
             {
                 RelativeSizeAxes = Axes.Both,
             },
