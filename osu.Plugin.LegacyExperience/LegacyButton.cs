@@ -184,13 +184,13 @@ public partial class LegacyButton : ClickableContainer
 
     protected override bool OnClick(ClickEvent e)
     {
+        // Action invoked in base.OnClick, so we want to make sure the sound and visual feedback are triggered.
         if (Enabled.Value)
         {
             clickSample?.Play();
-            Action?.Invoke();
-
             backgroundContainer.FlashColour(Colour4.White, 400);
         }
+
         return base.OnClick(e);
     }
 
