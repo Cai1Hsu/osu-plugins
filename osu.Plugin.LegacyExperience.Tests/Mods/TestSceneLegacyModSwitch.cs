@@ -56,6 +56,11 @@ public partial class TestSceneLegacyModSwitch : LocalSkinTestScene
         AddStep("set ruleset to osu!catch", () => setRuleset(2));
         AddStep("set ruleset to osu!mania", () => setRuleset(3));
         AddStep("set ruleset to custom", () => setRuleset(-1));
+
+        AddStep("set disabled", () => modSwitch?.SetDisabled());
+        AddStep("set no selection", () => modSwitch?.ClearSelection());
+        AddStep("set first mod selected", () => modSwitch?.SelectMod(0));
+        AddStep("cycle selection", () => modSwitch?.Cycle());
     }
 
     [SetUpSteps]
@@ -64,9 +69,11 @@ public partial class TestSceneLegacyModSwitch : LocalSkinTestScene
         AddStep("clear", () => content.Clear());
     }
 
+    private LegacyModSwitch? modSwitch;
+
     private void createModSwitch(LegacyMod[] mods)
     {
-        content.Add(new LegacyModSwitch(mods)
+        content.Add(modSwitch = new LegacyModSwitch(mods)
         {
             Anchor = Anchor.Centre,
             Origin = Anchor.Centre,
