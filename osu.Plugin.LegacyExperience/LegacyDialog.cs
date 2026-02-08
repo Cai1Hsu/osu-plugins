@@ -132,16 +132,26 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
 
     protected override bool OnKeyDown(KeyDownEvent e)
     {
-        if (!e.Repeat && e.Key >= Key.Number1 && e.Key <= Key.Number9)
+        if (!e.Repeat)
         {
-            int index = e.Key - Key.Number1;
-            if (index < optionsContainer.Count)
+            switch (e.Key)
             {
-                var button = optionsContainer.Children[index].Button;
-                button.TriggerClick();
-                return true;
+                case { } when e.Key >= Key.Number1 && e.Key <= Key.Number9:
+                    int index = e.Key - Key.Number1;
+                    if (index < optionsContainer.Count)
+                    {
+                        var button = optionsContainer.Children[index].Button;
+                        button.TriggerClick();
+                        return true;
+                    }
+                    break;
+
+                case Key.Escape:
+                    Close();
+                    return true;
             }
         }
+
         return base.OnKeyDown(e);
     }
 
