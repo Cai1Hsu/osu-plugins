@@ -90,7 +90,6 @@ public partial class LegacyModSwitch : CompositeDrawable
             if (i != DisplayIndex)
                 display.Alpha = 0;
 
-            applyDisplayState(display);
             modDisplays[i] = display;
             AddInternal(display);
         }
@@ -104,12 +103,6 @@ public partial class LegacyModSwitch : CompositeDrawable
     // this means when you click with right button previously pressed, the direction will still be backwards.
     // We keep this behaviour in case any user relies on it, but it is not recommended to use right click for mod switching.
     private bool shouldBackwards => inputManager.CurrentState.Mouse.IsPressed(MouseButton.Right);
-
-    private void applyDisplayState(ClickableModDisplay display)
-    {
-        if (State == ModSelectionState.Disabled && display == modDisplays[DisplayIndex])
-            display.Alpha = 0.5f;
-    }
 
     private static readonly SampleInfo checkOnSampleInfo = new SampleInfo("UI/check-on");
     private static readonly SampleInfo checkOffSampleInfo = new SampleInfo("UI/check-off");
@@ -226,7 +219,7 @@ public partial class LegacyModSwitch : CompositeDrawable
         mod.FadeIn(100)
            .ScaleTo(1f, 400, Easing.OutElastic)
            .RotateTo(0f, 400, Easing.OutElastic)
-           .FadeColour(Colour4.White.Opacity(0.5f), 400, Easing.OutElastic);
+           .FadeColour(Colour4.White.Darken(0.5f), 400, Easing.OutElastic);
     }
 
     private void resetMod(ClickableModDisplay mod)
