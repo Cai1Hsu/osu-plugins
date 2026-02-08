@@ -14,12 +14,16 @@ partial class LegacyModSelection
     {
         public OsuSpriteText Label { get; }
 
+        public required LegacyModType GroupType { get; init; }
+
         public FillFlowContainer Mods { get; }
 
         public SelectionGroup()
         {
             RelativeSizeAxes = Axes.X;
             Height = CellSize.Y;
+
+            Name = $"{GroupType} group";
 
             Children = new Drawable[]
             {

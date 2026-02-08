@@ -43,6 +43,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
             {
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.TopCentre,
+                GroupType = LegacyModType.Reduction,
                 Label =
                 {
                     Text = LegacyStrings.ModSelection_Reduction,
@@ -53,6 +54,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
             {
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.TopCentre,
+                GroupType = LegacyModType.Increase,
                 Label =
                 {
                     Text = LegacyStrings.ModSelection_Increase,
@@ -63,6 +65,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
             {
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.TopCentre,
+                GroupType = LegacyModType.Special,
                 Label =
                 {
                     Text = LegacyStrings.ModSelection_Special,
