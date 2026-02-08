@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -97,6 +98,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
             modSettingChangeTracker?.Dispose();
             modSettingChangeTracker = new ModSettingChangeTracker(mods.NewValue);
             modSettingChangeTracker.SettingChanged += _ => updateModsInformation();
+            registerModSettingsChange();
         }, true);
 
         localScoreMultiplier.BindValueChanged(_ => updateMultiplierText(), true);
@@ -212,9 +214,24 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         if (combinations.Count == 0)
             return;
 
-        // FIXME: currently for displaying only.
-        var comb = combinations.Select(c => c.LegacyMod).ToArray();
-        group.Mods.Add(new LegacyModSwitch(comb));
+        var modSwitch = combinations switch
+        {
+            [ModInfo(LegacyMod.ScoreV2, _)] => new ScoreV2ModSwitch(combinations),
+            _ => new UserModSwitch(combinations),
+        };
+
+        group.Mods.Add(modSwitch);
+    }
+
+    private void registerModSettingsChange()
+    {
+        Debug.Assert(modSettingChangeTracker is not null);
+
+        var modSwitches = Content.OfType<SelectionGroup>()
+            .SelectMany(static g => g.Mods.OfType<UserModSwitch>());
+
+        foreach (var modSwitch in modSwitches)
+            modSettingChangeTracker.SettingChanged += _ => modSwitch.OnSettingChanged();
     }
 
     #region  Combinations and display order
