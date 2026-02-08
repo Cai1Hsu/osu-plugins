@@ -109,7 +109,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         // TODO:
         // there are many mods that's not supported in legacy mod selection, but they may still change multiplier
         // We have to find a way to notify the user about the inconsistency of the multiplier,
-        // otherwise they may be confused about why the multiplier doesn't their expectation.
+        // otherwise they may be confused about why the multiplier doesn't match their expectation.
         foreach (var mod in selectedMods.Value)
         {
             // matches stable's behaviour: if any unranked mod is selected, the multiplier will be 0.
