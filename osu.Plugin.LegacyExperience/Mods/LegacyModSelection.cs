@@ -85,7 +85,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
 
     private void computeLocalAvailableMods()
     {
-        var loaclMods = new Dictionary<LegacyMod, Mod>[]
+        var localMods = new Dictionary<LegacyMod, Mod>[]
         {
             new Dictionary<LegacyMod, Mod>(), // reduction
             new Dictionary<LegacyMod, Mod>(), // increase
@@ -99,16 +99,16 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
             // We treat ScoreV2 as the reversal of Classic mod, 
             // which means when ScoreV2 is present, Classic mod is not available, and vice versa.
             if (mod is ModClassic)
-                loaclMods[(int)LegacyModType.Special][LegacyMod.ScoreV2] = mod;
+                localMods[(int)LegacyModType.Special][LegacyMod.ScoreV2] = mod;
 
             if (!LegacyModExtensions.TryGetLegacyMod(mod, out var legacyMod))
                 continue;
 
             var modType = legacyMod.Value.GetModType();
-            loaclMods[(int)modType][legacyMod.Value] = mod;
+            localMods[(int)modType][legacyMod.Value] = mod;
         }
 
-        localAvailableMods.Value = loaclMods;
+        localAvailableMods.Value = localMods;
     }
 
     private void updateModGroups()
@@ -116,14 +116,14 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         foreach (var group in Content.OfType<SelectionGroup>())
             group.Mods.Clear();
 
-        polulateReductionMods();
-        polulateIncreaseMods();
-        polulateSpecialMods();
+        populateReductionMods();
+        populateIncreaseMods();
+        populateSpecialMods();
     }
 
     private readonly record struct ModInfo(LegacyMod LegacyMod, Mod Mod);
 
-    private void polulateReductionMods()
+    private void populateReductionMods()
     {
         var mods = localAvailableMods.Value[(int)LegacyModType.Reduction];
 
@@ -145,7 +145,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         addToGroup(ReductionGroup, ht_comb);
     }
 
-    private void polulateIncreaseMods()
+    private void populateIncreaseMods()
     {
         var mods = localAvailableMods.Value[(int)LegacyModType.Increase];
 
@@ -183,7 +183,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         addToGroup(IncreaseGroup, fl_comb);
     }
 
-    private void polulateSpecialMods()
+    private void populateSpecialMods()
     {
         var mods = localAvailableMods.Value[(int)LegacyModType.Special];
 
