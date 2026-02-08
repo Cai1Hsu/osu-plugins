@@ -359,6 +359,7 @@ public partial class LegacyModSwitch : CompositeDrawable
         [BackgroundDependencyLoader]
         private void load(IBindable<Ruleset>? ruleset)
         {
+            // Since mod switches will be recreated every time the ruleset changes, we don't handle ruleset changes here. 
             var playMode = ruleset?.Value.RulesetInfo.OnlineID ?? 0;
 
             tooltipText = modDisplay.Mod switch
