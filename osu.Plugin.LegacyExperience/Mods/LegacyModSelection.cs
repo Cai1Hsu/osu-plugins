@@ -249,7 +249,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
 
     private static readonly LegacyMod[][] specialOrder = new[]
     {
-        combination_ATCN,
+        combination_KEYN,
         new [] { LegacyMod.KeyCoop },
         new [] { LegacyMod.Mirror },
         new [] { LegacyMod.Random },
