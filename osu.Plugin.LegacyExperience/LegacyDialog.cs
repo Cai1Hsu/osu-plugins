@@ -13,10 +13,10 @@ namespace osu.Plugin.LegacyExperience;
 
 public partial class LegacyDialog : DrawSizePreservingFillContainer
 {
-    public new FillFlowContainer Content { get; } = null!;
-    public OsuTextFlowContainer TitleText { get; } = null!;
+    public new FillFlowContainer Content { get; }
+    public OsuTextFlowContainer TitleText { get; }
 
-    private FillFlowContainer<OptionButtonContainer> optionsContainer = null!;
+    private FillFlowContainer<OptionButtonContainer> optionsContainer;
 
     public LegacyDialog()
     {
