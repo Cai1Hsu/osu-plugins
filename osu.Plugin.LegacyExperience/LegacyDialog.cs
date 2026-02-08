@@ -79,7 +79,9 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
         if (LoadState < LoadState.Loaded)
             throw new InvalidOperationException($"Add options in {nameof(LoadComplete)} or later.");
 
-        var labelText = LocalisableString.Interpolate($"{optionsContainer.Count + 1}. {text}");
+        var index = optionsContainer.Count;
+
+        var labelText = LocalisableString.Interpolate($"{index + 1}. {text}");
 
         var button = new LegacyButton(labelText, new Vector2(460, 40))
         {
@@ -102,8 +104,8 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
         {
             const float initialOffset = 40f * LegacyExperiencePlugin.StableRatio;
 
-            int delay = optionsContainer.Count * 60;
-            bool isOdd = optionsContainer.Count % 2 == 1;
+            int delay = index * 60;
+            bool isOdd = index % 2 == 1;
 
             button.MoveToX(isOdd ? -initialOffset : initialOffset)
                 .FadeOut()
