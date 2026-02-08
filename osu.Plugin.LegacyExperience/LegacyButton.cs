@@ -115,14 +115,14 @@ public partial class LegacyButton : ClickableContainer
 
     private void updateSkin()
     {
-        Texture? getTexutre(string name) => skin?.GetSkinTexture(name, textures, "UI");
+        Texture? getTexture(string name) => skin?.GetSkinTexture(name, textures, "UI");
 
         hoverSample = skin?.GetSample(hoverSampleInfo);
         clickSample = skin?.GetSample(clickSampleInfo);
 
-        updateTexture(buttonLeft, getTexutre("button-left"));
-        updateTexture(buttonMiddle, getTexutre("button-middle"));
-        updateTexture(buttonRight, getTexutre("button-right"));
+        updateTexture(buttonLeft, getTexture("button-left"));
+        updateTexture(buttonMiddle, getTexture("button-middle"));
+        updateTexture(buttonRight, getTexture("button-right"));
 
         float leftScale = dimensions.Y / (buttonLeft.DrawHeight * 0.625f);
         float rightScale = dimensions.Y / (buttonRight.DrawHeight * 0.625f);
@@ -136,7 +136,7 @@ public partial class LegacyButton : ClickableContainer
         float middleScaleX = (dimensions.X - leftWidth * 2f) / (float)buttonMiddle.Texture.DisplayWidth * LegacyExperiencePlugin.StableRatio;
 
         // on lazer there's a weird 1px gap between the middle and the left/right textures
-        // we do a conpensation by slightly increasing the scale of the middle texture and moving it a bit to the left
+        // we do a compensation by slightly increasing the scale of the middle texture and moving it a bit to the left
         middlePositionX -= 0.5f;
         middleScaleX += 2f / dimensions.X;
 
