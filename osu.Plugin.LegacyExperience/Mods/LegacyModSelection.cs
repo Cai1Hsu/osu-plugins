@@ -125,6 +125,7 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
     {
         var multiplier = localScoreMultiplier.Value;
 
+        // match stable: MultiplierText is not localised.
         MultiplierText.Text = $"Score Multiplier: {multiplier:0.00}x";
 
         var colour = multiplier switch
