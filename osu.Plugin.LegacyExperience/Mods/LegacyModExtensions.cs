@@ -82,7 +82,6 @@ public static class LegacyModExtensions
             _ when modType == OsuModTarget => LegacyMod.Target,
             // key10 is not supported in stable
             // fade out is no longer used in both stable and lazer, so we don't support it either.
-            // key coop is not yet supported in lazer
             _ => null,
         };
     }
