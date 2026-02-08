@@ -42,6 +42,7 @@ public partial class TestSceneLegacyButton : LocalSkinTestScene
     [SetUpSteps]
     public void SetUpSteps()
     {
+        AddStep("clear content", () => content.Clear());
         AddStep("add button", () =>
         {
             content.Add(button = new LegacyButton("Test Button", new Vector2(460, 40))
