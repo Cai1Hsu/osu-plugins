@@ -2,9 +2,9 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Game;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
-using osu.Game.Overlays.Mods;
 using osu.Game.Rulesets.Mods;
 using osu.Plugin.LegacyExperience.Localisations;
 
@@ -72,6 +72,13 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         });
     }
 
+    private readonly BindableDouble localScoreMultiplier = new BindableDouble(1.0);
+
+    private ModSettingChangeTracker? modSettingChangeTracker;
+
+    [Resolved]
+    private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
+
     private readonly IBindable<Dictionary<ModType, IReadOnlyList<Mod>>> globalAvailableMods = new Bindable<Dictionary<ModType, IReadOnlyList<Mod>>>();
     private readonly Bindable<Dictionary<LegacyMod, Mod>[]> localAvailableMods = new Bindable<Dictionary<LegacyMod, Mod>[]>();
 
@@ -81,6 +88,53 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         globalAvailableMods.BindTo(gameBase.AvailableMods);
         globalAvailableMods.BindValueChanged(_ => computeLocalAvailableMods(), true);
         localAvailableMods.BindValueChanged(_ => updateModGroups(), true);
+
+        selectedMods.BindValueChanged(mods =>
+        {
+            updateModsInfomation();
+
+            modSettingChangeTracker?.Dispose();
+            modSettingChangeTracker = new ModSettingChangeTracker(mods.NewValue);
+            modSettingChangeTracker.SettingChanged += _ => updateModsInfomation();
+        }, true);
+
+        localScoreMultiplier.BindValueChanged(_ => updateMultiplierText(), true);
+    }
+
+    private void updateModsInfomation()
+    {
+        double multiplier = 1.0;
+
+        // TODO:
+        // there are many mods that's not supported in legacy mod selection, but they may still change multiplier
+        // We have to find a way to notify the user about the inconsistency of the multiplier,
+        // otherwise they may be confused about why the multiplier doesn't their expectation.
+        foreach (var mod in selectedMods.Value)
+        {
+            if (mod.Ranked)
+                multiplier *= mod.ScoreMultiplier;
+            else
+                // matches stable's behaviour: if any unranked mod is selected, the multiplier will be 0.
+                multiplier = 0;
+        }
+
+        localScoreMultiplier.Value = multiplier;
+    }
+
+    private void updateMultiplierText()
+    {
+        var multiplier = localScoreMultiplier.Value;
+
+        MultiplierText.Text = $"Score Multiplier: {multiplier:0.00}x";
+
+        var colour = multiplier switch
+        {
+            > 1.0 => Colour4.GreenYellow,
+            < 1.0 => Colour4.OrangeRed,
+            _ => Colour4.White,
+        };
+
+        MultiplierText.FadeColour(colour, 400);
     }
 
     private void computeLocalAvailableMods()
