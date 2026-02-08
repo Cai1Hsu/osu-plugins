@@ -336,15 +336,15 @@ public partial class LegacyModSwitch : CompositeDrawable
             AutoSizeAxes = Axes.Both;
         }
 
-        protected override bool OnMouseDown(MouseDownEvent e)
+        protected override void OnMouseUp(MouseUpEvent e)
         {
+            // in stable, click event is fired immediately,
+            // but since clickable container in lazer fires click event on mouse up,
+            // we also trigger click on right mouse button to keep the behaviour consistent with left click.
             if (e.Button == MouseButton.Right)
             {
                 TriggerClick();
-                return true;
             }
-
-            return base.OnMouseDown(e);
         }
 
         [BackgroundDependencyLoader]
