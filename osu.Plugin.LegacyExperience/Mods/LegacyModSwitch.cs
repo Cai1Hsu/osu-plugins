@@ -346,6 +346,7 @@ public partial class LegacyModSwitch : CompositeDrawable
             {
                 TriggerClick();
             }
+            base.OnMouseUp(e);
         }
 
         [BackgroundDependencyLoader]
