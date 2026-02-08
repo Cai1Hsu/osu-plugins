@@ -6,6 +6,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Framework.Logging;
 using osu.Game.Audio;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
@@ -124,24 +125,33 @@ public partial class LegacyButton : ClickableContainer
         updateTexture(buttonMiddle, getTexture("button-middle"));
         updateTexture(buttonRight, getTexture("button-right"));
 
-        float leftScale = dimensions.Y / (buttonLeft.DrawHeight * 0.625f);
-        float rightScale = dimensions.Y / (buttonRight.DrawHeight * 0.625f);
-        buttonLeft.Scale = new Vector2(leftScale);
-        buttonRight.Scale = new Vector2(rightScale);
+        // we've packed the default textures with the plugin so there should always be valid textures
+        // i don't want to handle NRE/DivideByZero exceptions here, so just log an error if the textures are missing and skip the layout update.
+        try
+        {
+            float leftScale = dimensions.Y / (buttonLeft.DrawHeight * 0.625f);
+            float rightScale = dimensions.Y / (buttonRight.DrawHeight * 0.625f);
+            buttonLeft.Scale = new Vector2(leftScale);
+            buttonRight.Scale = new Vector2(rightScale);
 
-        float leftWidth = buttonLeft.DrawWidth * 0.625f * leftScale;
-        buttonRight.Position = new Vector2(dimensions.X - leftWidth, 0) * LegacyExperiencePlugin.StableRatio;
+            float leftWidth = buttonLeft.DrawWidth * 0.625f * leftScale;
+            buttonRight.Position = new Vector2(dimensions.X - leftWidth, 0) * LegacyExperiencePlugin.StableRatio;
 
-        float middlePositionX = leftWidth * LegacyExperiencePlugin.StableRatio;
-        float middleScaleX = (dimensions.X - leftWidth * 2f) / (float)buttonMiddle.Texture.DisplayWidth * LegacyExperiencePlugin.StableRatio;
+            float middlePositionX = leftWidth * LegacyExperiencePlugin.StableRatio;
+            float middleScaleX = (dimensions.X - leftWidth * 2f) / (float)buttonMiddle.Texture.DisplayWidth * LegacyExperiencePlugin.StableRatio;
 
-        // on lazer there's a weird 1px gap between the middle and the left/right textures
-        // we do a compensation by slightly increasing the scale of the middle texture and moving it a bit to the left
-        middlePositionX -= 0.5f;
-        middleScaleX += 2f / dimensions.X;
+            // on lazer there's a weird 1px gap between the middle and the left/right textures
+            // we do a compensation by slightly increasing the scale of the middle texture and moving it a bit to the left
+            middlePositionX -= 0.5f;
+            middleScaleX += 2f / dimensions.X;
 
-        buttonMiddle.Position = new Vector2(middlePositionX, 0);
-        buttonMiddle.Scale = new Vector2(middleScaleX, rightScale);
+            buttonMiddle.Position = new Vector2(middlePositionX, 0);
+            buttonMiddle.Scale = new Vector2(middleScaleX, rightScale);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to update button textures. Please report this to the plugin developer.");
+        }
     }
 
     void updateTexture(Sprite sprite, Texture? texture)
