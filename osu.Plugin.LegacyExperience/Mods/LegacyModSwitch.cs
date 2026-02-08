@@ -55,7 +55,7 @@ public partial class LegacyModSwitch : CompositeDrawable
         ArgumentOutOfRangeException.ThrowIfLessThan(mods.Length, 1, nameof(mods));
 
         this.mods = mods;
-        this.currentSelection = mods.Length; // start with no mod selected
+        this.currentSelection = NoModSelection; // start with no mod selected
 
         // LegacyModSwitch can't be auto-sized because has to keep mod displays' position consistent,
         // so we set a fixed size that can fit all mod displays.
