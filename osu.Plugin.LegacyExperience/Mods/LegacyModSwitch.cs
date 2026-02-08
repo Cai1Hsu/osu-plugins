@@ -50,6 +50,8 @@ public partial class LegacyModSwitch : CompositeDrawable
 {
     private readonly LegacyMod[] mods;
 
+    public IReadOnlyList<LegacyMod> Mods => mods;
+
     public LegacyModSwitch(LegacyMod[] mods)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(mods.Length, 1, nameof(mods));
