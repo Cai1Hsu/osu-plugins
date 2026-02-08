@@ -96,16 +96,19 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
             .SelectMany(static kv => kv.Value)
             .SelectMany(m => m is MultiMod multi ? multi.Mods : new[] { m }))
         {
-            // We treat ScoreV2 as the reversal of Classic mod, 
-            // which means when ScoreV2 is present, Classic mod is not available, and vice versa.
-            if (mod is ModClassic)
-                localMods[(int)LegacyModType.Special][LegacyMod.ScoreV2] = mod;
+            switch (mod)
+            {
+                // We treat ScoreV2 as the reversal of Classic mod, 
+                // which means when ScoreV2 is present, Classic mod is not available, and vice versa.
+                case ModClassic:
+                    localMods[(int)LegacyModType.Special][LegacyMod.ScoreV2] = mod;
+                    break;
 
-            if (!LegacyModExtensions.TryGetLegacyMod(mod, out var legacyMod))
-                continue;
-
-            var modType = legacyMod.Value.GetModType();
-            localMods[(int)modType][legacyMod.Value] = mod;
+                case { } when LegacyModExtensions.TryGetLegacyMod(mod, out var legacyMod):
+                    var modType = legacyMod.Value.GetModType();
+                    localMods[(int)modType][legacyMod.Value] = mod;
+                    break;
+            }
         }
 
         localAvailableMods.Value = localMods;
