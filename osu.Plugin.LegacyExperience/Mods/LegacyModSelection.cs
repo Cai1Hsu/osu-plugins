@@ -318,6 +318,13 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         group.Mods.Add(new LegacyModSwitch(comb));
     }
 
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        modSettingChangeTracker?.Dispose();
+    }
+
     private double lastHoverSampleTime = double.MinValue;
     private const double hoverSampleDebounceTime = 50;
 
