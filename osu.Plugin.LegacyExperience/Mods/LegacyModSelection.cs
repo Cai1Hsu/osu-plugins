@@ -91,17 +91,17 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
 
         selectedMods.BindValueChanged(mods =>
         {
-            updateModsInfomation();
+            updateModsInformation();
 
             modSettingChangeTracker?.Dispose();
             modSettingChangeTracker = new ModSettingChangeTracker(mods.NewValue);
-            modSettingChangeTracker.SettingChanged += _ => updateModsInfomation();
+            modSettingChangeTracker.SettingChanged += _ => updateModsInformation();
         }, true);
 
         localScoreMultiplier.BindValueChanged(_ => updateMultiplierText(), true);
     }
 
-    private void updateModsInfomation()
+    private void updateModsInformation()
     {
         double multiplier = 1.0;
 
