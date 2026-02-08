@@ -9,7 +9,7 @@ public static class LegacyModExtensions
     /// Gets the <see cref="LegacyModType"/> of a <see cref="LegacyMod"/>. This is used to categorize legacy mods in the mod selection screen.
     /// </summary>
     /// <param name="mod">The legacy mod.</param>
-    /// <returns>>The type of the legacy mod.</returns>s
+    /// <returns>The type of the legacy mod.</returns>
     public static LegacyModType GetModType(this LegacyMod mod) => mod switch
     {
         LegacyMod.Easy or
