@@ -78,7 +78,7 @@ public partial class LegacyButton : ClickableContainer
             },
             Empty().With(d =>
             {
-                Name = "Dimension Fitter";
+                d.Name = "Dimension Fitter";
                 d.Size = dimensions * LegacyExperiencePlugin.StableRatio;
                 d.Anchor = Anchor.Centre;
                 d.Origin = Anchor.Centre;
