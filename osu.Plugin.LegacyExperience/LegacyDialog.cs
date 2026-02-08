@@ -14,7 +14,7 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
     public new FillFlowContainer Content { get; } = null!;
     public OsuTextFlowContainer TitleText { get; } = null!;
 
-    private FillFlowContainer optionsContainer = null!;
+    private FillFlowContainer<OptionButtonContainer> optionsContainer = null!;
 
     public LegacyDialog()
     {
@@ -58,7 +58,7 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
                             },
                         }
                     },
-                    optionsContainer = new FillFlowContainer
+                    optionsContainer = new FillFlowContainer<OptionButtonContainer>
                     {
                         Name = "Options",
                         RelativeSizeAxes = Axes.X,
@@ -86,11 +86,10 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
         };
         configure?.Invoke(button);
 
-        optionsContainer.Add(new Container
+        optionsContainer.Add(new OptionButtonContainer(button)
         {
             RelativeSizeAxes = Axes.X,
             Height = 50 * LegacyExperiencePlugin.StableRatio,
-            Child = button
         });
 
         if (IsPresent)
@@ -133,5 +132,15 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
     {
         // FIXME: CJK characters look smaller than they should be.
         t.Font = OsuFont.Default.With(size: 24 * LegacyExperiencePlugin.StableRatio);
+    }
+
+    private partial class OptionButtonContainer : CompositeDrawable
+    {
+        public readonly LegacyButton Button;
+
+        public OptionButtonContainer(LegacyButton button)
+        {
+            InternalChild = Button = button;
+        }
     }
 }
