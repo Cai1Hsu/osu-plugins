@@ -15,6 +15,37 @@ using osuTK.Input;
 
 namespace osu.Plugin.LegacyExperience.Mods;
 
+/// <summary>
+/// Represents the selection state of a mod switch.
+/// </summary>
+public enum ModSelectionState
+{
+    /// <summary>
+    /// A specific mod is selected.
+    /// </summary>
+    Selected,
+
+    /// <summary>
+    /// No mod is selected.
+    /// </summary>
+    NoSelection,
+
+    /// <summary>
+    /// The mod switch is disabled (darkened by 50%).
+    /// Switching forward/backward will return to NoSelection state.
+    /// </summary>
+    Disabled,
+}
+
+/// <summary>
+/// Contains information about the current selection state of a mod switch.
+/// </summary>
+public readonly record struct ModSelectionInfo(
+    ModSelectionState State,
+    int DisplayedIndex,
+    int? SelectedIndex,
+    LegacyMod? SelectedMod);
+
 public partial class LegacyModSwitch : CompositeDrawable
 {
     private readonly LegacyMod[] mods;
@@ -53,18 +84,31 @@ public partial class LegacyModSwitch : CompositeDrawable
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
-                Action = onModClick,
+                Action = () => Cycle(shouldBackwards),
             };
 
             if (i != DisplayIndex)
                 display.Alpha = 0;
 
+            applyDisplayState(display);
             modDisplays[i] = display;
             AddInternal(display);
         }
 
         updateSkin();
         skin?.SourceChanged += updateSkin;
+    }
+
+
+    // stable uses contains instead of checking the activation button,
+    // this means when you click with right button previously pressed, the direction will still be backwards.
+    // We keep this behaviour in case any user relies on it, but it is not recommended to use right click for mod switching.
+    private bool shouldBackwards => inputManager.CurrentState.Mouse.IsPressed(MouseButton.Right);
+
+    private void applyDisplayState(ClickableModDisplay display)
+    {
+        if (State == ModSelectionState.Disabled && display == modDisplays[DisplayIndex])
+            display.Alpha = 0.5f;
     }
 
     private static readonly SampleInfo checkOnSampleInfo = new SampleInfo("UI/check-on");
@@ -87,63 +131,189 @@ public partial class LegacyModSwitch : CompositeDrawable
     }
 
     /// <summary>
-    /// Represent the current selection of the mod switch. The value is the index of the selected mod in the mods array, or mods.Length if no mod is selected.
+    /// Gets the current selection state of the mod switch.
+    /// </summary>
+    public ModSelectionState State
+    {
+        get
+        {
+            if (currentSelection == DisabledSelection)
+                return ModSelectionState.Disabled;
+            if (currentSelection == NoModSelection)
+                return ModSelectionState.NoSelection;
+            return ModSelectionState.Selected;
+        }
+    }
+
+    /// <summary>
+    /// Gets information about the current selection state.
+    /// </summary>
+    public ModSelectionInfo CurrentInfo
+    {
+        get
+        {
+            var state = State;
+            int? selectedIndex = state == ModSelectionState.Selected ? currentSelection : null;
+            LegacyMod? selectedMod = state == ModSelectionState.Selected ? mods[currentSelection] : null;
+            return new ModSelectionInfo(state, DisplayIndex, selectedIndex, selectedMod);
+        }
+    }
+
+    /// <summary>
+    /// Represent the current selection of the mod switch. The value is the index of the selected mod in the mods array,
+    /// or <see cref="NoModSelection"/> if no mod is selected, or <see cref="DisabledSelection"/> if disabled.
     /// </summary>
     public int CurrentSelection => currentSelection;
 
     /// <summary>
     /// Represent the index of the mod to be displayed. This is used for display purposes only, and is always in the range of [0, mods.Length - 1]. 
-    /// When no mod is selected, the first mod (index 0) will be displayed.
+    /// When no mod is selected or disabled, the first mod (index 0) will be displayed.
     /// </summary>
-    public int DisplayIndex => currentSelection % mods.Length;
+    public int DisplayIndex => currentSelection < mods.Length ? currentSelection : 0;
 
     /// <summary>
-    /// Represent the total number of selections, which is the number of mods plus one for the no mod selection.
+    /// Represent the total number of selections, which is the number of mods plus one.
     /// </summary>
     public int TotalSelections => mods.Length + 1;
 
     /// <summary>
-    /// The currently activated mod. This will be null when no mod is selected (CurrentSelection == mods.Length).
+    /// The currently activated mod. This will be null when no mod is selected or when disabled.
     /// </summary>
-    public LegacyMod? SelectedMod => currentSelection < mods.Length ? mods[currentSelection] : null;
+    public LegacyMod? SelectedMod => State == ModSelectionState.Selected ? mods[currentSelection] : null;
 
-    private void onModClick()
+    /// <summary>
+    /// The selection index representing the no selection state. This is always equal to mods.Length.
+    /// </summary>
+    public int NoModSelection => mods.Length;
+
+    /// <summary>
+    /// The selection index representing the disabled state. This is always equal to mods.Length + 1.
+    /// </summary>
+    public int DisabledSelection => mods.Length + 1;
+
+    /// <summary>
+    /// </summary>
+    public void Cycle(bool backwards = false)
     {
-        deactivateMod(modDisplays[DisplayIndex]);
-
-        // stable uses contains instead of checking the activation button,
-        // this means when you click with right button previously pressed, the direction will still be backwards.
-        // We keep this behaviour in case any user relies on it, but it is not recommended to use right click for mod switching.
-        int direction = inputManager.CurrentState.Mouse.IsPressed(MouseButton.Right) ? -1 : 1;
-
-        currentSelection = (currentSelection + direction + TotalSelections) % TotalSelections;
-
-        var next = modDisplays.ElementAtOrDefault(CurrentSelection);
-
-        if (next is not null)
+        // If disabled, clicking always returns to no selection
+        if (State == ModSelectionState.Disabled)
         {
-            activateMod(next);
-            checkOnSample?.Play();
+            setSelection(NoModSelection);
+            return;
         }
-        else
-        {
-            resetMod(modDisplays[DisplayIndex]);
-            checkOffSample?.Play();
-        }
+
+        int direction = backwards ? -1 : 1;
+        int newSelection = (currentSelection + direction + TotalSelections) % TotalSelections;
+
+        // If cycling would reach disabled state, go to no selection instead
+        if (newSelection == DisabledSelection)
+            newSelection = NoModSelection;
+
+        setSelection(newSelection);
+    }
+
+    private void setSelection(int newSelection)
+    {
+        if (currentSelection == newSelection)
+            return;
+
+        var previousInfo = CurrentInfo;
+        currentSelection = newSelection;
+        var currentInfo = CurrentInfo;
+
+        OnSelectionChanged(previousInfo, currentInfo);
+    }
+
+    private void disableMod(ClickableModDisplay mod)
+    {
+        mod.FadeIn(100)
+           .ScaleTo(1f, 400, Easing.OutElastic)
+           .RotateTo(0f, 400, Easing.OutElastic)
+           .FadeColour(Colour4.White.Opacity(0.5f), 400, Easing.OutElastic);
     }
 
     private void resetMod(ClickableModDisplay mod)
     {
         mod.FadeIn(100)
            .ScaleTo(1f, 400, Easing.OutElastic)
-           .RotateTo(0f, 400, Easing.OutElastic);
+           .RotateTo(0f, 400, Easing.OutElastic)
+           .FadeColour(Colour4.White, 400, Easing.OutElastic);
+    }
+
+    /// <summary>
+    /// Sets the selection to a specific mod by its index.
+    /// </summary>
+    /// <param name="index">The index of the mod to select (0 to mods.Length - 1).</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when index is out of range.</exception>
+    public void SelectMod(int index)
+    {
+        if (index < 0 || index >= mods.Length)
+            throw new ArgumentOutOfRangeException(nameof(index), $"Index must be between 0 and {mods.Length - 1}");
+
+        setSelection(index);
+    }
+
+    /// <summary>
+    /// Clears the current selection, returning to the no selection state.
+    /// </summary>
+    public void ClearSelection()
+    {
+        setSelection(mods.Length);
+    }
+
+    /// <summary>
+    /// Sets the mod switch to the disabled state.
+    /// When disabled, the displayed mod is darkened by 50% and cycling will return to no selection.
+    /// </summary>
+    public void SetDisabled()
+    {
+        setSelection(DisabledSelection);
+    }
+
+    /// <summary>
+    /// Gets whether the mod switch is currently in the disabled state.
+    /// </summary>
+    public bool IsDisabled => State == ModSelectionState.Disabled;
+
+    /// <summary>
+    /// Called when the selection state changes. Override to respond to state changes.
+    /// </summary>
+    /// <param name="previousInfo">Information about the previous selection state.</param>
+    /// <param name="currentInfo">Information about the current selection state.</param>
+    protected virtual void OnSelectionChanged(ModSelectionInfo previousInfo, ModSelectionInfo currentInfo)
+    {
+        var sample = (currentInfo.State, previousInfo.State) switch
+        {
+            (ModSelectionState.Selected, _) => checkOnSample,
+            (ModSelectionState.NoSelection, ModSelectionState.Disabled) => null,
+            _ => checkOffSample,
+        };
+        sample?.Play();
+
+        deactivateMod(modDisplays[previousInfo.DisplayedIndex]);
+
+        switch (currentInfo.State)
+        {
+            case ModSelectionState.Selected:
+                activateMod(modDisplays[currentInfo.DisplayedIndex]);
+                break;
+
+            case ModSelectionState.NoSelection:
+                resetMod(modDisplays[currentInfo.DisplayedIndex]);
+                break;
+
+            case ModSelectionState.Disabled:
+                disableMod(modDisplays[currentInfo.DisplayedIndex]);
+                break;
+        }
     }
 
     private void activateMod(ClickableModDisplay mod)
     {
         mod.FadeIn(100)
            .ScaleTo(1.2f, 400, Easing.OutElastic)
-           .RotateTo(activate_rotation, 400, Easing.OutElastic);
+           .RotateTo(activate_rotation, 400, Easing.OutElastic)
+           .FadeColour(Colour4.White, 400, Easing.OutElastic);
     }
 
     private const float activate_rotation = (float)(0.1 * 180 / Math.PI);
@@ -152,7 +322,8 @@ public partial class LegacyModSwitch : CompositeDrawable
     {
         mod.FadeOut(100)
            .ScaleTo(1f, 400, Easing.OutElastic)
-           .RotateTo(0f, 400, Easing.OutElastic);
+           .RotateTo(0f, 400, Easing.OutElastic)
+           .FadeColour(Colour4.White, 400, Easing.OutElastic);
     }
 
     protected override void Dispose(bool isDisposing)
