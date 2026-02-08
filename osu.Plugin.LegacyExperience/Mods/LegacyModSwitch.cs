@@ -192,6 +192,7 @@ public partial class LegacyModSwitch : CompositeDrawable
     public int DisabledSelection => mods.Length + 1;
 
     /// <summary>
+    /// Cycles to the next or previous mod selection.
     /// </summary>
     public void Cycle(bool backwards = false)
     {
