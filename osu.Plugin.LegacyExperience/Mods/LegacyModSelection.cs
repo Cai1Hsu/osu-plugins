@@ -40,33 +40,30 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
                     Bottom = 9 * LegacyExperiencePlugin.StableRatio,
                 },
             },
-            ReductionGroup = new SelectionGroup
+            ReductionGroup = new SelectionGroup(LegacyModType.Reduction)
             {
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.TopCentre,
-                GroupType = LegacyModType.Reduction,
                 Label =
                 {
                     Text = LegacyStrings.ModSelection_Reduction,
                     Colour = Colour4.LimeGreen,
                 },
             },
-            IncreaseGroup = new SelectionGroup
+            IncreaseGroup = new SelectionGroup(LegacyModType.Increase)
             {
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.TopCentre,
-                GroupType = LegacyModType.Increase,
                 Label =
                 {
                     Text = LegacyStrings.ModSelection_Increase,
                     Colour = Colour4.OrangeRed,
                 },
             },
-            SpecialGroup = new SelectionGroup
+            SpecialGroup = new SelectionGroup(LegacyModType.Special)
             {
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.TopCentre,
-                GroupType = LegacyModType.Special,
                 Label =
                 {
                     Text = LegacyStrings.ModSelection_Special,
