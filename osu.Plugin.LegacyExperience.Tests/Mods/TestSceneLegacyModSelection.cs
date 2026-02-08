@@ -8,6 +8,7 @@ using osu.Game.Overlays.Mods;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Catch;
 using osu.Game.Rulesets.Mania;
+using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Taiko;
 using osu.Game.Skinning;
@@ -29,6 +30,8 @@ public partial class TestSceneLegacyModSelection : LocalSkinTestScene
         {
             RelativeSizeAxes = Axes.Both,
         });
+
+        AddStep("clear mods", () => SelectedMods.Value = Array.Empty<Mod>());
 
         AddStep("set ruleset to osu!", () => setRuleset(new OsuRuleset()));
         AddStep("set ruleset to taiko", () => setRuleset(new TaikoRuleset()));
