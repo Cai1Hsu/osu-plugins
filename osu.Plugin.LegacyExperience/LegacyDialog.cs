@@ -2,10 +2,12 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osuTK;
+using osuTK.Input;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -126,6 +128,21 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
     {
         this.FadeOut(120)
             .Expire();
+    }
+
+    protected override bool OnKeyDown(KeyDownEvent e)
+    {
+        if (e.Key >= Key.Number1 && e.Key <= Key.Number9)
+        {
+            int index = e.Key - Key.Number1;
+            if (index < optionsContainer.Count)
+            {
+                var button = optionsContainer.Children[index].Button;
+                button.TriggerClick();
+                return true;
+            }
+        }
+        return base.OnKeyDown(e);
     }
 
     private static void textCreationParameter(SpriteText t)
