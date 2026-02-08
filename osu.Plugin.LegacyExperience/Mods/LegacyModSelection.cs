@@ -111,11 +111,14 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         // otherwise they may be confused about why the multiplier doesn't their expectation.
         foreach (var mod in selectedMods.Value)
         {
-            if (mod.Ranked)
-                multiplier *= mod.ScoreMultiplier;
-            else
-                // matches stable's behaviour: if any unranked mod is selected, the multiplier will be 0.
+            // matches stable's behaviour: if any unranked mod is selected, the multiplier will be 0.
+            if (!mod.Ranked)
+            {
                 multiplier = 0;
+                break;
+            }
+
+            multiplier *= mod.ScoreMultiplier;
         }
 
         localScoreMultiplier.Value = multiplier;
