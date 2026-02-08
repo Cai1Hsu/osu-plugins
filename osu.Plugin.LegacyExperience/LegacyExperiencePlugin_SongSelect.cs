@@ -9,13 +9,26 @@ using SongSelectV2 = osu.Game.Screens.SelectV2.SongSelect;
 using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
 using LegacyBeatmapCarousel = osu.Plugin.LegacyExperience.SongSelect.BeatmapCarousel;
 using AccessItEasy;
+using osu.Framework.Allocation;
+using osu.Plugin.LegacyExperience.Mods;
+using osu.Framework.Input.Bindings;
+using osu.Game.Input.Bindings;
+using osu.Game.Screens.Footer;
+using osuTK;
+using osu.Framework.Graphics.Containers;
+using osu.Framework.Input.Events;
+using osu.Framework.Utils;
 
 namespace osu.Plugin.LegacyExperience;
 
 public sealed partial class LegacyExperiencePlugin
 {
+    // it's probably fine to do this since each time we load a plugin we create a new instance of it.
+    private OsuGame game = null!;
+
     private void hookSongSelectScreen(OsuGame game)
     {
+        this.game = game;
         var screenStack = game.ScreenStack;
 
         screenStack.ScreenPushed += screenStack_ScreenSwitched;
@@ -71,6 +84,10 @@ public sealed partial class LegacyExperiencePlugin
             carouselParent.ChangeInternalChildDepth(legacyCarousel, previousDepth);
 
             currentCarousel = legacyCarousel;
+
+            // a stub used to keep track of the lifetime of the mod select screen, 
+            // also used as the entry point for opening the mod select screen.
+            addLegacyModSelectStub();
         });
     }
 
@@ -105,4 +122,97 @@ public sealed partial class LegacyExperiencePlugin
 
     [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_NewItemsPresented")]
     private static extern Action<IEnumerable<CarouselItem>>? get_NewItemsPresented(Carousel<BeatmapInfo> carousel);
+
+    private void addLegacyModSelectStub()
+    {
+        ScreenFooter screenFooter = game.Dependencies.Get<ScreenFooter>();
+        var footerContent = get_FooterContent(screenFooter);
+        footerContent.Add(new ModSelectStub());
+    }
+
+    [PrivateAccessor(PrivateAccessorKind.Field, Name = "buttonsFlow")]
+    private extern static FillFlowContainer<ScreenFooterButton> get_FooterContent(ScreenFooter footer);
+
+    private partial class UserModSelection : LegacyModSelection, IKeyBindingHandler<GlobalAction>
+    {
+        private bool fullyPresented => Precision.AlmostEquals(1, Alpha, 1E-3);
+
+        public override bool HandleNonPositionalInput => true;
+        public override bool RequestsFocus => true;
+
+        protected override bool OnHover(HoverEvent e) => fullyPresented;
+
+        protected override bool OnMouseDown(MouseDownEvent e) => fullyPresented;
+
+        protected override bool OnClick(ClickEvent e) => fullyPresented;
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            var focusManager = GetContainingFocusManager();
+            focusManager.ChangeFocus(null);
+            focusManager.ChangeFocus(this);
+        }
+
+        public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
+        {
+            if (!e.Repeat && e.Action is GlobalAction.Back)
+            {
+                Close();
+                return true;
+            }
+            return false;
+        }
+
+        public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
+        {
+        }
+    }
+
+    private partial class ModSelectStub : ScreenFooterButton, IKeyBindingHandler<GlobalAction>
+    {
+        [Resolved]
+        private OsuGame game { get; set; } = null!;
+
+        private LegacyModSelection? modSelection;
+
+        public ModSelectStub()
+        {
+            // make it invisible but still present and receive input
+            Size = new Vector2(0);
+            AlwaysPresent = true;
+            Hotkey = GlobalAction.ToggleModSelection;
+            Action = activate;
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            if (modSelection is not null)
+            {
+                // avoid capturing this in Dispose
+                var modSelect = modSelection;
+                game.Scheduler.Add(modSelect.Close);
+            }
+        }
+
+        private void activate()
+        {
+            if (GetContainingInputManager().CurrentState.Keyboard.AltPressed)
+                return;
+
+            if (modSelection is null)
+            {
+                game.Add(modSelection = new UserModSelection());
+                modSelection.Show();
+            }
+            else
+            {
+                modSelection.Close();
+                modSelection = null;
+            }
+        }
+    }
 }
