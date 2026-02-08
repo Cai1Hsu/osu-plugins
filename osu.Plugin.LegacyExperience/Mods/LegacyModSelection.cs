@@ -1,7 +1,11 @@
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Game;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Overlays.Mods;
+using osu.Game.Rulesets.Mods;
 using osu.Plugin.LegacyExperience.Localisations;
 
 namespace osu.Plugin.LegacyExperience.Mods;
@@ -66,6 +70,191 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
                 },
             },
         });
+    }
+
+    private readonly IBindable<Dictionary<ModType, IReadOnlyList<Mod>>> globalAvailableMods = new Bindable<Dictionary<ModType, IReadOnlyList<Mod>>>();
+    private readonly Bindable<Dictionary<LegacyMod, Mod>[]> localAvailableMods = new Bindable<Dictionary<LegacyMod, Mod>[]>();
+
+    [BackgroundDependencyLoader]
+    private void load(OsuGameBase gameBase)
+    {
+        globalAvailableMods.BindTo(gameBase.AvailableMods);
+        globalAvailableMods.BindValueChanged(_ => computeLocalAvailableMods(), true);
+        localAvailableMods.BindValueChanged(_ => updateModGroups(), true);
+    }
+
+    private void computeLocalAvailableMods()
+    {
+        var loaclMods = new Dictionary<LegacyMod, Mod>[]
+        {
+            new Dictionary<LegacyMod, Mod>(), // reduction
+            new Dictionary<LegacyMod, Mod>(), // increase
+            new Dictionary<LegacyMod, Mod>(), // special
+        };
+
+        foreach (var mod in globalAvailableMods.Value
+            .SelectMany(static kv => kv.Value)
+            .SelectMany(m => m is MultiMod multi ? multi.Mods : new[] { m }))
+        {
+            // We treat ScoreV2 as the reversal of Classic mod, 
+            // which means when ScoreV2 is present, Classic mod is not available, and vice versa.
+            if (mod is ModClassic)
+                loaclMods[(int)LegacyModType.Special][LegacyMod.ScoreV2] = mod;
+
+            if (!LegacyModExtensions.TryGetLegacyMod(mod, out var legacyMod))
+                continue;
+
+            var modType = legacyMod.Value.GetModType();
+            loaclMods[(int)modType][legacyMod.Value] = mod;
+        }
+
+        localAvailableMods.Value = loaclMods;
+    }
+
+    private void updateModGroups()
+    {
+        foreach (var group in Content.OfType<SelectionGroup>())
+            group.Mods.Clear();
+
+        polulateReductionMods();
+        polulateIncreaseMods();
+        polulateSpecialMods();
+    }
+
+    private readonly record struct ModInfo(LegacyMod LegacyMod, Mod Mod);
+
+    private void polulateReductionMods()
+    {
+        var mods = localAvailableMods.Value[(int)LegacyModType.Reduction];
+
+        var ez_comb = new List<ModInfo>();
+        var nf_comb = new List<ModInfo>();
+        var ht_comb = new List<ModInfo>();
+
+        if (mods.TryGetValue(LegacyMod.Easy, out var easy))
+            ez_comb.Add(new ModInfo(LegacyMod.Easy, easy));
+
+        if (mods.TryGetValue(LegacyMod.NoFail, out var noFail))
+            nf_comb.Add(new ModInfo(LegacyMod.NoFail, noFail));
+
+        if (mods.TryGetValue(LegacyMod.HalfTime, out var halfTime))
+            ht_comb.Add(new ModInfo(LegacyMod.HalfTime, halfTime));
+
+        addToGroup(ReductionGroup, ez_comb);
+        addToGroup(ReductionGroup, nf_comb);
+        addToGroup(ReductionGroup, ht_comb);
+    }
+
+    private void polulateIncreaseMods()
+    {
+        var mods = localAvailableMods.Value[(int)LegacyModType.Increase];
+
+        var hr_comb = new List<ModInfo>();
+        var sd_comb = new List<ModInfo>();
+        var dt_comb = new List<ModInfo>();
+        var fi_comb = new List<ModInfo>();
+        var fl_comb = new List<ModInfo>();
+
+        if (mods.TryGetValue(LegacyMod.HardRock, out var hardRock))
+            hr_comb.Add(new ModInfo(LegacyMod.HardRock, hardRock));
+
+        if (mods.TryGetValue(LegacyMod.SuddenDeath, out var suddenDeath))
+            sd_comb.Add(new ModInfo(LegacyMod.SuddenDeath, suddenDeath));
+        if (mods.TryGetValue(LegacyMod.Perfect, out var perfect))
+            sd_comb.Add(new ModInfo(LegacyMod.Perfect, perfect));
+
+        if (mods.TryGetValue(LegacyMod.DoubleTime, out var doubleTime))
+            dt_comb.Add(new ModInfo(LegacyMod.DoubleTime, doubleTime));
+        if (mods.TryGetValue(LegacyMod.Nightcore, out var nightcore))
+            dt_comb.Add(new ModInfo(LegacyMod.Nightcore, nightcore));
+
+        if (mods.TryGetValue(LegacyMod.FadeIn, out var fadeIn))
+            fi_comb.Add(new ModInfo(LegacyMod.FadeIn, fadeIn));
+        if (mods.TryGetValue(LegacyMod.Hidden, out var hidden))
+            fi_comb.Add(new ModInfo(LegacyMod.Hidden, hidden));
+
+        if (mods.TryGetValue(LegacyMod.Flashlight, out var flashlight))
+            fl_comb.Add(new ModInfo(LegacyMod.Flashlight, flashlight));
+
+        addToGroup(IncreaseGroup, hr_comb);
+        addToGroup(IncreaseGroup, sd_comb);
+        addToGroup(IncreaseGroup, dt_comb);
+        addToGroup(IncreaseGroup, fi_comb);
+        addToGroup(IncreaseGroup, fl_comb);
+    }
+
+    private void polulateSpecialMods()
+    {
+        var mods = localAvailableMods.Value[(int)LegacyModType.Special];
+
+        var keyN_comb = new List<ModInfo>();
+        var coop_comb = new List<ModInfo>();
+        var mirror_comb = new List<ModInfo>();
+        var random_comb = new List<ModInfo>();
+        var rx_comb = new List<ModInfo>();
+        var ap_comb = new List<ModInfo>();
+        var tp_comb = new List<ModInfo>();
+        var so_comb = new List<ModInfo>();
+        var at_comb = new List<ModInfo>();
+        var sv2_comb = new List<ModInfo>();
+
+        foreach (var legacyKeyN in Enumerable.Range((int)LegacyMod.Key4, 9 - 4 + 1)
+            .Concat(Enumerable.Range((int)LegacyMod.Key1, 3))
+            .Select(static i => (LegacyMod)i))
+        {
+            if (mods.TryGetValue(legacyKeyN, out var keyN))
+                keyN_comb.Add(new ModInfo(legacyKeyN, keyN));
+        }
+
+        if (mods.TryGetValue(LegacyMod.KeyCoop, out var coop))
+            coop_comb.Add(new ModInfo(LegacyMod.KeyCoop, coop));
+
+        if (mods.TryGetValue(LegacyMod.Mirror, out var mirror))
+            mirror_comb.Add(new ModInfo(LegacyMod.Mirror, mirror));
+
+        if (mods.TryGetValue(LegacyMod.Random, out var random))
+            random_comb.Add(new ModInfo(LegacyMod.Random, random));
+
+        if (mods.TryGetValue(LegacyMod.Relax, out var relax))
+            rx_comb.Add(new ModInfo(LegacyMod.Relax, relax));
+
+        if (mods.TryGetValue(LegacyMod.Relax2, out var autopilot))
+            ap_comb.Add(new ModInfo(LegacyMod.Relax2, autopilot));
+
+        if (mods.TryGetValue(LegacyMod.Target, out var target))
+            tp_comb.Add(new ModInfo(LegacyMod.Target, target));
+
+        if (mods.TryGetValue(LegacyMod.SpunOut, out var spunOut))
+            so_comb.Add(new ModInfo(LegacyMod.SpunOut, spunOut));
+
+        if (mods.TryGetValue(LegacyMod.Autoplay, out var autoplay))
+            at_comb.Add(new ModInfo(LegacyMod.Autoplay, autoplay));
+        if (mods.TryGetValue(LegacyMod.Cinema, out var cinema))
+            at_comb.Add(new ModInfo(LegacyMod.Cinema, cinema));
+
+        if (mods.TryGetValue(LegacyMod.ScoreV2, out var scoreV2))
+            sv2_comb.Add(new ModInfo(LegacyMod.ScoreV2, scoreV2));
+
+        addToGroup(SpecialGroup, keyN_comb);
+        addToGroup(SpecialGroup, coop_comb);
+        addToGroup(SpecialGroup, mirror_comb);
+        addToGroup(SpecialGroup, random_comb);
+        addToGroup(SpecialGroup, rx_comb);
+        addToGroup(SpecialGroup, ap_comb);
+        addToGroup(SpecialGroup, tp_comb);
+        addToGroup(SpecialGroup, so_comb);
+        addToGroup(SpecialGroup, at_comb);
+        addToGroup(SpecialGroup, sv2_comb);
+    }
+
+    private void addToGroup(SelectionGroup group, List<ModInfo> combinations)
+    {
+        if (combinations.Count == 0)
+            return;
+
+        // FIXME: currently for displaying only.
+        var comb = combinations.Select(c => c.LegacyMod).ToArray();
+        group.Mods.Add(new LegacyModSwitch(comb));
     }
 
     private double lastHoverSampleTime = double.MinValue;
