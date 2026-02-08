@@ -59,6 +59,12 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
         this.FadeOut(120);
     }
 
+    public void Close()
+    {
+        this.FadeOut(120)
+            .Expire();
+    }
+
     private static void textCreationParameter(SpriteText t)
     {
         // FIXME: CJK characters look smaller than they should be.
