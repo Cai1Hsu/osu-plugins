@@ -71,6 +71,28 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
                     Colour = Colour4.White,
                 },
             },
+            // match stable's currentVerticalSpace usage to create the same layout margin at the bottom of the dialog.
+            Empty().With(d =>
+            {
+                d.Height = 23 * LegacyExperiencePlugin.StableRatio;
+                d.RelativeSizeAxes = Axes.X;
+            })
+        });
+    }
+
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        AddOption(LegacyStrings.ModSelection_Reset, b =>
+        {
+            b.BackgroundColour = Colour4.OrangeRed;
+            b.Action = () => selectedMods.Value = Array.Empty<Mod>();
+        });
+        AddOption(LegacyStrings.General_Close, b =>
+        {
+            b.BackgroundColour = Colour4.Gray;
+            b.Action = Close;
         });
     }
 
