@@ -1,11 +1,11 @@
 using osu.Framework.Allocation;
 using osu.Framework.Audio.Sample;
-using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
+using osu.Framework.Localisation;
 using osu.Game.Audio;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
@@ -15,19 +15,8 @@ using osuTK;
 
 namespace osu.Plugin.LegacyExperience;
 
-public partial class LegacyButton : VisibilityContainer
+public partial class LegacyButton : ClickableContainer
 {
-    private Action? action;
-    public Action? Action
-    {
-        get => action;
-        set
-        {
-            action = value;
-            Enabled.Value = action != null;
-        }
-    }
-
     public Colour4 BackgroundColour
     {
         get => field;
@@ -56,8 +45,6 @@ public partial class LegacyButton : VisibilityContainer
         backgroundContainer.Colour = originalColour;
         label.Colour = Enabled.Value ? Colour4.White : Colour4.LightGray;
     }
-
-    public readonly BindableBool Enabled = new BindableBool();
 
     [Resolved]
     private TextureStore textures { get; set; } = null!;
@@ -193,16 +180,6 @@ public partial class LegacyButton : VisibilityContainer
             backgroundContainer.FlashColour(Colour4.White, 400);
         }
         return base.OnClick(e);
-    }
-
-    protected override void PopIn()
-    {
-        this.FadeIn(50);
-    }
-
-    protected override void PopOut()
-    {
-        this.FadeOut(50);
     }
 
     protected override void Dispose(bool isDisposing)
