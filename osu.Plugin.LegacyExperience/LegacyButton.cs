@@ -71,7 +71,7 @@ public partial class LegacyButton : VisibilityContainer
 
     private readonly Vector2 dimensions;
 
-    public LegacyButton(string text, Vector2 dimensions, float? textSize = null)
+    public LegacyButton(LocalisableString text, Vector2 dimensions, float? textSize = null)
     {
         this.dimensions = dimensions;
         Children = new Drawable[]
@@ -100,7 +100,7 @@ public partial class LegacyButton : VisibilityContainer
         BackgroundColour = Colour4.White;
         AutoSizeAxes = Axes.Both;
 
-        textSize ??= 14f * dimensions.Y / 18f / ((text.IndexOf('\n') <= 0) ? 1 : 2); // wtf is this?
+        textSize ??= 14f * dimensions.Y / 18f / ((text.ToString().IndexOf('\n') <= 0) ? 1 : 2); // wtf is this?
         label.Font = OsuFont.GetFont(size: textSize.Value * LegacyExperiencePlugin.StableRatio);
 
         Enabled.BindValueChanged(_ => updateColour(), true);
