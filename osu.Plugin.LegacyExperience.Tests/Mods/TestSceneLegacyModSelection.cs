@@ -2,7 +2,9 @@ using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
+using osu.Game.Overlays.Mods;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Catch;
 using osu.Game.Rulesets.Mania;
@@ -58,5 +60,26 @@ public partial class TestSceneLegacyModSelection : LocalSkinTestScene
         });
 
         AddStep("hide dialog", () => dialog?.Hide());
+    }
+
+    // test consistency of mod selection overlay with lazer's mod selection overlay.
+    [Test]
+    public void AddLazerModSelectOverlay()
+    {
+        UserModSelectOverlay? overlay = null;
+
+        AddStep("add overlay", () =>
+        {
+            if (overlay is not null)
+                return;
+
+            content.Add(overlay = new UserModSelectOverlay()
+            {
+                RelativeSizeAxes = Axes.Both,
+                SelectedMods = { BindTarget = SelectedMods }
+            });
+        });
+        AddStep("show overlay", () => overlay?.Show());
+        AddStep("hide overlay", () => overlay?.Hide());
     }
 }
