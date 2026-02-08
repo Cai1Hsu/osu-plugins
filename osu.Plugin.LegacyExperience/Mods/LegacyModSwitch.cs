@@ -282,7 +282,8 @@ public partial class LegacyModSwitch : CompositeDrawable
         };
         sample?.Play();
 
-        deactivateMod(modDisplays[previousInfo.DisplayedIndex]);
+        if (previousInfo.DisplayedIndex != currentInfo.DisplayedIndex)
+            deactivateMod(modDisplays[previousInfo.DisplayedIndex]);
 
         switch (currentInfo.State)
         {
