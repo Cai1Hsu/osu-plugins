@@ -47,6 +47,7 @@ public static class LegacyModExtensions
         return mod switch
         {
             _ when modType == ManiaModFadeIn => LegacyMod.FadeIn,
+            _ when modType == ManiaModDualStages => LegacyMod.KeyCoop,
             _ when modType == ManiaModKeys(1) => LegacyMod.Key1,
             _ when modType == ManiaModKeys(2) => LegacyMod.Key2,
             _ when modType == ManiaModKeys(3) => LegacyMod.Key3,
@@ -75,6 +76,8 @@ public static class LegacyModExtensions
     public static readonly Type? ManiaModMirror = Type.GetType("osu.Game.Rulesets.Mania.Mods.ManiaModMirror, osu.Game.Rulesets.Mania");
 
     public static readonly Type? ManiaModRandom = Type.GetType("osu.Game.Rulesets.Mania.Mods.ManiaModRandom, osu.Game.Rulesets.Mania");
+
+    public static readonly Type? ManiaModDualStages = Type.GetType("osu.Game.Rulesets.Mania.Mods.ManiaModDualStages, osu.Game.Rulesets.Mania");
 
     public static readonly Type? OsuModAutopilot = Type.GetType("osu.Game.Rulesets.Osu.Mods.OsuModAutopilot, osu.Game.Rulesets.Osu");
 
