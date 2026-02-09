@@ -124,7 +124,7 @@ partial class LegacyModSelection
 
             var selecteds = SelectedMods.Value.ToList();
 
-            selecteds.RemoveAll(m => m is ModClassic);
+            selecteds.RemoveAll(m => m is ModClassic || m.IncompatibleMods.Any(t => t.IsAssignableFrom(classicModType)));
 
             // When scoreV2 is not selected, add classic mod if not exists.
             if (currentInfo.State is ModSelectionState.NoSelection)
