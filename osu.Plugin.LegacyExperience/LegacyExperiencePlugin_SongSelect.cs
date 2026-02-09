@@ -199,7 +199,11 @@ public sealed partial class LegacyExperiencePlugin
             {
                 // avoid capturing this in Dispose
                 var modSelect = modSelection;
-                game.Scheduler.Add(modSelect.Close);
+                game.Scheduler.Add(() =>
+                {
+                    if (modSelect.IsAlive)
+                        modSelect.Close();
+                });
             }
         }
 
