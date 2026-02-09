@@ -86,6 +86,12 @@ partial class LegacyModSelection
 
         protected virtual void UpdateModSelection(ModSelectionInfo previousInfo, ModSelectionInfo currentInfo)
         {
+            // Don't mutate selected mods if the switch is disabled.
+            // such as the loader is entering while the mod select is not fully faded out.
+            // may need better way to handle this in the future.
+            if (SelectedMods.Disabled)
+                return;
+
             if (currentInfo.State is ModSelectionState.Disabled)
                 return;
 
@@ -119,6 +125,10 @@ partial class LegacyModSelection
 
         protected override void UpdateModSelection(ModSelectionInfo previousInfo, ModSelectionInfo currentInfo)
         {
+            // see above
+            if (SelectedMods.Disabled)
+                return;
+
             if (currentInfo.State is ModSelectionState.Disabled)
                 return;
 
