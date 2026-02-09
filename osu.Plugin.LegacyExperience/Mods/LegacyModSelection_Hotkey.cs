@@ -19,6 +19,7 @@ partial class LegacyModSelection
         bool useCycle = true,
         bool shiftPressed = false);
 
+    // make shift-required hotkeys go behind so that non-shift hotkeys can still be triggered when shift is pressed.
     private static readonly CombinationHotKey[] hotkeys =
     [
         new (Key.Q, new[] { LegacyMod.Easy }),
