@@ -55,7 +55,7 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
                                 AutoSizeAxes = Axes.Y,
                                 Margin = new MarginPadding
                                 {
-                                    Right = 2
+                                    Horizontal = 4 * LegacyExperiencePlugin.StableRatio
                                 }
                             },
                         }
