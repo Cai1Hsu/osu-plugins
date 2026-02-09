@@ -6,6 +6,7 @@ using osu.Game.Plugins;
 using osu.Game.Screens;
 using osu.Game.Screens.SelectV2;
 using SongSelectV2 = osu.Game.Screens.SelectV2.SongSelect;
+using SoloSongSelectV2 = osu.Game.Screens.SelectV2.SoloSongSelect;
 using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
 using LegacyBeatmapCarousel = osu.Plugin.LegacyExperience.SongSelect.BeatmapCarousel;
 using AccessItEasy;
@@ -85,9 +86,15 @@ public sealed partial class LegacyExperiencePlugin
 
             currentCarousel = legacyCarousel;
 
-            // a stub used to keep track of the lifetime of the mod select screen, 
-            // also used as the entry point for opening the mod select screen.
-            addLegacyModSelectStub();
+            // Available mods are restricted determined by the type of song select screen,
+            // extra actions needed for playlist song select as it uses the same carousel.
+            // currently only allow access to legacy mod selection in solo song select.
+            if (songSelect is SoloSongSelectV2)
+            {
+                // a stub used to keep track of the lifetime of the mod select screen, 
+                // also used as the entry point for opening the mod select screen.
+                addLegacyModSelectStub();
+            }
         });
     }
 
