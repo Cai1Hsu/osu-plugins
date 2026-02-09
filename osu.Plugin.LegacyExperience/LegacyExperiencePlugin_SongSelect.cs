@@ -146,6 +146,8 @@ public sealed partial class LegacyExperiencePlugin
 
         protected override bool OnClick(ClickEvent e) => fullyPresented;
 
+        public Action? CloseAction { get; init; }
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
@@ -165,12 +167,18 @@ public sealed partial class LegacyExperiencePlugin
             return false;
         }
 
+        public override void Close()
+        {
+            base.Close();
+            CloseAction?.Invoke();
+        }
+
         public void OnReleased(KeyBindingReleaseEvent<GlobalAction> e)
         {
         }
     }
 
-    private partial class ModSelectStub : ScreenFooterButton, IKeyBindingHandler<GlobalAction>
+    private partial class ModSelectStub : ScreenFooterButton
     {
         [Resolved]
         private OsuGame game { get; set; } = null!;
@@ -182,8 +190,6 @@ public sealed partial class LegacyExperiencePlugin
             // make it invisible but still present and receive input
             Size = new Vector2(0);
             AlwaysPresent = true;
-            Hotkey = GlobalAction.ToggleModSelection;
-            Action = activate;
         }
 
         protected override void Dispose(bool isDisposing)
@@ -198,21 +204,28 @@ public sealed partial class LegacyExperiencePlugin
             }
         }
 
-        private void activate()
+        public override bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
         {
-            if (GetContainingInputManager().CurrentState.Keyboard.AltPressed)
-                return;
+            // FIXME: event not received when alt is pressed
+            if (!e.Repeat && !e.AltPressed && e.Action is GlobalAction.ToggleModSelection)
+            {
+                if (modSelection is null)
+                {
+                    game.Add(modSelection = new UserModSelection()
+                    {
+                        CloseAction = () => modSelection = null,
+                    });
+                    modSelection.Show();
+                }
+                else
+                {
+                    modSelection.Close();
+                    modSelection = null;
+                }
+                return true;
+            }
 
-            if (modSelection is null)
-            {
-                game.Add(modSelection = new UserModSelection());
-                modSelection.Show();
-            }
-            else
-            {
-                modSelection.Close();
-                modSelection = null;
-            }
+            return false;
         }
     }
 }
