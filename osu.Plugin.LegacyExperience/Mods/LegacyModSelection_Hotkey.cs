@@ -20,7 +20,7 @@ partial class LegacyModSelection
         bool shiftPressed = false);
 
     private static readonly CombinationHotKey[] hotkeys =
-    {
+    [
         new (Key.Q, new[] { LegacyMod.Easy }),
         new (Key.W, new[] { LegacyMod.NoFail }),
         new (Key.E, new[] { LegacyMod.HalfTime }),
@@ -42,7 +42,12 @@ partial class LegacyModSelection
         new (Key.V, combination_ATCN),
         new (Key.V, new[] { LegacyMod.Cinema }, shiftPressed: true, useCycle: false),
         new (Key.B, new[] { LegacyMod.ScoreV2 }),
-    };
+
+        // Key.Number1 and Key.Number2 are not useable due to conflict with dialog's option hotkeys,
+        // however, this matches stable's behavior so we keep it for consistency.
+        ..Enumerable.Range(0, 9)
+                    .Select(i => new CombinationHotKey(Key.Number1 + i, new[] { LegacyMod.Key1 + i }, useCycle: false))
+    ];
 
     private (UserModSwitch, CombinationHotKey)? findTargetModSwitch(Key key, bool shiftPressed, Func<LegacyMod[], UserModSwitch?> getModSwitch)
     {
