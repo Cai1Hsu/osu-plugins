@@ -18,7 +18,7 @@ using osu.Game.Screens.Footer;
 using osuTK;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input.Events;
-using osu.Framework.Utils;
+using osu.Framework.Input;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -85,17 +85,26 @@ public sealed partial class LegacyExperiencePlugin
             carouselParent.ChangeInternalChildDepth(legacyCarousel, previousDepth);
 
             currentCarousel = legacyCarousel;
+        });
 
-            // Available mods are restricted determined by the type of song select screen,
-            // extra actions needed for playlist song select as it uses the same carousel.
-            // currently only allow access to legacy mod selection in solo song select.
-            if (songSelect is SoloSongSelectV2)
+        // Available mods are restricted determined by the type of song select screen,
+        // extra actions needed for playlist song select as it uses the same carousel.
+        // currently only allow access to legacy mod selection in solo song select.
+        if (songSelect is SoloSongSelectV2)
+        {
+            // footer get recreated everytime the screen changes
+            songSelect.InvokeWhenReady(d =>
             {
+                var ss = (SoloSongSelectV2)d;
+
+                if (!ss.IsCurrentScreen())
+                    return;
+
                 // a stub used to keep track of the lifetime of the mod select screen, 
                 // also used as the entry point for opening the mod select screen.
                 addLegacyModSelectStub();
-            }
-        });
+            });
+        }
     }
 
     [PrivateAccessor(PrivateAccessorKind.Field, Name = "carousel")]
