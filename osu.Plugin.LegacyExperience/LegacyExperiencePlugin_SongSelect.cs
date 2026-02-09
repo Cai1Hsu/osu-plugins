@@ -148,6 +148,7 @@ public sealed partial class LegacyExperiencePlugin
     {
         public override bool HandleNonPositionalInput => true;
         public override bool RequestsFocus => true;
+        public override bool AcceptsFocus => true;
 
         // block input to underlying carousel and other elements.
         protected override bool OnHover(HoverEvent e) => true;
@@ -158,13 +159,24 @@ public sealed partial class LegacyExperiencePlugin
 
         public Action? CloseAction { get; init; }
 
+        private IFocusManager FocusManager = null!;
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
-            var focusManager = GetContainingFocusManager();
-            focusManager.ChangeFocus(null);
-            focusManager.ChangeFocus(this);
+            FocusManager = GetContainingFocusManager();
+        }
+
+        public override void Show()
+        {
+            base.Show();
+
+            Schedule(() =>
+            {
+                if (!HasFocus)
+                    FocusManager.ChangeFocus(this);
+            });
         }
 
         public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
