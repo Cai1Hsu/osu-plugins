@@ -11,10 +11,12 @@ partial class LegacyModSelection
     /// </summary>
     /// <param name="key">The main key of the hotkey combination.</param>
     /// <param name="associatedMods">The mods associated with this hotkey combination.</param>
-    /// <param name="shiftPressed">Whether the hotkey combination requires the shift key to be pressed. This also makes the hotkey use accurate selection instead of cycling when there are multiple associated mods.</param>
+    /// <param name="useCycle">Whether the hotkey combination should cycle through associated mods when there are multiple, or use accurate selection to directly select a specific mod. Accurate selection will also allow deselecting the currently selected mod by pressing the hotkey combination again, while cycle will not.</param>
+    /// <param name="shiftPressed">Whether the hotkey combination requires the shift key to be pressed. If true, the hotkey will only be triggered when the shift key is pressed. If false, the state of the shift key will be ignored and the hotkey will be triggered regardless of whether the shift key is pressed.</param>
     private readonly record struct CombinationHotKey(
         Key key,
         LegacyMod[] associatedMods,
+        bool useCycle = true,
         bool shiftPressed = false);
 
     private static readonly CombinationHotKey[] hotkeys =
@@ -25,26 +27,26 @@ partial class LegacyModSelection
 
         new (Key.A, new[] { LegacyMod.HardRock }),
         new (Key.S, combination_SDPF),
-        new (Key.S, new[] { LegacyMod.Perfect }, shiftPressed: true),
+        new (Key.S, new[] { LegacyMod.Perfect }, shiftPressed: true, useCycle: false),
         new (Key.D, combination_DTNC),
-        new (Key.D, new[] { LegacyMod.Nightcore }, shiftPressed: true),
+        new (Key.D, new[] { LegacyMod.Nightcore }, shiftPressed: true, useCycle: false),
         new (Key.F, combination_FIHD),
-        new (Key.F, new[] { LegacyMod.FadeIn }, shiftPressed: true),
+        new (Key.F, new[] { LegacyMod.FadeIn }, shiftPressed: true, useCycle: false),
         new (Key.G, new[] { LegacyMod.Flashlight }),
 
         new (Key.Z, new[] { LegacyMod.Relax }),
         new (Key.Z, combination_KEYN),
         new (Key.X, new[] { LegacyMod.Relax2 }),
-        new (Key.X, new[] { LegacyMod.Random }, shiftPressed: true),
+        new (Key.X, new[] { LegacyMod.Random }, shiftPressed: true, useCycle: false),
         new (Key.C, new[] { LegacyMod.SpunOut }),
         new (Key.V, combination_ATCN),
-        new (Key.V, new[] { LegacyMod.Cinema }, shiftPressed: true),
+        new (Key.V, new[] { LegacyMod.Cinema }, shiftPressed: true, useCycle: false),
         new (Key.B, new[] { LegacyMod.ScoreV2 }),
     };
 
-    private (UserModSwitch, LegacyMod[])? findTargetModSwitch(Key key, bool shiftPressed, Func<LegacyMod[], UserModSwitch?> getModSwitch)
+    private (UserModSwitch, CombinationHotKey)? findTargetModSwitch(Key key, bool shiftPressed, Func<LegacyMod[], UserModSwitch?> getModSwitch)
     {
-        (UserModSwitch, LegacyMod[])? target = null;
+        (UserModSwitch, CombinationHotKey)? target = null;
 
         foreach (var hotkey in hotkeys)
         {
@@ -57,7 +59,7 @@ partial class LegacyModSelection
                 {
                     if (getModSwitch(hotkey.associatedMods) is UserModSwitch modSwitch)
                     {
-                        target = (modSwitch, hotkey.associatedMods);
+                        target = (modSwitch, hotkey);
                     }
                 }
             }
@@ -82,17 +84,15 @@ partial class LegacyModSelection
         if (target is null)
             return false;
 
-        var (modSwitch, associatedMods) = target.Value;
+        var (modSwitch, hotkey) = target.Value;
 
-        bool useCycle = !shiftPressed || associatedMods.Length > 1;
-
-        if (useCycle)
+        if (hotkey.useCycle)
         {
             modSwitch.Cycle();
         }
         else
         {
-            var targetMod = associatedMods.Single();
+            var targetMod = hotkey.associatedMods.Single();
             var currentMod = modSwitch.CurrentInfo.SelectedMod;
 
             if (currentMod is null || currentMod != targetMod)
