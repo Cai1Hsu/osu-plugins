@@ -126,7 +126,7 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
         this.FadeOut(120);
     }
 
-    public void Close()
+    public virtual void Close()
     {
         this.FadeOut(120)
             .Expire();
