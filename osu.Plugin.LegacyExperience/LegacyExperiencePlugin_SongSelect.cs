@@ -135,16 +135,15 @@ public sealed partial class LegacyExperiencePlugin
 
     private partial class UserModSelection : LegacyModSelection, IKeyBindingHandler<GlobalAction>
     {
-        private bool fullyPresented => Precision.AlmostEquals(1, Alpha, 1E-3);
-
         public override bool HandleNonPositionalInput => true;
         public override bool RequestsFocus => true;
 
-        protected override bool OnHover(HoverEvent e) => fullyPresented;
+        // block input to underlying carousel and other elements.
+        protected override bool OnHover(HoverEvent e) => true;
 
-        protected override bool OnMouseDown(MouseDownEvent e) => fullyPresented;
+        protected override bool OnMouseDown(MouseDownEvent e) => true;
 
-        protected override bool OnClick(ClickEvent e) => fullyPresented;
+        protected override bool OnClick(ClickEvent e) => true;
 
         public Action? CloseAction { get; init; }
 
