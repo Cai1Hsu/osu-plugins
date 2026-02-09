@@ -125,7 +125,11 @@ public sealed partial class LegacyExperiencePlugin
 
     private void addLegacyModSelectStub()
     {
-        ScreenFooter screenFooter = game.Dependencies.Get<ScreenFooter>();
+        ScreenFooter? screenFooter = game.Dependencies.Get<ScreenFooter>();
+
+        if (screenFooter is null)
+            return;
+
         var footerContent = get_FooterContent(screenFooter);
         footerContent.Add(new ModSelectStub());
     }
