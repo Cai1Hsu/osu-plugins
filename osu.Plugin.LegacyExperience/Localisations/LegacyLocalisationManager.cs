@@ -1,16 +1,20 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game;
 using osu.Game.Extensions;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using LazerLanguage = osu.Game.Localisation.Language;
 
 namespace osu.Plugin.LegacyExperience.Localisations;
@@ -37,7 +41,7 @@ public partial class LegacyLocalisationManager : Component
     private Bindable<string> frameworkLocale = null!;
 
     [BackgroundDependencyLoader]
-    private void load(Storage storage, FrameworkConfigManager config)
+    private void load(Storage storage, FrameworkConfigManager config, INotificationOverlay? notifications)
     {
         httpClient = new HttpClient()
         {
@@ -68,6 +72,31 @@ public partial class LegacyLocalisationManager : Component
         this.stores = stores.ToFrozenDictionary();
 
         localisationStorage = createLocalisationStorage(storage);
+
+        // async methods failed to run on AOT platforms, throwing exception:
+        // System.TypeLoadException: Could not load type of field 'osu.Plugin.LegacyExperience.Localisations.LegacyLocalisationManager+<loadRawLocalisation>d__23:<>u__3' (11) due to: Could not resolve type with token 0100018a from typeref (expected class 'System.Runtime.CompilerServices.ValueTaskAwaiter' in assembly 'System.Runtime, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a') assembly:System.Runtime, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a type:System.Runtime.CompilerServices.ValueTaskAwaiter member:(null)
+        // disable localisation loading on such platforms for now.
+        if (RuntimeFeature.IsDynamicCodeSupported)
+        {
+            var notificationString = $"Legacy localisation functionality has been disabled on this platform due to technical limitations. Localisation will remain in English.";
+
+            if (notifications is null)
+            {
+                Logger.Log(notificationString, LoggingTarget.Runtime, LogLevel.Important);
+            }
+            else
+            {
+                notifications.Post(new SimpleNotification
+                {
+                    Text = notificationString,
+                    Icon = FontAwesome.Solid.ExclamationTriangle,
+                    IconColour = Colour4.Yellow,
+                    Transient = true,
+                });
+            }
+            
+            return;
+        }
 
         currentLazerLanguage.BindTo(game.CurrentLanguage);
         currentLazerLanguage.BindValueChanged(v => currentLegacyLanguage.Value = v.NewValue.ToLegacy(), true);
