@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Resources;
+using System.Runtime.CompilerServices;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Game.Localisation;
@@ -55,22 +56,27 @@ partial class LegacyLocalisationManager
             if (resourceManagers.ContainsKey(RESOURCE_PREFIX))
                 return true;
 
-            resourceManagers[RESOURCE_PREFIX] = new LocalisationResourceManager(store);
+            resourceManagers[RESOURCE_PREFIX] = createResourceManager(store);
         }
 
         return true;
     }
 
+    private static LocalisationResourceManager createResourceManager(LocalisationStore store)
+    {
+        // We are observing System.MissingMethodException: "Method not found: 'Void System.Resources.ResourceManager..ctor()'" on some platforms (Android).
+        // Using RuntimeHelpers.GetUninitializedObject as a workaround to create an instance without calling the constructor.
+        // Since only GetString is expected to be used, this should be safe in our case.
+        var manager = (LocalisationResourceManager)RuntimeHelpers.GetUninitializedObject(typeof(LocalisationResourceManager));
+        manager.Store = store;
+        return manager;
+    }
+
     private class LocalisationResourceManager : ResourceManager
     {
-        private readonly LocalisationStore store;
+        internal required LocalisationStore Store { get; set; }
 
-        public LocalisationResourceManager(LocalisationStore store)
-        {
-            this.store = store;
-        }
-
-        public override string? GetString(string name) => store.Get(GetKey(name));
+        public override string? GetString(string name) => Store.Get(GetKey(name));
 
         public override string? GetString(string key, CultureInfo? culture = null) => GetString(key);
     }
