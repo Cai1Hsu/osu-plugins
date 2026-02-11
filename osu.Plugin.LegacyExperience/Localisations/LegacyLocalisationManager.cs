@@ -76,7 +76,7 @@ public partial class LegacyLocalisationManager : Component
         // async methods failed to run on AOT platforms, throwing exception:
         // System.TypeLoadException: Could not load type of field 'osu.Plugin.LegacyExperience.Localisations.LegacyLocalisationManager+<loadRawLocalisation>d__23:<>u__3' (11) due to: Could not resolve type with token 0100018a from typeref (expected class 'System.Runtime.CompilerServices.ValueTaskAwaiter' in assembly 'System.Runtime, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a') assembly:System.Runtime, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a type:System.Runtime.CompilerServices.ValueTaskAwaiter member:(null)
         // disable localisation loading on such platforms for now.
-        if (RuntimeFeature.IsDynamicCodeSupported)
+        if (valueAwaiterType is null)
         {
             var notificationString = $"Legacy localisation functionality has been disabled on this platform due to technical limitations. Localisation will remain in English.";
 
@@ -102,6 +102,9 @@ public partial class LegacyLocalisationManager : Component
         currentLazerLanguage.BindValueChanged(v => currentLegacyLanguage.Value = v.NewValue.ToLegacy(), true);
         currentLegacyLanguage.BindValueChanged(v => updateLocalisation(v.NewValue), true);
     }
+
+    // weird, ValueTaskAwaiter is actually defined in System.Private.CoreLib, but is expected to be in System.Runtime according to the exception message. Maybe it's a quirk of how AOT platforms handle assemblies?
+    private static readonly Type? valueAwaiterType = Type.GetType("System.Runtime.CompilerServices.ValueTaskAwaiter, System.Runtime");
 
     private FrozenDictionary<string, LocalisationStore> stores = null!;
 
