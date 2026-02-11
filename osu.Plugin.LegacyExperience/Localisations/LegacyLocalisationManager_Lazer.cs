@@ -64,7 +64,7 @@ partial class LegacyLocalisationManager
 
     private static LocalisationResourceManager createResourceManager(LocalisationStore store)
     {
-        // We are oveserving System.MissingMethodException: "Method not found: 'Void System.Resources.ResourceManager..ctor()'" on some platforms (Android).
+        // We are observing System.MissingMethodException: "Method not found: 'Void System.Resources.ResourceManager..ctor()'" on some platforms (Android).
         // Using RuntimeHelpers.GetUninitializedObject as a workaround to create an instance without calling the constructor.
         // Since only GetString is expected to be used, this should be safe in our case.
         var manager = (LocalisationResourceManager)RuntimeHelpers.GetUninitializedObject(typeof(LocalisationResourceManager));
