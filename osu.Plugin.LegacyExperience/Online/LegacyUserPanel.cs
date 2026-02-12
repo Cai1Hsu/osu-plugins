@@ -255,7 +255,7 @@ public partial class LegacyUserPanel : CompositeDrawable
         UserPresence? presence = metadata?.GetPresence(User.OnlineID);
         UserStatus status = presence?.Status ?? UserStatus.Offline;
         UserActivity? activity = presence?.Activity;
-        int dataTimeMinute = DateTime.Now.Minute;
+        int dataTimeMinute = DateTime.UtcNow.Minute;
 
         if (status == lastStatus && activity == lastActivity && dataTimeMinute == lastDataTimeMinute)
             return;
