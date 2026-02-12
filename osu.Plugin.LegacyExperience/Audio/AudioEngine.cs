@@ -83,7 +83,7 @@ public partial class AudioEngine : Component
     /// </summary>
     /// <param name="volume">The volume of the click sound, from 0 to 100.</param>
     /// <param name="sample">The sample to play.</param>
-    /// <param name="speed">The speed to play the sample at. from 0 to 1.</param>
+    /// <param name="speed">The speed (frequency) to play the sample at. Values above 1 speed up playback.</param>
     /// <param name="force">Whether to force play the click sound, ignoring cooldown.</param>
     public void Click(int volume = 100, LegacySample sample = LegacySample.menuclick, float speed = 1, bool force = false)
     {
