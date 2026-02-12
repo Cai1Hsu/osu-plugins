@@ -1,5 +1,4 @@
 using osu.Framework.Allocation;
-using osu.Framework.Audio.Sample;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
@@ -7,11 +6,11 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
-using osu.Game.Audio;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
+using osu.Plugin.LegacyExperience.Audio;
 using osuTK;
 
 namespace osu.Plugin.LegacyExperience;
@@ -52,6 +51,9 @@ public partial class LegacyButton : ClickableContainer
 
     [Resolved]
     private ISkinSource? skin { get; set; }
+
+    [Resolved]
+    private AudioEngine audioEngine { get; set; } = null!;
 
     private OsuSpriteText label;
 
@@ -118,9 +120,6 @@ public partial class LegacyButton : ClickableContainer
     {
         Texture? getTexture(string name) => skin?.GetSkinTexture(name, textures, "UI");
 
-        hoverSample = skin?.GetSample(hoverSampleInfo);
-        clickSample = skin?.GetSample(clickSampleInfo);
-
         updateTexture(buttonLeft, getTexture("button-left"));
         updateTexture(buttonMiddle, getTexture("button-middle"));
         updateTexture(buttonRight, getTexture("button-right"));
@@ -160,18 +159,12 @@ public partial class LegacyButton : ClickableContainer
         sprite.Size = texture?.DisplaySize ?? Vector2.Zero;
     }
 
-    private static readonly SampleInfo hoverSampleInfo = new SampleInfo("click-short");
-    private static readonly SampleInfo clickSampleInfo = new SampleInfo("click-short-confirm");
-
-    private ISample? hoverSample;
-    private ISample? clickSample;
-
     protected override bool OnHover(HoverEvent e)
     {
         if (!Enabled.Value)
             return false;
 
-        hoverSample?.Play();
+        audioEngine.Click(sample: LegacySample.click_short);
         backgroundContainer.FadeColour(BackgroundColour, 50);
         return base.OnHover(e);
     }
@@ -187,7 +180,7 @@ public partial class LegacyButton : ClickableContainer
         // Action invoked in base.OnClick, so we want to make sure the sound and visual feedback are triggered.
         if (Enabled.Value)
         {
-            clickSample?.Play();
+            audioEngine.PlaySample(sample: LegacySample.click_short_confirm);
             backgroundContainer.FlashColour(Colour4.White, 400);
         }
 
