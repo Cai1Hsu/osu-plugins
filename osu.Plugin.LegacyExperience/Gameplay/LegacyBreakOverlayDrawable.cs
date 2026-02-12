@@ -116,10 +116,7 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
 
         void playSample()
         {
-            if (passing)
-                audioEngine?.PlaySample(LegacySample.sectionpass);
-            else
-                audioEngine?.PlaySample(LegacySample.sectionfail);
+            audioEngine?.PlaySample(passing ? LegacySample.sectionpass : LegacySample.sectionfail);
         }
 
         void playAnimation()
