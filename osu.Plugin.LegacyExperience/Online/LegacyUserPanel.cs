@@ -307,7 +307,6 @@ public partial class LegacyUserPanel : CompositeDrawable
         if (playMode == null || !showIcon)
         {
             rulesetIcon.Hide();
-            return;
         }
         else
         {
