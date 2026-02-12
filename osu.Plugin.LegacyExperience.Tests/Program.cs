@@ -5,7 +5,6 @@ using osu.Game.Tests;
 using (var host = Host.GetSuitableDesktopHost("osu-development", new HostOptions()))
 {
     var game = new OsuTestBrowser();
-    game.EnsureLegacyResources();
-    game.EnsureLegacyLocalisation();
+    game.EnsureLegacyDependencies();
     host.Run(game);
 }
