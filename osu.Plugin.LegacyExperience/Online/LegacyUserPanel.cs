@@ -238,7 +238,7 @@ public partial class LegacyUserPanel : CompositeDrawable
     {
         base.Update();
 
-        updatePresense();
+        updatePresence();
     }
 
     private UserStatus? lastStatus;
@@ -247,7 +247,7 @@ public partial class LegacyUserPanel : CompositeDrawable
 
     private LegacyUserStatus? lastLegacyStatus;
 
-    private void updatePresense()
+    private void updatePresence()
     {
         // in lazer's code there's a comment saying "TODO: we probably don't want to do this every frame."
         // however, it didn't give a clear direction on when to update the presence. For simplicity, we can just update the presence every minute, since the presence information is not that time-sensitive and it can avoid unnecessary updates when the user is idle or offline.

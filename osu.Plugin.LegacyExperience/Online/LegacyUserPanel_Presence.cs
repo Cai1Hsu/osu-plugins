@@ -37,7 +37,7 @@ partial class LegacyUserPanel
                 return (LegacyUserStatus.Multiplaying, multiplayer.BeatmapDisplayTitle);
 
             case SpectatingMultiplayerGame spectatingMultiplayer:
-                // stable doesn't support spectating multiplayer games, however, this likes in a lobby but not playing, which is closest to multiplayer.
+                // stable doesn't support spectating multiplayer games, however, this is like being in a lobby but not playing, which is closest to multiplayer.
                 return (LegacyUserStatus.Multiplayer, spectatingMultiplayer.BeatmapDisplayTitle);
 
             case InDailyChallengeLobby:
