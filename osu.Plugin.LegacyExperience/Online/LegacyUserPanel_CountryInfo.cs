@@ -160,7 +160,7 @@ partial class LegacyUserPanel
             CountryCode.LU => 60, // UTC+1
             CountryCode.LV => 120, // UTC+2
             CountryCode.LY => 120, // UTC+2
-            CountryCode.MA => 0, // UTC+0
+            CountryCode.MA => 60, // UTC+1
             CountryCode.MC => 60, // UTC+1
             CountryCode.MD => 120, // UTC+2
             CountryCode.ME => 60, // UTC+1
@@ -248,7 +248,7 @@ partial class LegacyUserPanel
             CountryCode.TM => 300, // UTC+5
             CountryCode.TN => 60, // UTC+1
             CountryCode.TO => 780, // UTC+13
-            CountryCode.TR => 120, // UTC+2
+            CountryCode.TR => 180, // UTC+3
             CountryCode.TT => -240, // UTC-4
             CountryCode.TV => 720, // UTC+12
             CountryCode.TW => 480, // UTC+8
