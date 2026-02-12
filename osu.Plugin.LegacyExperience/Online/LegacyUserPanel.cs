@@ -275,6 +275,7 @@ public partial class LegacyUserPanel : CompositeDrawable
 
         updateAccentColour();
         updateColour();
+        updateRulesetIcon();
     }
 
     private void updateAccentColour()
