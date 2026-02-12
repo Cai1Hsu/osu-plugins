@@ -1,5 +1,4 @@
 using System.Collections.Frozen;
-using System.Numerics;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
@@ -9,6 +8,7 @@ using osu.Framework.Input;
 using osu.Game;
 using osu.Game.Audio;
 using osu.Game.Skinning;
+using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Audio;
 
