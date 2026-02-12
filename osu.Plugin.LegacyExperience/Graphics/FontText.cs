@@ -97,7 +97,7 @@ public partial class FontText : SpriteText
             public char Character => inner.Character;
 
             public float GetKerning<T>(T lastGlyph) where T : ICharacterGlyph
-                => inner.GetKerning(lastGlyph);
+                => inner.GetKerning(lastGlyph) * scaleAdjust;
 
             private readonly ITexturedCharacterGlyph inner;
 
