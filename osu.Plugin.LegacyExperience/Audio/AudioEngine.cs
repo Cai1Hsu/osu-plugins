@@ -130,4 +130,11 @@ public partial class AudioEngine : Component
 
         return Math.Clamp(normalized.X, -0.5f, 0.5f);
     }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        skin?.SourceChanged -= updateSamples;
+    }
 }
