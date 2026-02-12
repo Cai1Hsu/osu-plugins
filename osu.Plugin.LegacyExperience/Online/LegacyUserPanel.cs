@@ -5,7 +5,6 @@ using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
@@ -57,7 +56,7 @@ public partial class LegacyUserPanel : CompositeDrawable
     private ISkinSource? skin { get; set; }
 
     [BackgroundDependencyLoader]
-    private void load(IRenderer renderer)
+    private void load()
     {
         AutoSizeAxes = Axes.Both;
 
