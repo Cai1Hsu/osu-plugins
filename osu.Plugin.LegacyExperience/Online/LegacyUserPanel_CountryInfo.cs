@@ -169,7 +169,7 @@ partial class LegacyUserPanel
             CountryCode.MH => 720, // UTC+12
             CountryCode.MK => 60, // UTC+1
             CountryCode.ML => 0, // UTC+0
-            CountryCode.MM => 330, // UTC+5:30
+            CountryCode.MM => 390, // UTC+6:30
             CountryCode.MN => 480, // UTC+8
             CountryCode.MO => 480, // UTC+8
             CountryCode.MP => 600, // UTC+10
@@ -243,7 +243,7 @@ partial class LegacyUserPanel
             CountryCode.TG => 0, // UTC+0
             CountryCode.TH => 420, // UTC+7
             CountryCode.TJ => 300, // UTC+5
-            CountryCode.TK => -660, // UTC-11
+            CountryCode.TK => 780, // UTC+13
             CountryCode.TL => 540, // UTC+9
             CountryCode.TM => 300, // UTC+5
             CountryCode.TN => 60, // UTC+1
