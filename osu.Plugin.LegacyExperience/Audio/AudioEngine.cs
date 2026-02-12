@@ -62,7 +62,7 @@ public partial class AudioEngine : Component
     }
 
     // to avoid conflict with osu!lazer's own samples
-    private const string sample_namespace = "LegacyExperience";
+    private const string sample_namespace = nameof(LegacyExperience);
 
     private ISample? resolveSample(LegacySample usage)
     {
