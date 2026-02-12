@@ -106,6 +106,21 @@ public partial class AudioEngine : Component
     }
 
     /// <summary>
+    /// Plays a sample with the given volume.
+    /// </summary>
+    /// <param name="sample">The sample to play.</param>
+    /// <param name="volume">The volume of the sample, from 0 to 100.</param>
+    public void PlaySample(LegacySample sample, int volume = 100)
+    {
+        if (Samples.TryGetValue(sample, out var s)
+            && s?.GetChannel() is SampleChannel channel)
+        {
+            channel.Volume.Value = volume / 100.0;
+            channel.Play();
+        }
+    }
+
+    /// <summary>
     /// Plays a sample with positional audio based on the current mouse position.
     /// The sample's balance will be set to match the horizontal position of the mouse, with the center of the screen being balanced, left being negative balance, and right being positive balance.
     /// </summary>
