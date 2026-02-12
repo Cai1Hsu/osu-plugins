@@ -105,6 +105,12 @@ public partial class AudioEngine : Component
         });
     }
 
+    /// <summary>
+    /// Plays a sample with positional audio based on the current mouse position.
+    /// The sample's balance will be set to match the horizontal position of the mouse, with the center of the screen being balanced, left being negative balance, and right being positive balance.
+    /// </summary>
+    /// <param name="sample">The sample to play.</param>
+    /// <param name="configure"> An optional action to configure the sample channel before playing. Can be used to set volume, speed, etc.</param>
     public void PlaySamplePositional(LegacySample sample, Action<SampleChannel>? configure)
     {
         if (this[sample] is SampleChannel channel)
