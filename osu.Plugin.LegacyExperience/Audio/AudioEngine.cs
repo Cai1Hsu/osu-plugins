@@ -28,6 +28,8 @@ public partial class AudioEngine : Component
 
     private FrozenDictionary<LegacySample, ISample?> samples = FrozenDictionary<LegacySample, ISample?>.Empty;
 
+    public IReadOnlyDictionary<LegacySample, ISample?> Samples => samples;
+
     [BackgroundDependencyLoader]
     private void load()
     {
@@ -74,8 +76,6 @@ public partial class AudioEngine : Component
                 .FirstOrDefault(static s => s is not null);
     }
 
-    public SampleChannel? this[LegacySample usage] => samples[usage]?.GetChannel();
-
     private double clickSoundTime = double.MinValue;
 
     /// <summary>
@@ -111,9 +111,10 @@ public partial class AudioEngine : Component
     /// </summary>
     /// <param name="sample">The sample to play.</param>
     /// <param name="configure"> An optional action to configure the sample channel before playing. Can be used to set volume, speed, etc.</param>
-    public void PlaySamplePositional(LegacySample sample, Action<SampleChannel>? configure)
+    public void PlaySamplePositional(LegacySample sampleUsage, Action<SampleChannel>? configure)
     {
-        if (this[sample] is SampleChannel channel)
+        if (Samples.TryGetValue(sampleUsage, out var sample)
+            && sample?.GetChannel() is SampleChannel channel)
         {
             configure?.Invoke(channel);
 
