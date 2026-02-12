@@ -54,7 +54,7 @@ public partial class LegacySpriteButton : Button
 
     protected override bool OnHover(HoverEvent e)
     {
-        audioEngine?.Click(sample: LegacySample.click_short);
+        audioEngine.Click(sample: LegacySample.click_short);
 
         if (ApplyHoverEffect)
             Sprite.FadeColour(HoverColour, FadeDuration);
@@ -73,7 +73,7 @@ public partial class LegacySpriteButton : Button
     protected override bool OnClick(ClickEvent e)
     {
         // TODO: should we allow sample to be played when triggered from bindings?
-        audioEngine?.PlaySample(sample: LegacySample.click_short_confirm);
+        audioEngine.PlaySample(sample: LegacySample.click_short_confirm);
 
         // match stable behaviour of fade hover effect when ApplyHoverEffect became false
         if (!ApplyHoverEffect)
