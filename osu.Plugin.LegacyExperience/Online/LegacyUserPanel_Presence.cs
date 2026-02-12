@@ -8,8 +8,8 @@ partial class LegacyUserPanel
     /// <summary>
     /// Get the legacy user status and beatmap string based on user activity and status.
     /// </summary>
-    /// <param name="activity">The user activity.</param>
     /// <param name="status">The user status.</param>
+    /// <param name="activity">The user activity.</param>
     /// <returns>A tuple containing the legacy user status and beatmap string.</returns>
     public static (LegacyUserStatus, string?) GetLegacyUserStatusAndBeatmap(UserStatus status, UserActivity? activity)
     {
