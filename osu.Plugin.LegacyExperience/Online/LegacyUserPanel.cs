@@ -281,6 +281,11 @@ public partial class LegacyUserPanel : CompositeDrawable
     {
         AccentColour = lastLegacyStatus switch
         {
+            // in stable's latest code(b20260116cuttingedge), the corresponding condition is actually z!extended,
+            // this is actually a mistake due to the renaming of the member.
+            // In years earlier stable versions, the member was named "Minimal", the reversal of "extended",
+            // and the condition was !Minimal, the correct logic.
+            // it seems that peppy renamed the member but forgot to update the condition accordingly.
             _ when ExtendedStyle.Value => new Colour4(1, 1, 1, 255),
             LegacyUserStatus.Afk => new Colour4(10, 10, 10, 255),
             LegacyUserStatus.Editing => new Colour4(160, 60, 60, 255),
