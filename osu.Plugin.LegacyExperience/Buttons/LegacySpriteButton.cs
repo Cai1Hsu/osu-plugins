@@ -4,8 +4,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
-using osu.Game.Audio;
-using osu.Game.Skinning;
+using osu.Plugin.LegacyExperience.Audio;
 
 namespace osu.Plugin.LegacyExperience.Buttons;
 
@@ -26,9 +25,8 @@ public partial class LegacySpriteButton : Button
     [Resolved]
     private TextureStore? textures { get; set; }
 
-    public PoolableSkinnableSample? HoverSample { get; set; }
-
-    public PoolableSkinnableSample? ClickSample { get; set; }
+    [Resolved]
+    private AudioEngine audioEngine { get; set; } = null!;
 
     [BackgroundDependencyLoader]
     private void load()
@@ -44,9 +42,6 @@ public partial class LegacySpriteButton : Button
             }
         };
 
-        AddInternal(HoverSample ??= new PoolableSkinnableSample(new SampleInfo("click-short")));
-        AddInternal(ClickSample ??= new PoolableSkinnableSample(new SampleInfo("click-short-confirm")));
-
         SetTexture(Texture);
     }
 
@@ -59,7 +54,7 @@ public partial class LegacySpriteButton : Button
 
     protected override bool OnHover(HoverEvent e)
     {
-        HoverSample?.Play();
+        audioEngine?.Click(sample: LegacySample.click_short);
 
         if (ApplyHoverEffect)
             Sprite.FadeColour(HoverColour, FadeDuration);
@@ -78,7 +73,7 @@ public partial class LegacySpriteButton : Button
     protected override bool OnClick(ClickEvent e)
     {
         // TODO: should we allow sample to be played when triggered from bindings?
-        ClickSample?.Play();
+        audioEngine?.PlaySample(sample: LegacySample.click_short_confirm);
 
         // match stable behaviour of fade hover effect when ApplyHoverEffect became false
         if (!ApplyHoverEffect)
