@@ -23,4 +23,8 @@ public enum LegacySample
     menuclick,
     [Description("menuhit")]
     menuhit,
+    [Description("sectionpass")]
+    sectionpass,
+    [Description("sectionfail")]
+    sectionfail
 }
