@@ -72,9 +72,7 @@ public partial class FontText : SpriteText
         {
             return (c >= '一' && c <= '鿿') ||
                 (c >= '㐀' && c <= '䷿') ||
-                (c >= 131072 && c <= 173791) ||
-                (c >= '豈' && c <= '\ufaff') ||
-                (c >= 194560 && c <= 195103);
+                (c >= '豈' && c <= '\ufaff');
         }
 
         // TODO: the calculation here may be incorrect, but looks good enough for now.
