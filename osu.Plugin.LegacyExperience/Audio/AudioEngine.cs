@@ -90,6 +90,9 @@ public partial class AudioEngine : Component
         const double click_cooldown = 50; // match stable
 
         // TODO: stable also checks GameBase.Instance.IsActive, do we need to?
+
+        // stable doesn't guard cases where sample is missing, which means cooldown is consumed even if no sound is played.
+        // this isn't a big deal, just mentioning it here for completeness.
         if (Clock.CurrentTime - clickSoundTime <= click_cooldown && !force)
             return;
 
