@@ -47,6 +47,13 @@ public partial class AudioEngine : Component
     private static readonly LegacySample[] all_usages = Enum.GetValues<LegacySample>();
     private static readonly SampleInfo[] all_sample_infos = Array.ConvertAll(all_usages, static usage => new SampleInfo(usage.GetDescription()));
 
+    private static readonly string[] fallback_namespaces = new[]
+    {
+        sample_namespace,
+        "Gameplay",
+        "UI",
+    };
+
     private void updateSamples()
     {
         var samples = new Dictionary<LegacySample, ISample?>();
@@ -72,7 +79,7 @@ public partial class AudioEngine : Component
 
         return skin?.GetSample(sampleInfo)
             ?? sampleInfo.LookupNames
-                .Select(n => frameworkAudio.Samples.Get($"{sample_namespace}/{n}"))
+                .SelectMany(n => fallback_namespaces.Select(ns => frameworkAudio.Samples.Get($"{ns}/{n}")))
                 .FirstOrDefault(static s => s is not null);
     }
 
