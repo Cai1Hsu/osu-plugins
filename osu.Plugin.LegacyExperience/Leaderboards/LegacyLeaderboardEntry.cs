@@ -15,6 +15,7 @@ using osu.Game.Skinning;
 using osu.Game.Users;
 using osuTK;
 using osuTK.Graphics;
+using LegacyFont = osu.Plugin.LegacyExperience.Graphics.LegacyFont;
 
 namespace osu.Plugin.LegacyExperience.Leaderboards;
 
@@ -59,10 +60,8 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.TopLeft,
-                Font = new FontUsage(size: 14f, fixedWidth: false),
-                Scale = new Vector2(stable_ratio),
+                Font = LegacyFont.Default.With(size: 14),
                 RelativeSizeAxes = Axes.X,
-                Width = 1 / stable_ratio, // we scaled up, so we need to scale down the width
                 Position = background_offset + new Vector2(2.5f, -2f) * stable_ratio,
                 AllowMultiline = false,
             },
