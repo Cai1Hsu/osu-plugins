@@ -226,7 +226,12 @@ public partial class NativeText : Component
         }
 
         FontStyle fontStyle = BuildFontStyle(parameters.Bold, parameters.Italic);
-        Font font = getOrCreateFont(fontName, parameters.Size, fontStyle);
+        Font? font = getOrCreateFont(fontName, parameters.Size, fontStyle);
+
+        // The system doesn't install any font, and we failed to load osu!ui.dll, 
+        // so we have no choice but to give up rendering text.
+        if (font is null)
+            return null;
 
         float wrappingWidth = parameters.RestrictBounds.X > 0
             ? (int)parameters.RestrictBounds.X
@@ -330,7 +335,7 @@ public partial class NativeText : Component
         };
     }
 
-    private Font getOrCreateFont(string fontName, float size, FontStyle style)
+    private Font? getOrCreateFont(string fontName, float size, FontStyle style)
     {
         var key = new FontCacheKey(fontName, size, style);
 
@@ -344,8 +349,19 @@ public partial class NativeText : Component
         {
             // System.Drawing's Font fallback to call GdipGetGenericFontFamilySansSerif when the specified font is not found, 
             // so we do the same to mimic stable's behaviour.
-            family = msSansSerifFamily ?? SystemFonts.Families.First();
+            var fallback = msSansSerifFamily
+                // osu!ui's fonts are generally less complete, so we prefer system font fallbacks over osu!ui's when the specified font is not found.
+                ?? fallbackFontFamilies.Select(toNullable).FirstOrDefault()
+                ?? fontCollection.Families.Select(toNullable).FirstOrDefault()
+                ?? SystemFonts.Families.Select(toNullable).FirstOrDefault();
+
+            if (!fallback.HasValue)
+                return null;
+
+            family = fallback.Value;
         }
+
+        static T? toNullable<T>(T value) where T : struct => value;
 
         Font font = family.CreateFont(size, style);
         fontCache[key] = font;
