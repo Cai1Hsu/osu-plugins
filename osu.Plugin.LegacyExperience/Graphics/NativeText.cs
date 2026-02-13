@@ -411,8 +411,8 @@ public partial class NativeText : Component
                      >= '\uA640' and <= '\uA69F' or // Cyrillic Extended-B
                      >= '\u1C80' and <= '\u1C8F' or   // Cyrillic Extended-C
                                                       // Skipping Cyrillic Extended-D (U+1E030 to U+1E08F) as out of 16-bit char range
-                     >= '\u1D00' and <= '\u1D7F' or // Phonetic Extensions
-                     >= '\uFE2E' and <= '\uFE2F') // Combining Half Marks
+                     >= '\uFE2E' and <= '\uFE2F'// Combining Half Marks
+                || c is '\u1D2B' or '\u1D78') // Phonetic Extensions (Cyrillic chars only) 
                 return ScriptType.Cyrillic;
 
             // CJK Unified Ideographs + Extension A
