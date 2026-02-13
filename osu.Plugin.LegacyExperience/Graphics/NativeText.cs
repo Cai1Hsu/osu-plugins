@@ -359,7 +359,7 @@ public partial class NativeText : Component
         return default;
     }).Where(static f => f != default).ToArray();
 
-    private static readonly FontFamily? msSansSerifFamily = fallbackFontFamilies.First() is FontFamily family
+    private static readonly FontFamily? msSansSerifFamily = fallbackFontFamilies.FirstOrDefault() is FontFamily family
         && family.Name == "Microsoft Sans Serif" ? family : null;
 
     private readonly record struct FontCacheKey(string Name, float Size, FontStyle Style);
