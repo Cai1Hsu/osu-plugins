@@ -209,8 +209,6 @@ public partial class NativeText : Component
 
         // it seems GDI+ adds a really big padding around text when measuring/drawing.
 
-        const float safeAddition = 8;
-
         float wrappingWidth = parameters.RestrictBounds.X > 0
             ? (int)parameters.RestrictBounds.X
             : -1;
@@ -234,8 +232,8 @@ public partial class NativeText : Component
         if (measured.IsEmpty)
             return null;
 
-        int width = (int)MathF.Ceiling(measured.Width + safeAddition);
-        int height = (int)MathF.Ceiling(measured.Height + safeAddition);
+        int width = (int)MathF.Ceiling(measured.Width + measured.Left);
+        int height = (int)MathF.Ceiling(measured.Height + measured.Top);
 
         // we try to draw one more pixel to avoid 1px gap issues, masking can be used to crop later if needed.
         if (parameters.RestrictBounds.Y > 0)
