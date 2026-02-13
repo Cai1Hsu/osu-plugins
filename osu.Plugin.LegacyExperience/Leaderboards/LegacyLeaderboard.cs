@@ -13,13 +13,13 @@ using osu.Framework.Extensions.EnumExtensions;
 using osu.Game.Plugins;
 using osu.Framework.Graphics.Pooling;
 using osu.Game.Screens.Play;
-using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics;
 using osu.Framework.Localisation;
 using osu.Plugin.LegacyExperience.Localisations;
 using osu.Game.Input.Bindings;
 using osu.Game.Input;
-using osu.Game.Online.Leaderboards;
+using osu.Plugin.LegacyExperience.Graphics;
+using LegacyFont = osu.Plugin.LegacyExperience.Graphics.LegacyFont;
 
 namespace osu.Plugin.LegacyExperience.Leaderboards;
 
@@ -66,7 +66,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     private readonly Bindable<bool> visibility = new BindableBool();
 
     private Container content = null!;
-    private OsuSpriteText? tipText;
+    private FontText? tipText;
 
     [BackgroundDependencyLoader]
     private void load(ILocalUserPlayInfo localUserPlayInfo, OsuConfigManager osuConfig)
@@ -157,13 +157,18 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             tipText?.FadeOut(100)
                 .Expire();
 
-            content.Add(tipText = new OsuSpriteText
+            content.Add(tipText = new FontText
             {
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.BottomLeft,
                 BypassAutoSizeAxes = Axes.Both,
-                Font = OsuFont.Default.With(size: 12 * stable_ratio, weight: FontWeight.SemiBold),
+                Font = LegacyFont.Default.With(size: 12, weight: FontWeight.Bold),
                 Text = text,
+                Margin = new MarginPadding()
+                {
+                    Left = 2,
+                    Bottom = 4,
+                },
             });
 
             tipText.FadeOutFromOne(6000)

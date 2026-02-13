@@ -1,7 +1,6 @@
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Game.Graphics;
-using osu.Game.Graphics.Sprites;
+using osu.Plugin.LegacyExperience.Graphics;
 using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Mods;
@@ -12,7 +11,7 @@ partial class LegacyModSelection
 
     public partial class SelectionGroup : Container
     {
-        public OsuSpriteText Label { get; }
+        public FontText Label { get; }
 
         public LegacyModType GroupType { get; }
 
@@ -28,10 +27,10 @@ partial class LegacyModSelection
 
             Children = new Drawable[]
             {
-                Label = new OsuSpriteText
+                Label = new FontText
                 {
                     Position = new Vector2(20f, 13f) * LegacyExperiencePlugin.StableRatio,
-                    Font = OsuFont.Default.With(size: 24f * LegacyExperiencePlugin.StableRatio),
+                    Font = LegacyFont.Default.With(size: 24),
                 },
                 // FIXME:
                 // we are depending on LegacyModSwitch's constant size here, which is not ideal.

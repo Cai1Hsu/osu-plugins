@@ -6,8 +6,8 @@ using osu.Framework.Graphics;
 using osu.Game;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
-using osu.Game.Graphics.Sprites;
 using osu.Game.Rulesets.Mods;
+using osu.Plugin.LegacyExperience.Graphics;
 using osu.Plugin.LegacyExperience.Localisations;
 
 namespace osu.Plugin.LegacyExperience.Mods;
@@ -15,7 +15,7 @@ namespace osu.Plugin.LegacyExperience.Mods;
 [Cached(typeof(IModHoverManager))]
 public partial class LegacyModSelection : LegacyDialog, IModHoverManager
 {
-    public OsuSpriteText MultiplierText { get; private set; } = null!;
+    public FontText MultiplierText { get; private set; } = null!;
 
     public SelectionGroup ReductionGroup { get; private set; } = null!;
 
@@ -29,11 +29,11 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
 
         Content.AddRange(new Drawable[]
         {
-            MultiplierText = new OsuSpriteText
+            MultiplierText = new FontText
             {
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.Centre,
-                Font = OsuFont.Default.With(size: 30f * LegacyExperiencePlugin.StableRatio),
+                Font = LegacyFont.Default.With(size: 30),
                 // match stable's currentVerticalSpace usage
                 Margin = new MarginPadding
                 {
