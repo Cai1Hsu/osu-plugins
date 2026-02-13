@@ -221,10 +221,6 @@ public partial class NativeText : Component
             WordBreaking = WordBreaking.BreakAll,
         };
 
-        // Stable falls back to a single space for empty strings
-        if (text.Length == 0)
-            text = " ";
-
         // Measure text bounds
         FontRectangle measured = TextMeasurer.MeasureBounds(text, textOptions);
 
