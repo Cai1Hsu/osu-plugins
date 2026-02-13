@@ -99,7 +99,7 @@ public partial class NativeText : Component
             {
                 notificationOverlay.Post(new SimpleNotification
                 {
-                    Text = "Legacy Experience Plugin",
+                    Text = message,
                     Icon = FontAwesome.Solid.ExclamationTriangle,
                     IconColour = Colour4.Red,
                 });
