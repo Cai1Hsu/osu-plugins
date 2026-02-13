@@ -186,10 +186,7 @@ public partial class TestSceneNativeText : OsuTestScene
                 RelativeSizeAxes = Axes.Both,
                 Colour = Colour4.DarkGray.Opacity(0.3f),
             });
-            AddInternal(textSprite = new Sprite
-            {
-                Scale = new Vector2(1 / 1.6f),
-            });
+            AddInternal(textSprite = new Sprite());
         }
 
         public void ForceRedraw() => textureLayout.Invalidate();
@@ -214,6 +211,7 @@ public partial class TestSceneNativeText : OsuTestScene
                 RestrictBounds = DrawSize * 1.6f,
                 Dpi = 96,
             });
+            texture?.ScaleAdjust = 1.6f;
 
             textSprite.Texture = texture;
             textSprite.Size = texture?.DisplaySize ?? Vector2.Zero;
