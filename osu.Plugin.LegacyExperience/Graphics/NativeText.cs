@@ -284,7 +284,7 @@ public partial class NativeText : Component
         string fontName = GetFontFace(fontFace);
 
         // stable's behaviour:
-        if (fontFace is LegacyFontFace.Aller or LegacyFontFace.AllerLight)
+        if (fontFace is LegacyFontFace.DefaultRegular or LegacyFontFace.DefaultLight)
         {
             string? languageFont = getLanguageSpecificFont(text);
 
@@ -451,7 +451,7 @@ public partial class NativeText : Component
     {
         return fontFace switch
         {
-            LegacyFontFace.Aller => "Aller",
+            LegacyFontFace.DefaultRegular => "Aller",
             LegacyFontFace.Tahoma => "Tahoma",
             LegacyFontFace.FontAwesome => "FontAwesome",
             LegacyFontFace.Exo2 => "Exo 2.0",
@@ -485,8 +485,8 @@ public partial class NativeText : Component
 
     public enum LegacyFontFace
     {
-        AllerLight = 0,
-        Aller = 1,
+        DefaultLight = 0,
+        DefaultRegular = 1,
         Tahoma = 2,
         FontAwesome = 3,
         Exo2 = 4,
