@@ -384,12 +384,12 @@ public partial class NativeText : Component
                 return ScriptType.Korean;
 
             if (c is >= '\u0400' and <= '\u04FF' or // Cyrillic
-                     >= '\u0500' and <= '\u052F' or // Cyrillic Supplemen
+                     >= '\u0500' and <= '\u052F' or // Cyrillic Supplement
                      >= '\u2DE0' and <= '\u2DFF' or // Cyrillic Extended-A
                      >= '\uA640' and <= '\uA69F' or // Cyrillic Extended-B
                      >= '\u1C80' and <= '\u1C8F' or   // Cyrillic Extended-C
                                                       // Skipping Cyrillic Extended-D (U+1E030 to U+1E08F) as out of 16-bit char range
-                     >= '\u1D2B' or '\u1D78' or // Phonetic Extensions
+                     >= '\u1D00' and <= '\u1D7F' or // Phonetic Extensions
                      >= '\uFE2E' and <= '\uFE2F') // Combining Half Marks
                 return ScriptType.Cyrillic;
 
