@@ -217,6 +217,8 @@ public partial class NativeText : Component
             HorizontalAlignment = mapAlignment(parameters.Alignment),
             WrappingLength = wrappingWidth,
             WordBreaking = WordBreaking.BreakAll,
+            // keep this list small, as each fallback adds (much) to processing time.
+            FallbackFontFamilies = fallbackFontFamilies,
         };
 
         // Measure text bounds
@@ -319,18 +321,46 @@ public partial class NativeText : Component
         if (!fontCollection.TryGet(fontName, out family)
             && !SystemFonts.TryGet(fontName, out family))
         {
-            // Fallback to a commonly available font
-            if (!SystemFonts.TryGet("Segoe UI", out family)
-                && !SystemFonts.TryGet("Arial", out family))
-            {
-                family = SystemFonts.Families.First();
-            }
+            // System.Drawing's Font fallback to call GdipGetGenericFontFamilySansSerif when the specified font is not found, 
+            // so we do the same to mimic stable's behaviour.
+            family = msSansSerifFamily ?? SystemFonts.Families.First();
         }
 
         Font font = family.CreateFont(size, style);
         fontCache[key] = font;
         return font;
     }
+
+    private static readonly string[] fallbackFontNames =
+    [
+        // System.Drawing fallback to Microsoft Sans Serif (GdipGetGenericFontFamilySansSerif) first when the specified font is not found, 
+        // so we put it at the front of the list to mimic stable's behaviour.
+        "Microsoft Sans Serif",
+
+        // dictionary order, this should match GDI+ DrawString's fallback order when the specified font doesn't support certain characters.
+        ..new string[]
+        {
+            // we may want to add more fallbacks in the future if we find more missing characters.
+            "Malgun Gothic",
+            "Meiryo",
+            "Microsoft YaHei",
+            "Microsoft JhengHei",
+            "Segoe UI",
+            "Tahoma",
+        }.Order(StringComparer.InvariantCulture)
+    ];
+
+    private static readonly FontFamily[] fallbackFontFamilies = fallbackFontNames.Select(static name =>
+    {
+        if (SystemFonts.TryGet(name, out var family))
+            return family;
+
+        Logger.Log($"Fallback font '{name}' not found in system fonts.", LoggingTarget.Runtime, LogLevel.Verbose);
+        return default;
+    }).Where(static f => f != default).ToArray();
+
+    private static readonly FontFamily? msSansSerifFamily = fallbackFontFamilies.First() is FontFamily family
+        && family.Name == "Microsoft Sans Serif" ? family : null;
 
     private readonly record struct FontCacheKey(string Name, float Size, FontStyle Style);
 
