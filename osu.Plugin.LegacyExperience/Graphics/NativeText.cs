@@ -207,8 +207,6 @@ public partial class NativeText : Component
         FontStyle fontStyle = BuildFontStyle(parameters.Bold, parameters.Italic);
         Font font = getOrCreateFont(fontName, parameters.Size, fontStyle);
 
-        // it seems GDI+ adds a really big padding around text when measuring/drawing.
-
         float wrappingWidth = parameters.RestrictBounds.X > 0
             ? (int)parameters.RestrictBounds.X
             : -1;
