@@ -181,17 +181,21 @@ public partial class NativeText : Component
 
                 reader.GetResourceData(resourceName, out string resourceType, out byte[] resourceData);
 
-                if (resourceType != "ResourceTypeCode.ByteArray" || resourceData.Length < 8)
+                if (resourceType != "ResourceTypeCode.ByteArray" || resourceData.Length < 9)
                     continue;
 
-                // There're 4 extra bytes before the font header.
-                var dataSpan = resourceData.AsSpan(4);
+                // performs a simple binary serialization for byte[]
+                var length = BitConverter.ToInt32(resourceData, 0);
+                var dataSpan = resourceData.AsSpan(sizeof(int));
+
+                if (dataSpan.Length != length)
+                    continue;
 
                 if (!dataSpan[0..5].SequenceEqual(ttfHeader) &&
                     !dataSpan[0..4].SequenceEqual(otfHeader))
                     continue;
 
-                using var fontStream = new MemoryStream(resourceData, 4, resourceData.Length - 4, false);
+                using var fontStream = new MemoryStream(resourceData, sizeof(int), length, false);
                 fontCollection.Add(fontStream);
 
                 Logger.Log($"Loaded font {resourceName} from {osu_ui_dll}", LoggingTarget.Runtime, LogLevel.Verbose);
