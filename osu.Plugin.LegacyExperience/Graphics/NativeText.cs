@@ -317,8 +317,8 @@ public partial class NativeText : Component
 
         var image = new Image<Rgba32>(width, height);
 
-        // ImageSharp's DrawText doesn't support ReadOnlyMemory<char>, but ToString() will allocate a new string, so we want to avoid calling it if possible.
-        // ReadOnlyMemory<char> returns original string internally if we are not modifying the text for font-specific glyph adjustments
+        // ImageSharp's DrawText doesn't support ReadOnlyMemory<char> for some reason.
+        // However, ReadOnlyMemory<char> returns original string internally if we are not modifying the text for font-specific glyph adjustments
         var textString = textMemory.ToString();
 
         image.Mutate(ctx =>
