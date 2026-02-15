@@ -37,17 +37,21 @@ public partial class NativeText : Component
     [Resolved]
     private IRenderer renderer { get; set; } = null!;
 
+    private IBindable<DisplayMode> currentDisplayMode = new Bindable<DisplayMode>();
+
     // of's TextureStore limits texture size to 1024 due to mipmapping's performance impact,
     // but we are not mipmapping for text textures, so we can use larger textures to reduce atlas usage and improve performance.
     private const int max_atlas_size = 4096;
 
     [BackgroundDependencyLoader]
-    private void load(FrameworkConfigManager frameworkConfig)
+    private void load(FrameworkConfigManager frameworkConfig, GameHost host)
     {
         frameworkLocale = frameworkConfig.GetBindable<string>(FrameworkSetting.Locale);
 
         int atlasSize = Math.Min(renderer.MaxTextureSize, max_atlas_size);
         textureAtlas = new TextureAtlas(renderer, atlasSize, atlasSize, manualMipmaps: true);
+
+        currentDisplayMode.BindTo(host.Window.CurrentDisplayMode);
 
         loadOsuUI();
         populateFontCollection();
@@ -236,6 +240,8 @@ public partial class NativeText : Component
         }
     }
 
+    private const float target_dpi = 96f;
+
     /// <summary>
     /// Creates a texture containing the rendered text based on the provided parameters.
     /// </summary>
@@ -254,10 +260,22 @@ public partial class NativeText : Component
         if (textMemory.IsEmpty)
             return;
 
-        string fontName = selectFontFamily(parameters);
+        // TODO: SDL3 is removing SDL_GetDisplayDPI, we need to find an GdipGetDpiX equivalent way to for stable-like DPI scaling in the future.
+        if (SDL2.SDL.SDL_GetDisplayDPI(currentDisplayMode.Value.DisplayIndex, out _, out float dpiX, out _) is not 0)
+        {
+            Logger.Log($"Failed to get display DPI for display index {currentDisplayMode.Value.DisplayIndex}. SDL Error: {SDL2.SDL.SDL_GetError()}", LoggingTarget.Runtime, LogLevel.Verbose);
+            dpiX = target_dpi;
+        }
 
+        float dpiRatio = dpiX / target_dpi;
+
+        float fontSize = parameters.Size * 1.03f; // magic ratio to compensate for stable's slightly larger font rendering, especially at smaller sizes. This is not a perfect solution but it should be good enough for now.
+
+        Vector2 restrictBounds = parameters.RestrictBounds * dpiRatio;
+
+        string fontName = resolveFontName(parameters.FontFace, textMemory.Span, fontSize, parameters.Bold);
         FontStyle fontStyle = BuildFontStyle(parameters.Bold, parameters.Italic);
-        Font? font = getOrCreateFont(fontName, parameters.Size, fontStyle);
+        Font? font = getOrCreateFont(fontName, fontSize, fontStyle);
 
         // The system doesn't install any font, and we failed to load osu!ui.dll, 
         // so we have no choice but to give up rendering text.
@@ -269,11 +287,13 @@ public partial class NativeText : Component
 
         var textOptions = new RichTextOptions(font)
         {
-            Dpi = parameters.Dpi,
+            Dpi = dpiX,
             HorizontalAlignment = mapAlignment(parameters.Alignment),
-            WordBreaking = WordBreaking.BreakAll,
+            WordBreaking = WordBreaking.BreakWord,
             // keep this list small, as each fallback adds (much) to processing time.
             FallbackFontFamilies = fallbackFontFamilies,
+            // GDI+ leaves more space between lines than ImageSharp's default, we need to increase line spacing to compensate for that.
+            LineSpacing = 1.25f,
         };
 
         FontRectangle bounds = default;
@@ -282,7 +302,7 @@ public partial class NativeText : Component
         {
             // Measure bounds without wrapping to get the unrestricted size, which is needed to determine if the text was actually restricted or not.
             textOptions.WrappingLength = -1;
-            var unrestrictedBounds = TextMeasurer.MeasureBounds(textMemory.Span, textOptions);
+            var unrestrictedBounds = TextMeasurer.MeasureAdvance(textMemory.Span, textOptions);
 
             result = result with
             {
@@ -295,10 +315,12 @@ public partial class NativeText : Component
         // measure restricted bounds later to keep WrappingLength intact for rendering
         if (doRender || parameters.RenderFlags.HasFlagFast(TextRenderFlags.MeasureBounds))
         {
-            textOptions.WrappingLength = parameters.RestrictBounds.X > 0
-                ? (int)parameters.RestrictBounds.X
+            textOptions.WrappingLength = restrictBounds.X > 0
+                ? (int)restrictBounds.X
                 : -1;
-            bounds = TextMeasurer.MeasureBounds(textMemory.Span, textOptions);
+
+            // use advance here to leave full height for text, making text centered vertically.
+            bounds = TextMeasurer.MeasureAdvance(textMemory.Span, textOptions);
 
             result = result with
             {
@@ -317,11 +339,11 @@ public partial class NativeText : Component
         int height = (int)MathF.Ceiling(bounds.Bottom);
 
         // we try to draw one more pixel to avoid 1px gap issues, masking can be used to crop later if needed.
-        if (parameters.RestrictBounds.Y > 0)
-            height = Math.Min(height, (int)MathF.Ceiling(parameters.RestrictBounds.Y));
+        if (restrictBounds.Y > 0)
+            height = Math.Min(height, (int)MathF.Ceiling(restrictBounds.Y));
 
-        if (parameters.RestrictBounds.X > 0)
-            width = Math.Min(width, (int)MathF.Ceiling(parameters.RestrictBounds.X));
+        if (restrictBounds.X > 0)
+            width = Math.Min(width, (int)MathF.Ceiling(restrictBounds.X));
 
         if (width <= 0 || height <= 0)
             return;
@@ -339,6 +361,7 @@ public partial class NativeText : Component
 
         var texture = textureAtlas.Add(image.Width, image.Height)
             ?? renderer.CreateTexture(image.Width, image.Height);
+        texture.ScaleAdjust = dpiRatio;
         texture.SetData(new TextureUpload(image));
 
         result = result with
@@ -347,12 +370,7 @@ public partial class NativeText : Component
         };
     }
 
-    private string selectFontFamily(in TextCreationParameters parameters)
-    {
-        return resolveFontName(parameters.FontFace, parameters.Text, parameters.Size, parameters.Bold);
-    }
-
-    private string resolveFontName(LegacyFontFace fontFace, string text, float size, bool bold)
+    private string resolveFontName(LegacyFontFace fontFace, ReadOnlySpan<char> text, float size, bool bold)
     {
         string fontName = GetFontFace(fontFace);
 
@@ -473,7 +491,7 @@ public partial class NativeText : Component
     /// Detects CJK or special script characters and returns an appropriate system font name.
     /// Ported from stable's getLanguageSpecificFont.
     /// </summary>
-    private string? getLanguageSpecificFont(string text)
+    private string? getLanguageSpecificFont(ReadOnlySpan<char> text)
     {
         ScriptType script = detectScript(text);
 
@@ -498,7 +516,7 @@ public partial class NativeText : Component
     /// Detects the primary script type of the text based on the first non-Latin character.
     /// Extracted from unicode.org scripts data, may differ slightly from stable's implementation.
     /// </summary>
-    private static ScriptType detectScript(string text)
+    private static ScriptType detectScript(ReadOnlySpan<char> text)
     {
         foreach (char c in text)
         {
@@ -597,11 +615,6 @@ public partial class NativeText : Component
         /// The font size.
         /// </summary>
         public required float Size { get; init; }
-
-        /// <summary>
-        /// The DPI (dots per inch) for rendering the text.
-        /// </summary>
-        public float Dpi { get; init; } = 72; // ImageSharp's default DPI
 
         /// <summary>
         /// The maximum bounds to restrict the text within.
