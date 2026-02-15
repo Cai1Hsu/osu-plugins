@@ -667,6 +667,7 @@ public partial class NativeText : Component
 
         /// <summary>
         /// The size of the rendered text without any restrictions applied. This may be larger than <see cref="BoundsSize"/> if the text was restricted by the provided bounds.
+        /// You must pass <see cref="TextRenderFlags.MeasureUnrestrictedBounds"/> when creating the text to populate this value, otherwise it will be default(Vector2.Zero).
         /// </summary>
         public Vector2 UnrestrictedBoundsSize { get; init; }
 
