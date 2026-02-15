@@ -201,26 +201,27 @@ public partial class NativeText : Component
 
     private static readonly SolidBrush DrawBrush = Brushes.Solid(Color.White);
 
-    private void processFontSpecificGlyphAdjustments(ref string text, string fontName)
+    private void processFontSpecificGlyphAdjustments(ref ReadOnlyMemory<char> text, string fontName)
     {
         // stable's "Aller" font has a custom glyph for digits that are mapped to the Unicode private use area.
         if (fontName.StartsWith("Aller"))
         {
             char[]? chars = null;
 
-            for (int i = 0; i < text.Length; i++)
+            var textSpan = text.Span;
+            for (int i = 0; i < textSpan.Length; i++)
             {
-                char c = text[i];
+                char c = textSpan[i];
 
                 if (c is >= '0' and <= '9')
                 {
-                    chars ??= text.ToCharArray();
+                    chars ??= textSpan.ToArray();
                     chars[i] = (char)(c + 63500);
                 }
             }
 
             if (chars is not null)
-                text = new string(chars);
+                text = chars;
         }
     }
 
@@ -237,9 +238,9 @@ public partial class NativeText : Component
             RequestedRestrictBounds = parameters.RestrictBounds,
         };
 
-        string? text = parameters.Text;
+        ReadOnlyMemory<char> textMemory = parameters.Text.AsMemory();
 
-        if (string.IsNullOrEmpty(text))
+        if (textMemory.IsEmpty)
             return;
 
         string fontName = selectFontFamily(parameters);
@@ -253,7 +254,7 @@ public partial class NativeText : Component
             return;
 
         // stable behaviour
-        processFontSpecificGlyphAdjustments(ref text, fontName);
+        processFontSpecificGlyphAdjustments(ref textMemory, fontName);
 
         var textOptions = new RichTextOptions(font)
         {
@@ -270,7 +271,7 @@ public partial class NativeText : Component
         {
             // Measure bounds without wrapping to get the unrestricted size, which is needed to determine if the text was actually restricted or not.
             textOptions.WrappingLength = -1;
-            var unrestrictedBounds = TextMeasurer.MeasureBounds(text, textOptions);
+            var unrestrictedBounds = TextMeasurer.MeasureBounds(textMemory.Span, textOptions);
 
             result = result with
             {
@@ -286,7 +287,7 @@ public partial class NativeText : Component
             textOptions.WrappingLength = parameters.RestrictBounds.X > 0
                 ? (int)parameters.RestrictBounds.X
                 : -1;
-            bounds = TextMeasurer.MeasureBounds(text, textOptions);
+            bounds = TextMeasurer.MeasureBounds(textMemory.Span, textOptions);
 
             result = result with
             {
@@ -316,9 +317,13 @@ public partial class NativeText : Component
 
         var image = new Image<Rgba32>(width, height);
 
+        // ImageSharp's DrawText doesn't support ReadOnlyMemory<char>, but ToString() will allocate a new string, so we want to avoid calling it if possible.
+        // ReadOnlyMemory<char> returns original string internally if we are not modifying the text for font-specific glyph adjustments
+        var textString = textMemory.ToString();
+
         image.Mutate(ctx =>
         {
-            ctx.DrawText(textOptions, text, DrawBrush, null);
+            ctx.DrawText(textOptions, textString, DrawBrush, null);
         });
 
         var texture = textureAtlas.Add(image.Width, image.Height)
