@@ -31,13 +31,22 @@ public partial class NativeText : Component
 {
     private Bindable<string> frameworkLocale = null!;
 
+    private TextureAtlas textureAtlas = null!;
+
     [Resolved]
     private IRenderer renderer { get; set; } = null!;
+
+    // of's TextureStore limits texture size to 1024 due to mipmapping's performance impact,
+    // but we are not mipmapping for text textures, so we can use larger textures to reduce atlas usage and improve performance.
+    private const int max_atlas_size = 4096;
 
     [BackgroundDependencyLoader]
     private void load(FrameworkConfigManager frameworkConfig)
     {
         frameworkLocale = frameworkConfig.GetBindable<string>(FrameworkSetting.Locale);
+
+        int atlasSize = Math.Min(renderer.MaxTextureSize, max_atlas_size);
+        textureAtlas = new TextureAtlas(renderer, atlasSize, atlasSize, manualMipmaps: true);
 
         loadOsuUI();
         populateFontCollection();
@@ -274,7 +283,8 @@ public partial class NativeText : Component
             ctx.DrawText(textOptions, text, DrawBrush, null);
         });
 
-        var texture = renderer.CreateTexture(image.Width, image.Height);
+        var texture = textureAtlas.Add(image.Width, image.Height)
+            ?? renderer.CreateTexture(image.Width, image.Height);
         texture.SetData(new TextureUpload(image));
         return texture;
     }
