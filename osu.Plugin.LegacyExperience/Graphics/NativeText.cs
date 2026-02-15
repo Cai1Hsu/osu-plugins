@@ -255,10 +255,6 @@ public partial class NativeText : Component
         // stable behaviour
         processFontSpecificGlyphAdjustments(ref text, fontName);
 
-        float wrappingWidth = parameters.RestrictBounds.X > 0
-            ? (int)parameters.RestrictBounds.X
-            : -1;
-
         var textOptions = new RichTextOptions(font)
         {
             Dpi = parameters.Dpi,
@@ -270,19 +266,6 @@ public partial class NativeText : Component
 
         FontRectangle bounds = default;
 
-        bool doRender = parameters.RenderFlags.HasFlagFast(TextRenderFlags.Render);
-
-        if (doRender || parameters.RenderFlags.HasFlagFast(TextRenderFlags.MeasureBounds))
-        {
-            textOptions.WrappingLength = wrappingWidth;
-            bounds = TextMeasurer.MeasureBounds(text, textOptions);
-
-            result = result with
-            {
-                BoundsSize = new Vector2(bounds.Right, bounds.Bottom),
-            };
-        }
-
         if (parameters.RenderFlags.HasFlagFast(TextRenderFlags.MeasureUnrestrictedBounds))
         {
             // Measure bounds without wrapping to get the unrestricted size, which is needed to determine if the text was actually restricted or not.
@@ -292,6 +275,22 @@ public partial class NativeText : Component
             result = result with
             {
                 UnrestrictedBoundsSize = new Vector2(unrestrictedBounds.Right, unrestrictedBounds.Bottom),
+            };
+        }
+
+        bool doRender = parameters.RenderFlags.HasFlagFast(TextRenderFlags.Render);
+
+        // measure restricted bounds later to keep WrappingLength intact for rendering
+        if (doRender || parameters.RenderFlags.HasFlagFast(TextRenderFlags.MeasureBounds))
+        {
+            textOptions.WrappingLength = parameters.RestrictBounds.X > 0
+                ? (int)parameters.RestrictBounds.X
+                : -1;
+            bounds = TextMeasurer.MeasureBounds(text, textOptions);
+
+            result = result with
+            {
+                BoundsSize = new Vector2(bounds.Right, bounds.Bottom),
             };
         }
 
