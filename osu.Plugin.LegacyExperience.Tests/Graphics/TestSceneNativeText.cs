@@ -204,13 +204,17 @@ public partial class TestSceneNativeText : OsuTestScene
 
         private void updateText()
         {
-            var texture = nativeText.CreateText(new TextCreationParameters
+            nativeText.CreateText(new TextCreationParameters
             {
                 Text = text,
                 Size = TextSize,
                 RestrictBounds = DrawSize * 1.6f,
                 Dpi = 96,
-            });
+                RenderFlags = TextRenderFlags.Render
+            }, out var result);
+
+            var texture = result.Texture;
+
             texture?.ScaleAdjust = 1.6f;
 
             textSprite.Texture = texture;

@@ -3,6 +3,7 @@ using System.Resources;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
+using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Sprites;
@@ -204,13 +205,19 @@ public partial class NativeText : Component
     /// Creates a texture containing the rendered text based on the provided parameters.
     /// </summary>
     /// <param name="parameters">The text creation parameters.</param>
+    /// <param name="result">The result of the text creation operation.</param>
     /// <returns>The created texture, or null if text is empty or could not be rendered.</returns>
-    public Texture? CreateText(in TextCreationParameters parameters)
+    public void CreateText(in TextCreationParameters parameters, out TextCreationResult result)
     {
+        result = new TextCreationResult
+        {
+            RequestedRestrictBounds = parameters.RestrictBounds,
+        };
+
         string? text = parameters.Text;
 
         if (string.IsNullOrEmpty(text))
-            return null;
+            return;
 
         string fontName = selectFontFamily(parameters);
 
@@ -240,7 +247,7 @@ public partial class NativeText : Component
         // The system doesn't install any font, and we failed to load osu!ui.dll, 
         // so we have no choice but to give up rendering text.
         if (font is null)
-            return null;
+            return;
 
         float wrappingWidth = parameters.RestrictBounds.X > 0
             ? (int)parameters.RestrictBounds.X
@@ -250,21 +257,47 @@ public partial class NativeText : Component
         {
             Dpi = parameters.Dpi,
             HorizontalAlignment = mapAlignment(parameters.Alignment),
-            WrappingLength = wrappingWidth,
             WordBreaking = WordBreaking.BreakAll,
             // keep this list small, as each fallback adds (much) to processing time.
             FallbackFontFamilies = fallbackFontFamilies,
         };
 
-        // Measure text bounds
-        FontRectangle measured = TextMeasurer.MeasureBounds(text, textOptions);
+        FontRectangle bounds = default;
+
+        bool doRender = parameters.RenderFlags.HasFlagFast(TextRenderFlags.Render);
+
+        if (doRender || parameters.RenderFlags.HasFlagFast(TextRenderFlags.MeasureBounds))
+        {
+            textOptions.WrappingLength = wrappingWidth;
+            bounds = TextMeasurer.MeasureBounds(text, textOptions);
+
+            result = result with
+            {
+                BoundsSize = new Vector2(bounds.Right, bounds.Bottom),
+            };
+        }
+
+        if (parameters.RenderFlags.HasFlagFast(TextRenderFlags.MeasureUnrestrictedBounds))
+        {
+            // Measure bounds without wrapping to get the unrestricted size, which is needed to determine if the text was actually restricted or not.
+            textOptions.WrappingLength = -1;
+            var unrestrictedBounds = TextMeasurer.MeasureBounds(text, textOptions);
+
+            result = result with
+            {
+                UnrestrictedBoundsSize = new Vector2(unrestrictedBounds.Right, unrestrictedBounds.Bottom),
+            };
+        }
+
+        if (!doRender)
+            return;
 
         // no need to create a empty texture
-        if (measured.IsEmpty)
-            return null;
+        if (bounds.IsEmpty)
+            return;
 
-        int width = (int)MathF.Ceiling(measured.Width + measured.Left);
-        int height = (int)MathF.Ceiling(measured.Height + measured.Top);
+        int width = (int)MathF.Ceiling(bounds.Right);
+        int height = (int)MathF.Ceiling(bounds.Bottom);
 
         // we try to draw one more pixel to avoid 1px gap issues, masking can be used to crop later if needed.
         if (parameters.RestrictBounds.Y > 0)
@@ -274,7 +307,7 @@ public partial class NativeText : Component
             width = Math.Min(width, (int)MathF.Ceiling(parameters.RestrictBounds.X));
 
         if (width <= 0 || height <= 0)
-            return null;
+            return;
 
         var image = new Image<Rgba32>(width, height);
 
@@ -286,7 +319,11 @@ public partial class NativeText : Component
         var texture = textureAtlas.Add(image.Width, image.Height)
             ?? renderer.CreateTexture(image.Width, image.Height);
         texture.SetData(new TextureUpload(image));
-        return texture;
+
+        result = result with
+        {
+            Texture = texture,
+        };
     }
 
     private string selectFontFamily(in TextCreationParameters parameters)
@@ -570,8 +607,65 @@ public partial class NativeText : Component
         /// </summary>
         public TextAlignment Alignment { get; init; }
 
+        /// <summary>
+        /// Flags to specify whether to measure bounds and/or render the text. 
+        /// This allows for performance optimizations when only measurements are needed without rendering, or vice versa.
+        /// </summary>
+        public required TextRenderFlags RenderFlags { get; init; }
+
         public TextCreationParameters()
         {
         }
+    }
+
+    [Flags]
+    public enum TextRenderFlags
+    {
+        MeasureBounds = 1 << 0,
+        MeasureUnrestrictedBounds = 1 << 1,
+        MeasureAll = MeasureBounds | MeasureUnrestrictedBounds,
+        Render = 1 << 2,
+    }
+
+    public readonly struct TextCreationResult
+    {
+        /// <summary>
+        /// The resulting texture of the rendered text.
+        /// </summary>
+        public Texture? Texture { get; init; }
+
+        /// <summary>
+        /// The bounds that were requested to restrict the text within. This is the same as the <see cref="TextCreationParameters.RestrictBounds"/> provided when creating the text.
+        /// </summary>
+        public Vector2 RequestedRestrictBounds { get; init; }
+
+        /// <summary>
+        /// The size of the rendered text as requested by the parameters. This may be larger than <see cref="DrawSize"/> if the text was restricted by the provided bounds, or smaller than <see cref="UnrestrictedBoundsSize"/> if the text contains empty space that was cropped out.
+        /// </summary>
+        public Vector2 BoundsSize { get; init; }
+
+        /// <summary>
+        /// The size of the rendered text without any restrictions applied. This may be larger than <see cref="BoundsSize"/> if the text was restricted by the provided bounds.
+        /// </summary>
+        public Vector2 UnrestrictedBoundsSize { get; init; }
+
+        /// <summary>
+        /// The actual size of the rendered text texture. This may be smaller than <see cref="BoundsSize"/> if the text was restricted by the provided bounds, or smaller than <see cref="UnrestrictedBoundsSize"/> if the text contains empty space that was cropped out.
+        /// It may also be larger than both <see cref="BoundsSize"/> and <see cref="UnrestrictedBoundsSize"/> if the text was restricted by the provided bounds but still contains sub-pixel glyphs that require a larger texture to render.
+        /// </summary>
+        public Vector2 DrawSize => Texture is null ? Vector2.Zero : Texture.Size;
+
+        /// <summary>
+        /// Whether the text was restricted by the provided bounds. This is true if either the width or height of the actual rendered text is smaller than the requested restriction bounds.
+        /// </summary>
+        public bool IsRestrictedRequested => RequestedRestrictBounds.X > 0 || RequestedRestrictBounds.Y > 0;
+
+        /// <summary>
+        /// Whether the text was actually restricted. 
+        /// This is true if the text was requested to be restricted and either the width or height of the actual rendered text is smaller than the requested restriction bounds.
+        ///  Note that even if the text was requested to be restricted, it may not be actually restricted if the text fits within the restriction bounds, and in that case <see cref="DrawSize"/> may be equal to <see cref="BoundsSize"/> instead of <see cref="UnrestrictedBoundsSize"/>.
+        /// </summary>
+        public bool IsRestricted => IsRestrictedRequested &&
+            (DrawSize.X < UnrestrictedBoundsSize.X || DrawSize.Y < UnrestrictedBoundsSize.Y);
     }
 }
