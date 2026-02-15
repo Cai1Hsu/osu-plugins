@@ -169,6 +169,8 @@ public partial class NativeText : Component
         if (resourceStream is null)
             return;
 
+        Span<byte> lengthSpan = stackalloc byte[sizeof(int)];
+
         // the idiot microsoft knows that ResourceReader is unsafe due to binary serialization vulnerabilities
         // but they NEVER provide a safe alternative for reading embedded resource names WITHOUT serializing them.
         // We have to do this reflection hack to read resource names safely(AND WITHOUT TRIGGERING THOSE FUCKING EXCEPTIONS).
@@ -184,8 +186,13 @@ public partial class NativeText : Component
                 if (resourceType != "ResourceTypeCode.ByteArray" || resourceData.Length < 9)
                     continue;
 
+                resourceData.AsSpan(0, sizeof(int)).CopyTo(lengthSpan);
+
+                if (!BitConverter.IsLittleEndian)
+                    lengthSpan.Reverse();
+
                 // performs a simple binary serialization for byte[]
-                var length = BitConverter.ToInt32(resourceData, 0);
+                var length = BitConverter.ToInt32(lengthSpan);
                 var dataSpan = resourceData.AsSpan(sizeof(int));
 
                 if (dataSpan.Length != length)
