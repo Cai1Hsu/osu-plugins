@@ -208,14 +208,11 @@ public partial class TestSceneNativeText : OsuTestScene
             {
                 Text = text,
                 Size = TextSize,
-                RestrictBounds = DrawSize * 1.6f,
-                Dpi = 96,
+                RestrictBounds = DrawSize,
                 RenderFlags = TextRenderFlags.Render
             }, out var result);
 
             var texture = result.Texture;
-
-            texture?.ScaleAdjust = 1.6f;
 
             textSprite.Texture = texture;
             textSprite.Size = texture?.DisplaySize ?? Vector2.Zero;
