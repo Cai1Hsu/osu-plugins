@@ -201,6 +201,29 @@ public partial class NativeText : Component
 
     private static readonly SolidBrush DrawBrush = Brushes.Solid(Color.White);
 
+    private void processFontSpecificGlyphAdjustments(ref string text, string fontName)
+    {
+        // stable's "Aller" font has a custom glyph for digits that are mapped to the Unicode private use area.
+        if (fontName.StartsWith("Aller"))
+        {
+            char[]? chars = null;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+
+                if (c is >= '0' and <= '9')
+                {
+                    chars ??= text.ToCharArray();
+                    chars[i] = (char)(c + 63500);
+                }
+            }
+
+            if (chars is not null)
+                text = new string(chars);
+        }
+    }
+
     /// <summary>
     /// Creates a texture containing the rendered text based on the provided parameters.
     /// </summary>
@@ -221,26 +244,6 @@ public partial class NativeText : Component
 
         string fontName = selectFontFamily(parameters);
 
-        // stable behaviour
-        if (fontName.StartsWith("Aller"))
-        {
-            char[]? chars = null;
-
-            for (int i = 0; i < text.Length; i++)
-            {
-                char c = text[i];
-
-                if (c is >= '0' and <= '9')
-                {
-                    chars ??= text.ToCharArray();
-                    chars[i] = (char)(c + 63500);
-                }
-            }
-
-            if (chars is not null)
-                text = new string(chars);
-        }
-
         FontStyle fontStyle = BuildFontStyle(parameters.Bold, parameters.Italic);
         Font? font = getOrCreateFont(fontName, parameters.Size, fontStyle);
 
@@ -248,6 +251,9 @@ public partial class NativeText : Component
         // so we have no choice but to give up rendering text.
         if (font is null)
             return;
+
+        // stable behaviour
+        processFontSpecificGlyphAdjustments(ref text, fontName);
 
         float wrappingWidth = parameters.RestrictBounds.X > 0
             ? (int)parameters.RestrictBounds.X
