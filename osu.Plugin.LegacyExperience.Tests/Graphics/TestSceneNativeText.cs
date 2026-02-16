@@ -11,16 +11,14 @@ using osu.Game.Graphics.UserInterface;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Shapes;
 using osuTK;
-using static osu.Plugin.LegacyExperience.Graphics.NativeText;
 using osu.Framework.Layout;
+using NUnit.Framework;
+using static osu.Plugin.LegacyExperience.Graphics.NativeText;
 
 namespace osu.Plugin.LegacyExperience.Tests.Graphics;
 
 public partial class TestSceneNativeText : OsuTestScene
 {
-    [Cached]
-    private readonly NativeText nativeText = new NativeText();
-
     private readonly BindableFloat textRectangleWidth = new BindableFloat
     {
         Value = 400,
@@ -40,13 +38,60 @@ public partial class TestSceneNativeText : OsuTestScene
         MinValue = 5,
         MaxValue = 72,
     };
+    private readonly Bindable<Colour4> textColour = new Bindable<Colour4>(Colour4.White);
 
     private readonly Bindable<string> inputValue = new Bindable<string>("Hello, Legacy Experience!");
+
+    private Container createDependencyContainer(INativeText nativeText) => new DependencyProvidingContainer()
+    {
+        RelativeSizeAxes = Axes.Both,
+        CachedDependencies = new (Type, object)[]
+        {
+            (typeof(INativeText), nativeText)
+        },
+        Children = new Drawable[]
+        {
+            (Drawable)nativeText,
+        }
+    };
+
+    [Test]
+    public void TestImageSharpNativeText() 
+        => createTestScene(() => createDependencyContainer(new ImageSharpNativeText()));
+
+    private Container contentContainer = null!;
+
+    private void createTestScene(Func<Container> createContent)
+    {
+        AddStep("setup", () =>
+        {
+            var content = createContent();
+            contentContainer.Child = content;
+            content.Add(nativeTextContainer = new NativeTextContainer
+            {
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.TopCentre,
+                Size = new Vector2(400, 100),
+                Margin = new MarginPadding { Top = 100 },
+            });
+
+            textRectangleHeight.TriggerChange();
+            textRectangleWidth.TriggerChange();
+            fontSize.TriggerChange();
+            inputValue.TriggerChange();
+            textColour.TriggerChange();
+        });
+    }
+
+    private NativeTextContainer? nativeTextContainer;
 
     [BackgroundDependencyLoader]
     private void load(OsuGameBase game)
     {
-        Add(nativeText);
+        Add(contentContainer = new Container
+        {
+            RelativeSizeAxes = Axes.Both,
+        });
 
         Add(new SettingsEnumDropdown<Language>()
         {
@@ -55,16 +100,6 @@ public partial class TestSceneNativeText : OsuTestScene
             AlwaysShowSearchBar = true,
             Current = { BindTarget = game.CurrentLanguage },
             LabelText = "Game language",
-        });
-
-        NativeTextContainer nativeTextContainer;
-
-        Add(nativeTextContainer = new NativeTextContainer
-        {
-            Anchor = Anchor.TopCentre,
-            Origin = Anchor.TopCentre,
-            Size = new Vector2(400, 100),
-            Margin = new MarginPadding { Top = 100 },
         });
 
         Add(new FillFlowContainer
@@ -110,29 +145,31 @@ public partial class TestSceneNativeText : OsuTestScene
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
                     Text = "Force Redraw",
-                    Action = () => nativeTextContainer.ForceRedraw(),
+                    Action = () => nativeTextContainer?.ForceRedraw(),
                 },
             }
         });
 
-        textRectangleWidth.BindValueChanged(width => nativeTextContainer.Width = width.NewValue, true);
-        textRectangleHeight.BindValueChanged(height => nativeTextContainer.Height = height.NewValue, true);
+        AddStep("set Black", () => textColour.Value = Colour4.Black);
+        AddStep("set White", () => textColour.Value = Colour4.White);
+        AddStep("set Red", () => textColour.Value = Colour4.Red);
+        AddStep("set Blue", () => textColour.Value = Colour4.Blue);
 
-        fontSize.BindValueChanged(size => nativeTextContainer.TextSize = size.NewValue, true);
-        inputValue.BindValueChanged(value => nativeTextContainer.Text = value.NewValue, true);
+        AddToggleStep("toggle masking", enabled => nativeTextContainer?.Masking = enabled);
 
-        AddStep("set Black", () => nativeTextContainer.Colour = Colour4.Black);
-        AddStep("set White", () => nativeTextContainer.Colour = Colour4.White);
-        AddStep("set Red", () => nativeTextContainer.Colour = Colour4.Red);
-        AddStep("set Blue", () => nativeTextContainer.Colour = Colour4.Blue);
+        textRectangleWidth.BindValueChanged(width => nativeTextContainer?.Width = width.NewValue, true);
+        textRectangleHeight.BindValueChanged(height => nativeTextContainer?.Height = height.NewValue, true);
 
-        AddToggleStep("toggle masking", enabled => nativeTextContainer.Masking = enabled);
+        fontSize.BindValueChanged(size => nativeTextContainer?.TextSize = size.NewValue, true);
+        inputValue.BindValueChanged(value => nativeTextContainer?.Text = value.NewValue, true);
+
+        textColour.BindValueChanged(colour => nativeTextContainer?.Colour = colour.NewValue, true);
     }
 
     private partial class NativeTextContainer : Container
     {
         [Resolved]
-        private NativeText nativeText { get; set; } = null!;
+        private INativeText nativeText { get; set; } = null!;
 
         private string text = string.Empty;
 
@@ -174,20 +211,19 @@ public partial class TestSceneNativeText : OsuTestScene
         public NativeTextContainer()
         {
             AddLayout(textureLayout);
+
+            InternalChildren = new Drawable[]
+            {
+                new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = Colour4.DarkGray.Opacity(0.3f),
+                },
+                textSprite = new Sprite(),
+            };
         }
 
         private Sprite textSprite = null!;
-
-        [BackgroundDependencyLoader]
-        private void load()
-        {
-            AddInternal(new Box
-            {
-                RelativeSizeAxes = Axes.Both,
-                Colour = Colour4.DarkGray.Opacity(0.3f),
-            });
-            AddInternal(textSprite = new Sprite());
-        }
 
         public void ForceRedraw() => textureLayout.Invalidate();
 
