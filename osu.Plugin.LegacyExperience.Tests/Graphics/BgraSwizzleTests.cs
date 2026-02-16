@@ -4,7 +4,7 @@ using osu.Plugin.LegacyExperience.Graphics;
 
 namespace osu.Plugin.LegacyExperience.Tests.Graphics;
 
-public class SwizzleToRgba32Tests
+public class BgraSwizzleTests
 {
     /// <summary>
     /// Pixel patterns for edge case testing. Each pattern defines how to generate BGRA pixel data
