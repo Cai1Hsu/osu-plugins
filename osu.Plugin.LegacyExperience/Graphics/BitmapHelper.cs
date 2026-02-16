@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -96,6 +97,8 @@ internal static class BitmapHelper
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal unsafe static void SwizzleToRgba32Scalar(IntPtr pData, int length)
     {
+        Debug.Assert(length % 4 == 0, "Length should be a multiple of 4 since each pixel is 4 bytes.");
+
         byte* ptr = (byte*)pData;
         byte* endPtr = ptr + length;
 
