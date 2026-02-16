@@ -118,7 +118,7 @@ internal static class BitmapHelper
 
     // This version generates more instructions per-pixel than 32 bits version(3 compared to 1),
     // but it eliminates 1 read and 1 write for every 2 pixels.
-    // It can be very inperformant on 32-bit platforms due to the 64-bit operations so we only use it on 64-bit processes. 
+    // It can be very inefficient on 32-bit platforms due to the 64-bit operations so we only use it on 64-bit processes. 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal unsafe static void SwizzleToRgba32Scalar_64(IntPtr pData, int length)
     {
