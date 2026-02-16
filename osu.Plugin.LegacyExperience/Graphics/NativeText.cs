@@ -132,6 +132,7 @@ public static partial class NativeText
         /// This is true if the text was requested to be restricted and either the width or height of the actual rendered text is smaller than the requested restriction bounds.
         /// </summary>
         public bool IsRestricted => IsRestrictedRequested &&
+            UnrestrictedBoundsSize != Vector2.Zero &&
             (DrawSize.X < UnrestrictedBoundsSize.X || DrawSize.Y < UnrestrictedBoundsSize.Y);
     }
 }
