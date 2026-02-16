@@ -1,5 +1,6 @@
 using osu.Game;
 using osu.Game.Plugins;
+using osu.Plugin.LegacyExperience.Graphics;
 using osu.Plugin.LegacyExperience.Localisations;
 
 namespace osu.Plugin.LegacyExperience;
@@ -12,7 +13,13 @@ public static class GameExtensions
         {
             var game = (OsuGameBase)d;
             game.InjectDependency(out LegacyResourceManager _, () => new());
+            game.CacheDependency(out INativeText _, CreateNativeText, true);
         });
+    }
+
+    private static NativeTextBase CreateNativeText()
+    {
+        return new ImageSharpNativeText();
     }
 
     public static void EnsureLegacyLocalisation(this OsuGameBase game)
