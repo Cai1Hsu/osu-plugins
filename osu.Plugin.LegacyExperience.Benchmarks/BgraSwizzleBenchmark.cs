@@ -1,10 +1,13 @@
 using BenchmarkDotNet.Attributes;
 using System.Runtime.InteropServices;
 using osu.Plugin.LegacyExperience.Graphics;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Filters;
 
 namespace osu.Plugin.LegacyExperience.Benchmarks;
 
 [MemoryDiagnoser]
+[Config(typeof(Config))]
 public class BgraSwizzleBenchmark
 {
     private byte[]? data;
@@ -53,19 +56,26 @@ public class BgraSwizzleBenchmark
     [Benchmark]
     public void Vector128()
     {
-        if (System.Runtime.Intrinsics.Vector128.IsHardwareAccelerated)
-            BitmapHelper.SwizzleToRgba32Vector128(pData, length);
-        else
-            throw new NotSupportedException("Vector128 is not supported on this hardware.");
+        BitmapHelper.SwizzleToRgba32Vector128(pData, length);
     }
 
     [Benchmark]
     public void Vector256()
     {
-        if (System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated)
-            BitmapHelper.SwizzleToRgba32Vector256(pData, length);
-        else
-            throw new NotSupportedException("Vector256 is not supported on this hardware.");
+        BitmapHelper.SwizzleToRgba32Vector256(pData, length);
+    }
+
+    private class Config : ManualConfig
+    {
+        public Config()
+        {
+            AddFilter(new DisjunctionFilter(
+                new NameFilter(name => name is nameof(Vector128)
+                    && System.Runtime.Intrinsics.Vector128.IsHardwareAccelerated),
+                new NameFilter(name => name is nameof(Vector256)
+                    && System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated),
+                new NameFilter(name => name is not nameof(Vector128) and not nameof(Vector256))
+            ));
+        }
     }
 }
-
