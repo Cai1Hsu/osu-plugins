@@ -14,6 +14,7 @@ using osuTK;
 using osu.Framework.Layout;
 using NUnit.Framework;
 using static osu.Plugin.LegacyExperience.Graphics.NativeText;
+using System.Runtime.Versioning;
 
 namespace osu.Plugin.LegacyExperience.Tests.Graphics;
 
@@ -58,6 +59,12 @@ public partial class TestSceneNativeText : OsuTestScene
     [Test]
     public void TestImageSharpNativeText() 
         => createTestScene(() => createDependencyContainer(new ImageSharpNativeText()));
+
+    [Test]
+    [Platform(Include = "Win")]
+    [SupportedOSPlatform("windows")]
+    public void TestGdipNativeText()
+        => createTestScene(() => createDependencyContainer(new GdipNativeText()));
 
     private Container contentContainer = null!;
 
