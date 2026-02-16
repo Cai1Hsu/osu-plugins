@@ -75,6 +75,47 @@ public static class CompositeDrawableExtensions
             return true;
         }
 
+        /// <summary>
+        /// Caches a dependency into the composite drawable if it does not already exist. Optionally adds it as a child if it is a drawable.
+        /// </summary>
+        /// <typeparam name="T">The type of the dependency to cache.</typeparam>
+        /// <param name="instance">The cached or existing instance.</param>
+        /// <param name="factory">A factory function to create the instance if it does not exist.</param>
+        /// <param name="addAsChild">Whether to add the instance as a child if it is a drawable.</param>
+        /// <returns>True if a new instance was cached; false if an existing instance was found.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if <paramref name="addAsChild"/> is true but the created instance is not a drawable.</exception>
+        public bool CacheDependency<T>(out T instance, Func<T> factory, bool addAsChild)
+            where T : class
+        {
+            @this.EnsureChildMutationAllowed();
+
+            if (@this.Dependencies.Get<T?>() is T existing)
+            {
+                instance = existing;
+                return false;
+            }
+
+            var dependencies = @this.Dependencies as DependencyContainer;
+
+            Debug.Assert(dependencies != null);
+
+            instance = factory();
+
+            if (addAsChild)
+            {
+                if (instance is not Drawable drawable)
+                    throw new InvalidOperationException($"Cannot add non-drawable dependency of type {typeof(T)} as child.");
+
+                if (@this is Container container)
+                    container.Add(drawable);
+                else
+                    @this.AddInternal(drawable);
+            }
+
+            dependencies.CacheAs(instance);
+            return true;
+        }
+
         public void AddInternal(Drawable drawable)
         {
             if (PluginHelper.IsIACTSupported)
