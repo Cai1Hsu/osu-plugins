@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,5 +19,11 @@
     <PackageReference Include="ppy.osu.Game.Rulesets.Taiko" Version="2025.1209.0" />
     <PackageReference Include="ppy.osu.Game.Rulesets.Catch" Version="2025.1209.0" />
     <PackageReference Include="ppy.osu.Game.Rulesets.Mania" Version="2025.1209.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Package References">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
   </ItemGroup>
 </Project>
