@@ -23,7 +23,7 @@ partial class GdipNativeText
             BitmapHelper.SwizzleToRgba32(bitmapData);
         }
 
-        public unsafe ReadOnlySpan<Rgba32> Data => new Span<Rgba32>(bitmapData.Scan0.ToPointer(), bitmapData.Stride * bitmapData.Height / Unsafe.SizeOf<Rgba32>()).ToArray();
+        public unsafe ReadOnlySpan<Rgba32> Data => new ReadOnlySpan<Rgba32>(bitmapData.Scan0.ToPointer(), bitmapData.Stride * bitmapData.Height / Unsafe.SizeOf<Rgba32>());
 
         public int Level { get; set; }
 
