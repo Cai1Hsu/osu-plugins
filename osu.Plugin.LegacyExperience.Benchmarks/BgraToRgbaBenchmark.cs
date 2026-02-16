@@ -51,7 +51,6 @@ public class BgraSwizzleBenchmark
     }
 
     [Benchmark]
-
     public void Vector128()
     {
         if (System.Runtime.Intrinsics.Vector128.IsHardwareAccelerated)
