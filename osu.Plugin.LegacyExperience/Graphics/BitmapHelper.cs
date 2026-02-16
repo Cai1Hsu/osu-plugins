@@ -142,8 +142,8 @@ internal static class BitmapHelper
             // R0 G0 B0 00 | R1 G1 B1 00
             x ^= alpha;
 
-            // A0 00 00 00 | A1 00 00 00
-            alpha = BitOperations.RotateRight(alpha, 8);
+            // 00 00 00 A0 | 00 00 00 A1
+            alpha = BitOperations.RotateRight(alpha, 32);
 
             ulong rgba = x | alpha;
 
