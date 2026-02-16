@@ -215,7 +215,7 @@ public partial class ImageSharpNativeText : NativeTextBase
         if (!doRender)
             return;
 
-        // no need to create a empty texture
+        // no need to create an empty texture
         if (bounds.IsEmpty)
             return;
 

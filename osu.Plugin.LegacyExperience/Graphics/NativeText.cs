@@ -5,7 +5,7 @@ namespace osu.Plugin.LegacyExperience.Graphics;
 
 /// <summary>
 /// Contains type definitions for stable's font rendering system (NativeText).
-/// Use <see cref="ImageSharpNativeText"/> or <see cref="GdipNativeText"/> for actual implementations.
+/// Use <see cref="INativeText"/> for actual implementations.
 /// </summary>
 public static partial class NativeText
 {
