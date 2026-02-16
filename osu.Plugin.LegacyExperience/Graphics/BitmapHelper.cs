@@ -109,7 +109,7 @@ internal static class BitmapHelper
 
             // reverse endianness first so that movbe can be used to eliminate explicit BSWAP.
             uint argb = BinaryPrimitives.ReverseEndianness(bgra);
-            uint rgba = BitOperations.RotateLeft(argb, 8);
+            uint rgba = BitOperations.RotateRight(argb, 8);
 
             Unsafe.Write(ptr, rgba);
             ptr += 4;

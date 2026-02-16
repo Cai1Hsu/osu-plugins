@@ -204,8 +204,7 @@ public partial class GdipNativeText : NativeTextBase
             return;
         }
 
-        // stable uses Format32bppArgb, but here we need premultiplied alpha for correct blending.
-        var bitmap = new GdipBitmap(width, height, GdipPixelFormat.Format32bppPArgb);
+        var bitmap = new GdipBitmap(width, height, GdipPixelFormat.Format32bppArgb);
         using (var gfx = GdipGraphics.FromImage(bitmap))
         {
             gfx.TextRenderingHint = TextRenderingHint.AntiAlias;
