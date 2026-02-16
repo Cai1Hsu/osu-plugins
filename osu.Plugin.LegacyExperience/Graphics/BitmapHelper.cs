@@ -134,10 +134,10 @@ internal static class BitmapHelper
             ulong x = BinaryPrimitives.ReverseEndianness(bgra2);
 
             // R0 G0 B0 A1 | R1 G1 B1 A0
-            x = BitOperations.RotateRight(x, 24);
+            x = BitOperations.RotateLeft(x, 24);
 
             // 00 00 00 A1 | 00 00 00 A0
-            ulong alpha = x & 0x000000FF000000FF;
+            ulong alpha = x & 0xFF000000FF000000;
 
             // R0 G0 B0 00 | R1 G1 B1 00
             x ^= alpha;
