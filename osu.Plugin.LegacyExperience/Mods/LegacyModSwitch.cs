@@ -1,14 +1,11 @@
 using osu.Framework.Allocation;
-using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
-using osu.Game.Audio;
 using osu.Game.Rulesets;
-using osu.Game.Skinning;
 using osu.Plugin.LegacyExperience.Audio;
 using osu.Plugin.LegacyExperience.Localisations;
 using osuTK;
@@ -71,9 +68,6 @@ public partial class LegacyModSwitch : CompositeDrawable
 
     private InputManager inputManager = null!;
 
-    [Resolved]
-    private ISkinSource? skin { get; set; }
-
     [BackgroundDependencyLoader]
     private void load()
     {
@@ -96,28 +90,15 @@ public partial class LegacyModSwitch : CompositeDrawable
             modDisplays[i] = display;
             AddInternal(display);
         }
-
-        updateSkin();
-        skin?.SourceChanged += updateSkin;
     }
-
 
     // stable uses contains instead of checking the activation button,
     // this means when you click with right button previously pressed, the direction will still be backwards.
     // We keep this behaviour in case any user relies on it, but it is not recommended to use right click for mod switching.
     private bool shouldBackwards => inputManager.CurrentState.Mouse.IsPressed(MouseButton.Right);
 
-    private static readonly SampleInfo checkOnSampleInfo = new SampleInfo("UI/check-on");
-    private static readonly SampleInfo checkOffSampleInfo = new SampleInfo("UI/check-off");
-
-    private ISample? checkOnSample;
-    private ISample? checkOffSample;
-
-    private void updateSkin()
-    {
-        checkOnSample = skin?.GetSample(checkOnSampleInfo);
-        checkOffSample = skin?.GetSample(checkOffSampleInfo);
-    }
+    [Resolved]
+    private AudioEngine audioEngine { get; set; } = null!;
 
     protected override void LoadComplete()
     {
@@ -275,13 +256,15 @@ public partial class LegacyModSwitch : CompositeDrawable
     /// <param name="currentInfo">Information about the current selection state.</param>
     protected virtual void OnSelectionChanged(ModSelectionInfo previousInfo, ModSelectionInfo currentInfo)
     {
-        var sample = (currentInfo.State, previousInfo.State) switch
+        LegacySample? sample = (currentInfo.State, previousInfo.State) switch
         {
-            (ModSelectionState.Selected, _) => checkOnSample,
+            (ModSelectionState.Selected, _) => LegacySample.check_on,
             (ModSelectionState.NoSelection, ModSelectionState.Disabled) => null,
-            _ => checkOffSample,
+            _ => LegacySample.check_off,
         };
-        sample?.Play();
+
+        if (sample.HasValue)
+            audioEngine.Click(sample: sample.Value);
 
         if (previousInfo.DisplayedIndex != currentInfo.DisplayedIndex)
             deactivateMod(modDisplays[previousInfo.DisplayedIndex]);
@@ -318,13 +301,6 @@ public partial class LegacyModSwitch : CompositeDrawable
            .ScaleTo(1f, 400, Easing.OutElastic)
            .RotateTo(0f, 400, Easing.OutElastic)
            .FadeColour(Colour4.White, 400, Easing.OutElastic);
-    }
-
-    protected override void Dispose(bool isDisposing)
-    {
-        base.Dispose(isDisposing);
-
-        skin?.SourceChanged -= updateSkin;
     }
 
     private partial class ClickableModDisplay : ClickableContainer, IHasLegacyTooltip
