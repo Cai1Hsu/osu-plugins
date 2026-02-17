@@ -53,20 +53,6 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
 
     public bool AllowPanelHoverSample => !legacyScrollContainer.AbsoluteScrolling;
 
-    // stable does cooldown in AudioEngine, refer to AudioEngine.Click() you will see:
-    // if (GameBase.Time - clickSoundTime > 50 || force)
-    private const double hover_sample_cooldown = 50;
-    private double lastHoverSampleTime = double.MinValue;
-
-    public bool RequestPlayPanelHoverSample()
-    {
-        if (!AllowPanelHoverSample || lastHoverSampleTime + hover_sample_cooldown > Time.Current)
-            return false;
-
-        lastHoverSampleTime = Time.Current;
-        return true;
-    }
-
     // SongSelectV2's capacity is 100 foreach panel type.
     // Although V2's panels are more varied, I think 100 is enough.
     private const int pool_capacity = 100;
