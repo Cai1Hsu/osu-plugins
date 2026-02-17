@@ -228,4 +228,17 @@ public partial class GdipNativeText : NativeTextBase
             _ => StringAlignment.Near,
         };
     }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        wndGraphics.Dispose();
+
+        foreach (var font in fontCache.Values)
+            font.Dispose();
+
+        fontCache.Clear();
+        fontCollection.Dispose();
+    }
 }
