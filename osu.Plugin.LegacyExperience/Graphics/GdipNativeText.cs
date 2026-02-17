@@ -235,7 +235,8 @@ public partial class GdipNativeText : NativeTextBase
     {
         base.Dispose(isDisposing);
 
-        wndGraphics.Dispose();
+        // null check here in case load is not called
+        wndGraphics?.Dispose();
 
         foreach (var font in fontCache.Values)
             font.Dispose();
