@@ -91,12 +91,10 @@ public partial class GdipNativeText : NativeTextBase
 
         foreach (var f in fontCollection.Families)
         {
-            if (f.Name.Equals(fontName, StringComparison.OrdinalIgnoreCase))
+            if (f.Name.Equals(fontName, StringComparison.OrdinalIgnoreCase)
+                && f.IsStyleAvailable(style))
             {
                 family = f;
-
-                if (family.IsStyleAvailable(style))
-                    break;
             }
         }
 
