@@ -19,6 +19,9 @@ public static class GameExtensions
 
     private static NativeTextBase CreateNativeText()
     {
+        if (OperatingSystem.IsWindows())
+            return new GdipNativeText();
+
         return new ImageSharpNativeText();
     }
 
