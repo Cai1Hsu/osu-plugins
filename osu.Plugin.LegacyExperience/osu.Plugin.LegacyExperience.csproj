@@ -5,7 +5,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>osu.Plugin.LegacyExperience.Benchmarks</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>osu.Plugin.LegacyExperience.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Beatmaps\**\*" />
@@ -27,9 +37,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="SixLabors.Fonts" Version="2.1.3" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+    <!-- osu!framework already depends on ImageSharp, so we don't want to copy this to the output directory. -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="ppy.osu.Game" Version="2025.1209.0">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>

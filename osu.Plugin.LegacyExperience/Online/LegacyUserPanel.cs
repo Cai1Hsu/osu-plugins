@@ -8,7 +8,6 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
 using osu.Game.Graphics;
-using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Metadata;
@@ -16,7 +15,9 @@ using osu.Game.Plugins;
 using osu.Game.Users;
 using osu.Game.Users.Drawables;
 using osu.Plugin.LegacyExperience.Audio;
+using osu.Plugin.LegacyExperience.Graphics;
 using osuTK;
+using LegacyFont = osu.Plugin.LegacyExperience.Graphics.LegacyFont;
 using Vector3 = System.Numerics.Vector3;
 using Vector4 = System.Numerics.Vector4;
 
@@ -39,7 +40,7 @@ public partial class LegacyUserPanel : CompositeDrawable
     private Sprite spriteBorder = null!;
 
     private OsuSpriteText rankText = null!;
-    private OsuTextFlowContainer playerInfoText = null!;
+    private LegacyTextFlowContainer playerInfoText = null!;
     private PlayerStatusDisplay statusDisplay = null!;
     private Sprite rulesetIcon = null!;
     private LevelProgressBar levelBar = null!;
@@ -88,18 +89,26 @@ public partial class LegacyUserPanel : CompositeDrawable
                 Anchor = Anchor.TopLeft,
                 Origin = Anchor.TopRight,
                 Position = new Vector2(204, 11) * LegacyExperiencePlugin.StableRatio,
-                Font = OsuFont.Default.With(size: 36 * LegacyExperiencePlugin.StableRatio),
+                Font = LegacyFont.Default.With(size: 36),
                 Shadow = false,
-                Margin = new MarginPadding { Right = 4 },
+                // scale it down a bit to better match stable's appearance.
+                Scale = new Vector2(0.9f, 0.85f),
+                Margin = new MarginPadding
+                {
+                    // avoid overlap with ruleset icon when extended style is enabled.
+                    Top = 8,
+                    // GDI's DrawString method seems to add a little extra space at the end of the text
+                    Right = 4,
+                },
             }.With(updateRankText),
             new OsuSpriteText
             {
                 Position = new Vector2(52, 2) * LegacyExperiencePlugin.StableRatio,
                 Text = User.Username,
-                Font = OsuFont.Default.With(size: 14 * LegacyExperiencePlugin.StableRatio),
+                Font = LegacyFont.Default.With(size: 14),
                 Shadow = false,
             },
-            playerInfoText = new OsuTextFlowContainer(configureText)
+            playerInfoText = new LegacyTextFlowContainer(configureText)
             {
                 Masking = true,
                 ParagraphSpacing = 0,
@@ -381,7 +390,7 @@ public partial class LegacyUserPanel : CompositeDrawable
 
     private static void configureText(SpriteText text)
     {
-        text.Font = OsuFont.Default.With(size: 10 * LegacyExperiencePlugin.StableRatio);
+        text.Font = LegacyFont.Default.With(size: 10);
         text.Shadow = false;
     }
 

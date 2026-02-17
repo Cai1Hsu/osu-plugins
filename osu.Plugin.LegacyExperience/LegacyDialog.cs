@@ -1,11 +1,9 @@
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
-using osu.Game.Graphics;
-using osu.Game.Graphics.Containers;
+using osu.Plugin.LegacyExperience.Graphics;
 using osuTK;
 using osuTK.Input;
 
@@ -14,7 +12,7 @@ namespace osu.Plugin.LegacyExperience;
 public partial class LegacyDialog : DrawSizePreservingFillContainer
 {
     public new FillFlowContainer Content { get; }
-    public OsuTextFlowContainer TitleText { get; }
+    public FontText TitleText { get; }
 
     private FillFlowContainer<OptionButtonContainer> optionsContainer;
 
@@ -47,12 +45,13 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
                         Direction = FillDirection.Vertical,
                         Children = new Drawable[]
                         {
-                            TitleText = new OsuTextFlowContainer(textCreationParameter)
+                            TitleText = new FontText
                             {
                                 Name = "Title",
                                 Position = new Vector2(2),
                                 RelativeSizeAxes = Axes.X,
-                                AutoSizeAxes = Axes.Y,
+                                AllowMultiline = true,
+                                Font = LegacyFont.Default.With(size: 24),
                                 Margin = new MarginPadding
                                 {
                                     Horizontal = 4 * LegacyExperiencePlugin.StableRatio
@@ -155,12 +154,6 @@ public partial class LegacyDialog : DrawSizePreservingFillContainer
         }
 
         return base.OnKeyDown(e);
-    }
-
-    private static void textCreationParameter(SpriteText t)
-    {
-        // FIXME: CJK characters look smaller than they should be.
-        t.Font = OsuFont.Default.With(size: 24 * LegacyExperiencePlugin.StableRatio);
     }
 
     private partial class OptionButtonContainer : CompositeDrawable

@@ -1,6 +1,7 @@
 using osu.Game;
 using osu.Game.Plugins;
 using osu.Plugin.LegacyExperience.Audio;
+using osu.Plugin.LegacyExperience.Graphics;
 using osu.Plugin.LegacyExperience.Localisations;
 
 namespace osu.Plugin.LegacyExperience;
@@ -16,6 +17,15 @@ public static class GameExtensions
             game.InjectDependency(out LegacyResourceManager _, static () => new());
             game.InjectDependency(out LegacyLocalisationManager _, static () => new());
             game.InjectDependency(out AudioEngine _, static () => new());
+            game.CacheDependency(out INativeText _, CreateNativeText, true);
         });
+    }
+
+    private static NativeTextBase CreateNativeText()
+    {
+        if (OperatingSystem.IsWindows())
+            return new GdipNativeText();
+
+        return new ImageSharpNativeText();
     }
 }

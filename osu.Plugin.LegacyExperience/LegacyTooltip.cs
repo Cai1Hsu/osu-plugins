@@ -4,9 +4,9 @@ using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
-using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
+using osu.Plugin.LegacyExperience.Graphics;
 using osuTK;
 
 namespace osu.Plugin.LegacyExperience;
@@ -60,6 +60,7 @@ public partial class LegacyTooltip : VisibilityContainer, ITooltip<LocalisableSt
 
     private partial class TooltipTextFlowContainer : OsuTextFlowContainer
     {
+        // we don't use FontText here since CJK scaling is not needed for tooltip.
         protected override SpriteText CreateSpriteText() => new OsuSpriteText()
         {
             Shadow = false,
@@ -67,7 +68,7 @@ public partial class LegacyTooltip : VisibilityContainer, ITooltip<LocalisableSt
             // to make it closer to stable.
             UseFullGlyphHeight = false,
             // it seems that stable uses light font weight, but this looks bad for latin characters, so we use regular weight instead.
-            Font = OsuFont.Default.With(size: 11 * LegacyExperiencePlugin.StableRatio),
+            Font = LegacyFont.Default.With(size: 11),
         };
     }
 }

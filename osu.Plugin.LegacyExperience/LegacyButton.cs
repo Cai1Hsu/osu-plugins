@@ -7,11 +7,12 @@ using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Game.Graphics;
-using osu.Game.Graphics.Sprites;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
 using osu.Plugin.LegacyExperience.Audio;
+using osu.Plugin.LegacyExperience.Graphics;
 using osuTK;
+using LegacyFont = osu.Plugin.LegacyExperience.Graphics.LegacyFont;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -55,7 +56,7 @@ public partial class LegacyButton : ClickableContainer
     [Resolved]
     private AudioEngine audioEngine { get; set; } = null!;
 
-    private OsuSpriteText label;
+    private FontText label;
 
     private BufferedContainer backgroundContainer = null!;
 
@@ -72,7 +73,7 @@ public partial class LegacyButton : ClickableContainer
             {
                 RelativeSizeAxes = Axes.Both,
             },
-            label = new OsuSpriteText
+            label = new FontText
             {
                 Text = text,
                 Anchor = Anchor.Centre,
@@ -80,6 +81,7 @@ public partial class LegacyButton : ClickableContainer
                 Colour = Colour4.Purple,
                 BypassAutoSizeAxes = Axes.Y,
                 UseFullGlyphHeight = false,
+                Shadow = true,
             },
             Empty().With(d =>
             {
@@ -93,7 +95,7 @@ public partial class LegacyButton : ClickableContainer
         AutoSizeAxes = Axes.Both;
 
         textSize ??= 14f * dimensions.Y / 18f / ((text.ToString().IndexOf('\n') <= 0) ? 1 : 2); // wtf is this?
-        label.Font = OsuFont.GetFont(size: textSize.Value * LegacyExperiencePlugin.StableRatio);
+        label.Font = LegacyFont.Default.With(size: textSize.Value);
 
         Enabled.BindValueChanged(_ => updateColour(), true);
     }
