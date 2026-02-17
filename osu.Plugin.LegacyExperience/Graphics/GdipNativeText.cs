@@ -1,7 +1,6 @@
 using System.Drawing;
 using System.Drawing.Text;
 using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.EnumExtensions;
@@ -15,6 +14,7 @@ using GdipFontFamily = System.Drawing.FontFamily;
 using GdipBitmap = System.Drawing.Bitmap;
 using GdipRectangleF = System.Drawing.RectangleF;
 using GdipSizeF = System.Drawing.SizeF;
+using osu.Framework.Platform;
 
 namespace osu.Plugin.LegacyExperience.Graphics;
 
@@ -29,34 +29,45 @@ public partial class GdipNativeText : NativeTextBase
     private GdipGraphics wndGraphics = null!;
     private readonly PrivateFontCollection fontCollection = new();
 
+    private Storage fontCacheStorage = null!;
+
     [BackgroundDependencyLoader]
     private void load()
     {
         wndGraphics = GdipGraphics.FromHwnd(IntPtr.Zero);
     }
 
-    protected unsafe override void AddFont(string resourceName, MemoryStream fontStream)
+    protected override void AddFont(string resourceName, MemoryStream fontStream)
     {
         // Don't use GetBuffer, it returns the whole byte array,
         // but in our case, the font data is the subset of the array (starting after the length prefix).
         if (!fontStream.TryGetBuffer(out var fontData))
             fontData = fontStream.ToArray();
 
-        IntPtr fontPtr = Marshal.AllocCoTaskMem(fontData.Count);
+        // This method is call before load, so DI doesn't work for us.
+        fontCacheStorage ??= LazerStorage.GetStorageForDirectory("font-cache");
+
+        if (!fontCacheStorage.Exists(resourceName))
+        {
+            using (var fs = fontCacheStorage.CreateFileSafely(resourceName))
+                fs.Write(fontData.Array);
+        }
+
         try
         {
-            var destSpan = new Span<byte>(fontPtr.ToPointer(), fontData.Count);
-            fontData.AsSpan().CopyTo(destSpan);
-            fontCollection.AddMemoryFont(fontPtr, fontData.Count);
+            // There's a weird quirk in GDI+ where it always selects random font style if you uses AddMemoryFont.
+            // This thread (https://stackoverflow.com/questions/31140819/privatefontcollection-with-gdi-sometimes-uses-the-wrong-fontstyle-in-windows-8)
+            // suggests that you use a single PrivateFontCollection for the each font family, 
+            // which is the osu!stable approach. But it doesn't work in our case for some reason.
+            // And this thread (https://stackoverflow.com/questions/25583394/privatefontcollection-addmemoryfont-producing-random-errors-on-windows-server-20)
+            // suggests that AddFontFile doesn't have this issue.
+            // I checked libgdiplus's source and comments there strongly against you use GdipPrivateAddMemoryFont due to various issues, so let's just use AddFontFile for now.
+            fontCollection.AddFontFile(fontCacheStorage.GetFullPath(resourceName));
             Logger.Log($"Loaded font {resourceName} to GDI+ PrivateFontCollection", LoggingTarget.Runtime, LogLevel.Verbose);
         }
         catch (Exception e)
         {
             Logger.Log($"Failed to load font {resourceName} to GDI+ PrivateFontCollection: {e.Message}", LoggingTarget.Runtime, LogLevel.Error);
-        }
-        finally
-        {
-            Marshal.FreeCoTaskMem(fontPtr);
         }
     }
 
