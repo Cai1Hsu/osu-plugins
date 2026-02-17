@@ -62,38 +62,38 @@ public partial class GdipNativeText : NativeTextBase
 
     private const float target_dpi = 96f;
 
+    private readonly record struct FontCacheKey(string Name, float Size, GdipFontStyle Style);
+
+    private readonly Dictionary<FontCacheKey, GdipFont> fontCache = new();
+
     /// <summary>
     /// Gets a font with the specified properties, trying the private collection first.
     /// </summary>
     private GdipFont GetFont(string fontName, float size, GdipFontStyle style)
     {
-        // Check if the font is in our private collection
-        foreach (var family in fontCollection.Families)
+        var cacheKey = new FontCacheKey(fontName, size, style);
+        if (fontCache.TryGetValue(cacheKey, out var cachedFont))
+            return cachedFont;
+
+        GdipFontFamily? family = null;
+
+        foreach (var f in fontCollection.Families)
         {
-            if (family.Name == fontName)
+            if (f.Name.Equals(fontName, StringComparison.OrdinalIgnoreCase))
             {
-                return new GdipFont(family, size, style, GraphicsUnit.Pixel);
+                family = f;
+
+                if (family.IsStyleAvailable(style))
+                    break;
             }
         }
 
-        // Fallback to system fonts
-        try
-        {
-            return new GdipFont(fontName, size, style, GraphicsUnit.Pixel);
-        }
-        catch
-        {
-            // Fallback generic
-            try
-            {
-                return new GdipFont(GdipFontFamily.GenericSansSerif, size, style, GraphicsUnit.Pixel);
-            }
-            catch
-            {
-                // Last ditch effort
-                return new GdipFont("Arial", size, style, GraphicsUnit.Pixel);
-            }
-        }
+        var font = family is not null
+            ? new GdipFont(family, size, style)
+            // GDI+ fallbacks internally, so we can just try to create the font directly by name.
+            : new GdipFont(fontName, size, style);
+
+        return fontCache[cacheKey] = font;
     }
 
     /// <summary>
@@ -144,7 +144,7 @@ public partial class GdipNativeText : NativeTextBase
         var adjustedText = textMemory.ToString();
 
         // Set up text formatting options
-        var stringFormat = new StringFormat()
+        using var stringFormat = new StringFormat()
         {
             Alignment = mapTextAlignment(parameters.Alignment),
             LineAlignment = StringAlignment.Near,
@@ -181,11 +181,7 @@ public partial class GdipNativeText : NativeTextBase
         }
 
         if (!doRender)
-        {
-            gdipFont?.Dispose();
-            stringFormat?.Dispose();
             return;
-        }
 
         // Calculate final texture size
         int width = (int)MathF.Ceiling(measuredSize.Width);
@@ -198,11 +194,7 @@ public partial class GdipNativeText : NativeTextBase
             width = Math.Min(width, (int)MathF.Ceiling(restrictBounds.X));
 
         if (width <= 0 || height <= 0)
-        {
-            gdipFont?.Dispose();
-            stringFormat?.Dispose();
             return;
-        }
 
         var bitmap = new GdipBitmap(width, height, GdipPixelFormat.Format32bppArgb);
         using (var gfx = GdipGraphics.FromImage(bitmap))
@@ -221,9 +213,6 @@ public partial class GdipNativeText : NativeTextBase
         {
             Texture = texture,
         };
-
-        gdipFont.Dispose();
-        stringFormat.Dispose();
     }
 
     /// <summary>
