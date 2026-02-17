@@ -4,8 +4,8 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Threading;
-using osu.Game.Audio;
 using osu.Game.Skinning;
+using osu.Plugin.LegacyExperience.Audio;
 using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Gameplay;
@@ -81,16 +81,8 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
         };
     }
 
-    private PoolableSkinnableSample? sectionPassSample = null;
-    private PoolableSkinnableSample? sectionFailSample = null;
-
-    [BackgroundDependencyLoader]
-    private void load()
-    {
-        // FIXME: in tests, samples from skin were not used. but in normal play, they were used.
-        AddInternal(sectionPassSample = new PoolableSkinnableSample(new SampleInfo("Gameplay/sectionpass")));
-        AddInternal(sectionFailSample = new PoolableSkinnableSample(new SampleInfo("Gameplay/sectionfail")));
-    }
+    [Resolved]
+    private AudioEngine audioEngine { get; set; } = null!;
 
     public void PlayWarningAnimation(int loopCount)
     {
@@ -124,10 +116,7 @@ public partial class LegacyBreakOverlayDrawable : CompositeDrawable
 
         void playSample()
         {
-            if (passing)
-                sectionPassSample?.Play();
-            else
-                sectionFailSample?.Play();
+            audioEngine.PlaySample(passing ? LegacySample.sectionpass : LegacySample.sectionfail);
         }
 
         void playAnimation()

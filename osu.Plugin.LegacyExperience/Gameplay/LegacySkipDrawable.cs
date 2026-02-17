@@ -5,10 +5,10 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
-using osu.Game.Audio;
 using osu.Game.Input.Bindings;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
+using osu.Plugin.LegacyExperience.Audio;
 using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Gameplay;
@@ -25,9 +25,8 @@ public partial class LegacySkipDrawable : CompositeDrawable, IKeyBindingHandler<
 
     public Action? SkipRequested { get; set; }
 
-    private static readonly SampleInfo menuhit_sample_info = new SampleInfo("menuhit");
-
-    private PoolableSkinnableSample? clickSample;
+    [Resolved]
+    private AudioEngine audioEngine { get; set; } = null!;
 
     [BackgroundDependencyLoader]
     private void load()
@@ -56,9 +55,6 @@ public partial class LegacySkipDrawable : CompositeDrawable, IKeyBindingHandler<
 
         Position = new Vector2(0, 480) * stable_ratio;
         Alpha = 0.6f;
-
-        // TODO: Same as BreakOverlay, sample from skin wasn't used in test scene.
-        AddInternal(clickSample = new PoolableSkinnableSample(menuhit_sample_info));
     }
 
     protected override bool OnHover(HoverEvent e)
@@ -81,8 +77,8 @@ public partial class LegacySkipDrawable : CompositeDrawable, IKeyBindingHandler<
 
     private void activated()
     {
+        audioEngine.PlaySamplePositional(LegacySample.menuhit, null);
         SkipRequested?.Invoke();
-        clickSample?.Play();
     }
 
     public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)

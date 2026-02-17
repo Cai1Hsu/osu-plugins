@@ -1,10 +1,7 @@
 using System.Diagnostics;
 using osu.Framework.Allocation;
-using osu.Framework.Audio.Sample;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.Input.Events;
-using osu.Game.Audio;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
 
@@ -18,9 +15,6 @@ public partial class LegacyModDisplay : Sprite
     {
         Mod = mod;
     }
-
-    [Resolved]
-    private IModHoverManager? hoverManager { get; set; }
 
     [Resolved]
     private TextureStore textures { get; set; } = null!;
@@ -37,8 +31,6 @@ public partial class LegacyModDisplay : Sprite
 
     private void updateTexture()
     {
-        sampleHover = skin?.GetSample(sampleHoverInfo);
-
         var texture = skin.GetSkinTexture($"selection-mod-{textureName}", textures, "UI");
 
         Debug.Assert(texture is not null); // we've packed default icons, so this should never be null.
@@ -48,18 +40,6 @@ public partial class LegacyModDisplay : Sprite
     }
 
     private string textureName => Mod.ToString().ToLowerInvariant();
-
-    private static readonly SampleInfo sampleHoverInfo = new SampleInfo("click-short");
-
-    private ISample? sampleHover;
-
-    protected override bool OnHover(HoverEvent e)
-    {
-        if (hoverManager?.RequestHoverSample() ?? true)
-            sampleHover?.Play();
-
-        return base.OnHover(e);
-    }
 
     protected override void Dispose(bool isDisposing)
     {

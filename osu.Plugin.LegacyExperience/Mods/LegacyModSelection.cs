@@ -12,8 +12,7 @@ using osu.Plugin.LegacyExperience.Localisations;
 
 namespace osu.Plugin.LegacyExperience.Mods;
 
-[Cached(typeof(IModHoverManager))]
-public partial class LegacyModSelection : LegacyDialog, IModHoverManager
+public partial class LegacyModSelection : LegacyDialog
 {
     public FontText MultiplierText { get; private set; } = null!;
 
@@ -311,19 +310,5 @@ public partial class LegacyModSelection : LegacyDialog, IModHoverManager
         base.Dispose(isDisposing);
 
         modSettingChangeTracker?.Dispose();
-    }
-
-    private double lastHoverSampleTime = double.MinValue;
-    private const double hoverSampleDebounceTime = 50;
-
-    bool IModHoverManager.RequestHoverSample()
-    {
-        double currentTime = Time.Current;
-
-        if (currentTime - lastHoverSampleTime < hoverSampleDebounceTime)
-            return false;
-
-        lastHoverSampleTime = currentTime;
-        return true;
     }
 }

@@ -9,10 +9,9 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Plugins;
 using osu.Framework.Input.Events;
-using osu.Framework.Audio.Sample;
-using osu.Game.Audio;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.UserInterface;
+using osu.Plugin.LegacyExperience.Audio;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
@@ -106,13 +105,8 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
         updateBackgroundColor(targetColor, duration);
     }
 
-    private ISample? hoverSample;
-    private static readonly SampleInfo menu_click_sample_info = new SampleInfo("menuclick");
-
     protected virtual void SkinChanged()
     {
-        hoverSample = skin?.GetSample(menu_click_sample_info);
-
         // TODO: Song select requires dynamic textures loading when skin changes
         // SkinnableSprite doesn't scale with @2x, so we manually retrieve the texture here.
         // This is a temporary workaround to make size correct.
@@ -133,11 +127,14 @@ public abstract partial class LegacyPanel : PoolableDrawable, ICarouselPanel, IH
         }
     }
 
+    [Resolved]
+    private AudioEngine audioEngine { get; set; } = null!;
+
     protected override bool OnHover(HoverEvent e)
     {
         // quick scrolling spamms hover events, so we suppress the sound in that case.
-        if (Carousel?.RequestPlayPanelHoverSample() ?? true)
-            hoverSample?.Play();
+        if (Carousel?.AllowPanelHoverSample ?? true)
+            audioEngine.Click(sample: LegacySample.menuclick);
 
         flashBackground();
         return base.OnHover(e);

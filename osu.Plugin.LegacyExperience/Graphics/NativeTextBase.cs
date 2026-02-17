@@ -65,7 +65,7 @@ public abstract partial class NativeTextBase : Component, INativeText
     private LegacyImportManager? legacyImportManager { get; set; }
 
     [Resolved]
-    private Storage lazerStorage { get; set; } = null!;
+    protected Storage LazerStorage { get; private set; } = null!;
 
     [Resolved]
     private INotificationOverlay? notificationOverlay { get; set; }
@@ -87,7 +87,7 @@ public abstract partial class NativeTextBase : Component, INativeText
             // osu actually has a registry entry for stable installs, but we want to avoid platform-specific code if possible.
             // so let's try the default installation path (~\AppData\Local\osu!) for now.
             new NativeStorage(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!")),
-            lazerStorage,
+            LazerStorage,
             // also attempt the directory of our assembly as a last resort.
             new NativeStorage(Path.GetDirectoryName(typeof(NativeTextBase).Assembly.Location) ?? string.Empty),
         };

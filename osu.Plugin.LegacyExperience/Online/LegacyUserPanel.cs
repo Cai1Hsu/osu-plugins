@@ -1,22 +1,20 @@
 using System.Diagnostics;
 using System.Text;
 using osu.Framework.Allocation;
-using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
-using osu.Game.Audio;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Metadata;
 using osu.Game.Plugins;
-using osu.Game.Skinning;
 using osu.Game.Users;
 using osu.Game.Users.Drawables;
+using osu.Plugin.LegacyExperience.Audio;
 using osu.Plugin.LegacyExperience.Graphics;
 using osuTK;
 using LegacyFont = osu.Plugin.LegacyExperience.Graphics.LegacyFont;
@@ -52,9 +50,6 @@ public partial class LegacyUserPanel : CompositeDrawable
 
     [Resolved]
     private MetadataClient? metadata { get; set; }
-
-    [Resolved]
-    private ISkinSource? skin { get; set; }
 
     [BackgroundDependencyLoader]
     private void load()
@@ -141,9 +136,6 @@ public partial class LegacyUserPanel : CompositeDrawable
 
         updateRulesetIcon();
         FinishTransforms(true);
-
-        updateSkin();
-        skin?.SourceChanged += updateSkin;
     }
 
     private void updateStyle(ValueChangedEvent<bool> v)
@@ -371,21 +363,6 @@ public partial class LegacyUserPanel : CompositeDrawable
         spriteBackground.FadeColour(backgroundColour, transition_duration);
     }
 
-    private const string hover_sample_name = "click-short";
-    private const string click_sample_name = "click-short-confirm";
-
-    private static readonly SampleInfo hover_sample_info = new SampleInfo(hover_sample_name);
-    private static readonly SampleInfo click_sample_info = new SampleInfo(click_sample_name);
-
-    private ISample? hoverSample;
-    private ISample? clickSample;
-
-    private void updateSkin()
-    {
-        hoverSample = skin?.GetSample(hover_sample_info);
-        clickSample = skin?.GetSample(click_sample_info);
-    }
-
     protected override void OnHoverLost(HoverLostEvent e)
     {
         updateColour();
@@ -393,9 +370,12 @@ public partial class LegacyUserPanel : CompositeDrawable
         base.OnHoverLost(e);
     }
 
+    [Resolved]
+    private AudioEngine audioEngine { get; set; } = null!;
+
     protected override bool OnHover(HoverEvent e)
     {
-        hoverSample?.Play();
+        audioEngine.Click(sample: LegacySample.click_short);
         updateColour();
         updateDisplayedInfo();
         return base.OnHover(e);
@@ -403,16 +383,9 @@ public partial class LegacyUserPanel : CompositeDrawable
 
     protected override bool OnClick(ClickEvent e)
     {
-        clickSample?.Play();
+        audioEngine.Click(sample: LegacySample.click_short_confirm);
         Action?.Invoke();
         return true;
-    }
-
-    protected override void Dispose(bool isDisposing)
-    {
-        base.Dispose(isDisposing);
-
-        skin?.SourceChanged -= updateSkin;
     }
 
     private static void configureText(SpriteText text)

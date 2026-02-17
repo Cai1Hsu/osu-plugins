@@ -47,6 +47,13 @@ public partial class AudioEngine : Component
     private static readonly LegacySample[] all_usages = Enum.GetValues<LegacySample>();
     private static readonly SampleInfo[] all_sample_infos = Array.ConvertAll(all_usages, static usage => new SampleInfo(usage.GetDescription()));
 
+    private static readonly string[] fallback_namespaces = new[]
+    {
+        sample_namespace,
+        "Gameplay",
+        "UI",
+    };
+
     private void updateSamples()
     {
         var samples = new Dictionary<LegacySample, ISample?>();
@@ -72,7 +79,7 @@ public partial class AudioEngine : Component
 
         return skin?.GetSample(sampleInfo)
             ?? sampleInfo.LookupNames
-                .Select(n => frameworkAudio.Samples.Get($"{sample_namespace}/{n}"))
+                .SelectMany(n => fallback_namespaces.Select(ns => frameworkAudio.Samples.Get($"{ns}/{n}")))
                 .FirstOrDefault(static s => s is not null);
     }
 
@@ -103,6 +110,21 @@ public partial class AudioEngine : Component
             c.Volume.Value = volume / 100.0;
             c.Frequency.Value = speed;
         });
+    }
+
+    /// <summary>
+    /// Plays a sample with the given volume.
+    /// </summary>
+    /// <param name="sample">The sample to play.</param>
+    /// <param name="volume">The volume of the sample, from 0 to 100.</param>
+    public void PlaySample(LegacySample sample, int volume = 100)
+    {
+        if (Samples.TryGetValue(sample, out var s)
+            && s?.GetChannel() is SampleChannel channel)
+        {
+            channel.Volume.Value = volume / 100.0;
+            channel.Play();
+        }
     }
 
     /// <summary>
