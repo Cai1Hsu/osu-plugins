@@ -50,7 +50,7 @@ public partial class GdipNativeText : NativeTextBase
         if (!fontCacheStorage.Exists(resourceName))
         {
             using (var fs = fontCacheStorage.CreateFileSafely(resourceName))
-                fs.Write(fontData.Array);
+                fs.Write(fontData);
         }
 
         try
