@@ -187,23 +187,34 @@ public partial class GdipNativeText : NativeTextBase
         if (width <= 0 || height <= 0)
             return;
 
-        var bitmap = new GdipBitmap(width, height, GdipPixelFormat.Format32bppArgb);
-        using (var gfx = GdipGraphics.FromImage(bitmap))
+        GdipBitmap? bitmap = null;
+
+        try
         {
-            gfx.TextRenderingHint = TextRenderingHint.AntiAlias;
-            gfx.SmoothingMode = SmoothingMode.HighQuality;
-            gfx.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            gfx.DrawString(adjustedText, gdipFont, Brushes.White, new GdipRectangleF(0, 0, width, height), stringFormat);
+            bitmap = new GdipBitmap(width, height, GdipPixelFormat.Format32bppArgb);
+            using (var gfx = GdipGraphics.FromImage(bitmap))
+            {
+                gfx.TextRenderingHint = TextRenderingHint.AntiAlias;
+                gfx.SmoothingMode = SmoothingMode.HighQuality;
+                gfx.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                gfx.DrawString(adjustedText, gdipFont, Brushes.White, new GdipRectangleF(0, 0, width, height), stringFormat);
+            }
+
+            var texture = CreateTexture(width, height);
+            texture.ScaleAdjust = dpiRatio;
+            texture.SetData(new BitmapTextureUpload(bitmap));
+
+            bitmap = null; // BitmapTextureUpload manages the bitmap's memory, so we should not dispose it after this point.
+
+            result = result with
+            {
+                Texture = texture,
+            };
         }
-
-        var texture = CreateTexture(width, height);
-        texture.ScaleAdjust = dpiRatio;
-        texture.SetData(new BitmapTextureUpload(bitmap));
-
-        result = result with
+        finally
         {
-            Texture = texture,
-        };
+            bitmap?.Dispose();
+        }
     }
 
     /// <summary>
