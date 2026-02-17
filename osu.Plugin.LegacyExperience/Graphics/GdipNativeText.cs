@@ -62,6 +62,7 @@ public partial class GdipNativeText : NativeTextBase
             // And this thread (https://stackoverflow.com/questions/25583394/privatefontcollection-addmemoryfont-producing-random-errors-on-windows-server-20)
             // suggests that AddFontFile doesn't have this issue.
             // I checked libgdiplus's source and comments there strongly against you use GdipPrivateAddMemoryFont due to various issues, so let's just use AddFontFile for now.
+            // Also, GdipPrivateAddMemoryFont just internally store your font data in a temporary file and call AddFontFile, so we might as well skip the middleman.
             fontCollection.AddFontFile(fontCacheStorage.GetFullPath(resourceName));
             Logger.Log($"Loaded font {resourceName} to GDI+ PrivateFontCollection", LoggingTarget.Runtime, LogLevel.Verbose);
         }
