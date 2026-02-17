@@ -139,14 +139,17 @@ public partial class GdipNativeText : NativeTextBase
         {
             Alignment = mapTextAlignment(parameters.Alignment),
             LineAlignment = StringAlignment.Near,
-            Trimming = StringTrimming.None,
         };
 
-        // Measure text
-        GdipSizeF measuredSize = wndGraphics.MeasureString(adjustedText, gdipFont, int.MaxValue, stringFormat);
+        GdipSizeF unrestrictedSize = default;
 
-        if (parameters.RenderFlags.HasFlagFast(NativeText.TextRenderFlags.MeasureUnrestrictedBounds))
+        if (parameters.RenderFlags.HasFlagFast(NativeText.TextRenderFlags.MeasureUnrestrictedBounds)
+            || restrictBounds == Vector2.Zero)
         {
+            // stable doesn't pass stringformat to unstricted measurement.
+            GdipSizeF measuredSize = wndGraphics.MeasureString(adjustedText, gdipFont);
+            unrestrictedSize = measuredSize;
+
             result = result with
             {
                 UnrestrictedBoundsSize = new Vector2(measuredSize.Width, measuredSize.Height),
@@ -155,19 +158,19 @@ public partial class GdipNativeText : NativeTextBase
 
         bool doRender = parameters.RenderFlags.HasFlagFast(NativeText.TextRenderFlags.Render);
 
+        // Measure with restriction if needed
+        GdipSizeF drawSize = default;
+
         if (doRender || parameters.RenderFlags.HasFlagFast(NativeText.TextRenderFlags.MeasureBounds))
         {
-            // Measure with restriction if needed
-            GdipSizeF restrictedSize = measuredSize;
-
-            if (restrictBounds.X > 0)
-            {
-                restrictedSize = wndGraphics.MeasureString(adjustedText, gdipFont, (int)restrictBounds.X, stringFormat);
-            }
+            if (restrictBounds != Vector2.Zero)
+                drawSize = wndGraphics.MeasureString(adjustedText, gdipFont, new GdipSizeF(restrictBounds.X, restrictBounds.Y), stringFormat);
+            else
+                drawSize = unrestrictedSize;
 
             result = result with
             {
-                BoundsSize = new Vector2(restrictedSize.Width, restrictedSize.Height),
+                BoundsSize = new Vector2(drawSize.Width, drawSize.Height),
             };
         }
 
@@ -175,8 +178,8 @@ public partial class GdipNativeText : NativeTextBase
             return;
 
         // Calculate final texture size
-        int width = (int)MathF.Ceiling(measuredSize.Width);
-        int height = (int)MathF.Ceiling(measuredSize.Height);
+        int width = (int)MathF.Ceiling(drawSize.Width);
+        int height = (int)MathF.Ceiling(drawSize.Height);
 
         if (restrictBounds.Y > 0)
             height = Math.Min(height, (int)MathF.Ceiling(restrictBounds.Y));
@@ -197,7 +200,8 @@ public partial class GdipNativeText : NativeTextBase
                 gfx.TextRenderingHint = TextRenderingHint.AntiAlias;
                 gfx.SmoothingMode = SmoothingMode.HighQuality;
                 gfx.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                gfx.DrawString(adjustedText, gdipFont, Brushes.White, new GdipRectangleF(0, 0, width, height), stringFormat);
+                gfx.DrawString(adjustedText, gdipFont, Brushes.White, new GdipRectangleF(0, 0, width, height),
+                    restrictBounds != Vector2.Zero ? stringFormat : null);
             }
 
             var texture = CreateTexture(width, height);
