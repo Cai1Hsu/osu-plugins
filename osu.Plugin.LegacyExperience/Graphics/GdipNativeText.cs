@@ -127,16 +127,7 @@ public partial class GdipNativeText : NativeTextBase
         if (parameters.Bold) style |= GdipFontStyle.Bold;
         if (parameters.Italic) style |= GdipFontStyle.Italic;
 
-        GdipFont? gdipFont;
-        try
-        {
-            gdipFont = GetFont(fontName, fontSize, style);
-        }
-        catch (Exception e)
-        {
-            Logger.Log($"Failed to create font {fontName}: {e.Message}", LoggingTarget.Runtime, LogLevel.Error);
-            return;
-        }
+        GdipFont? gdipFont = GetFont(fontName, fontSize, style);
 
         // Apply font-specific glyph adjustments
         var textMemory = text.AsMemory();
