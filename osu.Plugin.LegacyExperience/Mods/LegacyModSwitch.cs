@@ -9,6 +9,7 @@ using osu.Framework.Localisation;
 using osu.Game.Audio;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;
+using osu.Plugin.LegacyExperience.Audio;
 using osu.Plugin.LegacyExperience.Localisations;
 using osuTK;
 using osuTK.Input;
@@ -388,6 +389,15 @@ public partial class LegacyModSwitch : CompositeDrawable
                 LegacyMod.ScoreV2 => LegacyStrings.ModSelection_Mod_ScoreV2,
                 _ => string.Empty,
             };
+        }
+
+        [Resolved]
+        private AudioEngine audioEngine { get; set; } = null!;
+
+        protected override bool OnHover(HoverEvent e)
+        {
+            audioEngine.Click(sample: LegacySample.click_short);
+            return base.OnHover(e);
         }
 
         private LocalisableString tooltipText;

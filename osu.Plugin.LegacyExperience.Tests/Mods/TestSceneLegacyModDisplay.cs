@@ -10,22 +10,13 @@ using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Tests.Mods;
 
-[Cached(typeof(IModHoverManager))]
-public partial class TestSceneLegacyModDisplay : LocalSkinTestScene, IModHoverManager
+public partial class TestSceneLegacyModDisplay : LocalSkinTestScene
 {
     private SkinProvidingContainer content = null!;
-
-    private bool bypassHoverSampleDebounce;
 
     [BackgroundDependencyLoader]
     private void load()
     {
-        // ModDisplay is typically arranged in a high-density layout within the UI, 
-        // making it prone to generating excessive hover samples when the cursor moves.
-        // osu!stable debounces all samples with a threshold of 50ms, 
-        // we implement the same logic here and provide an option to bypass it for testing purposes.
-        AddToggleStep("bypass hover sample debounce", value => bypassHoverSampleDebounce = value);
-
         Add(content = new SkinProvidingContainer(new DefaultLegacySkin(this))
         {
             RelativeSizeAxes = Axes.Both,
@@ -71,22 +62,5 @@ public partial class TestSceneLegacyModDisplay : LocalSkinTestScene, IModHoverMa
                 });
             }
         });
-    }
-
-    private const double hoverSampleDebounceTime = 50;
-    private double lastHoverSampleTime = double.MinValue;
-
-    bool IModHoverManager.RequestHoverSample()
-    {
-        if (bypassHoverSampleDebounce)
-            return true;
-
-        double currentTime = Time.Current;
-
-        if (currentTime - lastHoverSampleTime < hoverSampleDebounceTime)
-            return false;
-
-        lastHoverSampleTime = currentTime;
-        return true;
     }
 }
