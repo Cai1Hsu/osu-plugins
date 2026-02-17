@@ -200,8 +200,11 @@ public partial class GdipNativeText : NativeTextBase
                 gfx.TextRenderingHint = TextRenderingHint.AntiAlias;
                 gfx.SmoothingMode = SmoothingMode.HighQuality;
                 gfx.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                gfx.DrawString(adjustedText, gdipFont, Brushes.White, new GdipRectangleF(0, 0, width, height),
-                    restrictBounds != Vector2.Zero ? stringFormat : null);
+
+                if (restrictBounds != Vector2.Zero)
+                    gfx.DrawString(adjustedText, gdipFont, Brushes.White, new GdipRectangleF(0, 0, restrictBounds.X, restrictBounds.Y), stringFormat);
+                else
+                    gfx.DrawString(adjustedText, gdipFont, Brushes.White, 0, 0);
             }
 
             var texture = CreateTexture(width, height);
