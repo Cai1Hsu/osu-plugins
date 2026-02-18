@@ -91,7 +91,7 @@ public partial class MenuVisualisation : CompositeDrawable
 
     public float MaxAlpha { get; set; } = 0.4f;
 
-    public float Overshoot { get; set; } = 8f;
+    public float Overshoot { get; init; } = 8f;
 
     private double startOffset;
 
