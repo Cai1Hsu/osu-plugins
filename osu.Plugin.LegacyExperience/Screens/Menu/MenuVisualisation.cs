@@ -28,11 +28,20 @@ public partial class MenuVisualisation : Drawable
     private Texture texture = null!;
     private IShader shader = null!;
 
+    /// <summary>
+    /// Initializes a new <see cref="MenuVisualisation"/> and configures rendering to use additive blending.
+    /// </summary>
     public MenuVisualisation()
     {
         Blending = BlendingParameters.Additive;
     }
 
+    /// <summary>
+    /// Loads the menu visualisation texture and shader and sets the drawable colour to <see cref="default_colour"/>.
+    /// </summary>
+    /// <remarks>
+    /// Asserts that the built-in texture "UI/menu-vis" was loaded; failure indicates a missing resource.
+    /// </remarks>
     [BackgroundDependencyLoader]
     private void load(TextureStore textures, ShaderManager shaders)
     {
@@ -46,8 +55,23 @@ public partial class MenuVisualisation : Drawable
         Colour = default_colour;
     }
 
-    protected override DrawNode CreateDrawNode() => new MenuVisualisationDrawNode(this);
+    /// <summary>
+/// Creates the draw node responsible for rendering this MenuVisualisation.
+/// </summary>
+/// <returns>A new <see cref="MenuVisualisationDrawNode"/> instance bound to this visualisation.</returns>
+protected override DrawNode CreateDrawNode() => new MenuVisualisationDrawNode(this);
 
+    /// <summary>
+    /// Advances the visualisation's animation by the current frame's elapsed time and schedules a redraw of the draw node.
+    /// </summary>
+    protected override void Update()
+    {
+        base.Update();
+    
+        updateVisualisation(Clock.ElapsedFrameTime);
+    
+        Invalidate(Invalidation.DrawNode);
+    }
     protected override void Update()
     {
         base.Update();
@@ -65,6 +89,13 @@ public partial class MenuVisualisation : Drawable
 
     private double columnCurrentMilliseconds;
 
+    /// <summary>
+    /// Advances the visualisation state by the given elapsed time.
+    /// </summary>
+    /// <param name="elapsed">Time in milliseconds to advance the visualisation; values greater than 1000 are ignored.</param>
+    /// <remarks>
+    /// The method processes time in discrete 10ms column steps. For each completed 10ms step it updates column state and increments the internal start offset by 50, wrapping modulo the number of columns.
+    /// </remarks>
     private void updateVisualisation(double elapsed)
     {
         if (elapsed > 1000)
@@ -90,6 +121,10 @@ public partial class MenuVisualisation : Drawable
         }
     }
 
+    /// <summary>
+    /// Updates each column's horizontal scale and transparency based on elapsed time and current amplitude samples.
+    /// </summary>
+    /// <param name="elapsed">Elapsed time in milliseconds used to compute the decay factor applied to existing column scales.</param>
     private void updateColumn(double elapsed)
     {
         const double sixty_fps = 1000.0 / 60;
@@ -125,6 +160,10 @@ public partial class MenuVisualisation : Drawable
 
         private readonly VisualisationColumn[] columns = new VisualisationColumn[IAmplitudesProvider.SampleSize];
 
+        /// <summary>
+        /// Creates a draw node responsible for rendering the provided MenuVisualisation.
+        /// </summary>
+        /// <param name="source">The MenuVisualisation instance that this draw node will read state from.</param>
         public MenuVisualisationDrawNode(MenuVisualisation source)
             : base(source)
         {
@@ -139,6 +178,12 @@ public partial class MenuVisualisation : Drawable
 
         private Vector2 center;
 
+        /// <summary>
+        /// Syncs visible state from the source MenuVisualisation into this draw node.
+        /// </summary>
+        /// <remarks>
+        /// Copies the source's Overshoot, Radius, shader, texture, draw center, and per-column visual data into the draw node so the renderer has a local, immutable snapshot of the visual state for drawing.
+        /// </remarks>
         public override void ApplyState()
         {
             base.ApplyState();
@@ -155,6 +200,10 @@ public partial class MenuVisualisation : Drawable
 
         const float scaleY = 0.5f;
 
+        /// <summary>
+        /// Renders the visualisation columns as textured quads arranged around the control's center, using each column's scale, rotation, and alpha to position, size, and tint the quads.
+        /// </summary>
+        /// <param name="renderer">The renderer used to draw the textured quads.</param>
         protected override void Draw(IRenderer renderer)
         {
             base.Draw(renderer);
@@ -202,6 +251,10 @@ public partial class MenuVisualisation : Drawable
             shader.Unbind();
         }
 
+        /// <summary>
+        /// Disposes resources held by the draw node, including the vertex batch.
+        /// </summary>
+        /// <param name="isDisposing">True when called from Dispose, false when called from a finalizer.</param>
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);

@@ -34,6 +34,12 @@ public partial class TestSceneMenuVisualisation : OsuTestScene
     [Cached(typeof(IAmplitudesProvider))]
     private readonly TestAmplitudesProvider provider;
 
+    /// <summary>
+    /// Initializes the test scene and configures its amplitudes provider.
+    /// </summary>
+    /// <remarks>
+    /// Creates a TestAmplitudesProvider backed by the cached AmplitudesProvider instance.
+    /// </remarks>
     public TestSceneMenuVisualisation()
     {
         provider = new TestAmplitudesProvider(amplitudes);
@@ -41,6 +47,12 @@ public partial class TestSceneMenuVisualisation : OsuTestScene
 
     private MenuVisualisation visualisation = null!;
 
+    /// <summary>
+    /// Creates and adds the amplitudes provider and the MenuVisualisation drawable to the scene.
+    /// </summary>
+    /// <remarks>
+    /// Initializes <see cref="visualisation"/> as a centered, full-size <see cref="MenuVisualisation"/> and adds it alongside the cached <see cref="amplitudes"/> drawable.
+    /// </remarks>
     [BackgroundDependencyLoader]
     private void load()
     {
@@ -56,6 +68,9 @@ public partial class TestSceneMenuVisualisation : OsuTestScene
         });
     }
 
+    /// <summary>
+    /// Adds interactive test steps that switch the amplitudes source between the track's amplitudes and a custom amplitudes buffer.
+    /// </summary>
     [Test]
     public void TestAmplitudesSource()
     {
@@ -79,6 +94,12 @@ public partial class TestSceneMenuVisualisation : OsuTestScene
         });
     }
 
+    /// <summary>
+    /// Adds a test slider that adjusts the MenuVisualisation's radius.
+    /// </summary>
+    /// <remarks>
+    /// The slider ranges from 0 to 200 with an initial value of 160. The chosen slider value is multiplied by <c>LegacyExperiencePlugin.StableRatio</c> before being applied to <c>visualisation.Radius</c>.
+    /// </remarks>
     [Test]
     public void TestRadius()
     {
@@ -89,6 +110,12 @@ public partial class TestSceneMenuVisualisation : OsuTestScene
         });
     }
 
+    /// <summary>
+    /// Adds a test slider that controls the visualisation's alpha (opacity).
+    /// </summary>
+    /// <remarks>
+    /// The slider ranges from 0 to 1 with a default value of 0.8 and updates <c>visualisation.Alpha</c> when changed.
+    /// </remarks>
     [Test]
     public void TestAlpha()
     {
@@ -98,6 +125,9 @@ public partial class TestSceneMenuVisualisation : OsuTestScene
         });
     }
 
+    /// <summary>
+    /// Adds interactive test steps to control music playback: stop, restart, toggle pause, play specific test beatmaps, and seek within the current track.
+    /// </summary>
     [Test]
     public void TestMusic()
     {
@@ -132,6 +162,12 @@ public partial class TestSceneMenuVisualisation : OsuTestScene
     [Resolved]
     private OsuGameBase game { get; set; } = null!;
 
+    /// <summary>
+    /// Loads a beatmap from the embedded Tracks resource identified by <paramref name="file"/>, imports and selects the beatmap set matching <paramref name="hash"/>, sets it as the current working beatmap, and starts playback.
+    /// </summary>
+    /// <param name="file">The filename of the beatmap archive in the Tracks resource (e.g. "circles.osz").</param>
+    /// <param name="hash">The protected beatmap set hash used to locate the imported beatmap set.</param>
+    /// <exception cref="ArgumentNullException">Thrown when no beatmap set matching <paramref name="hash"/> is found after import.</exception>
     private void playBeatmap(string file, string hash)
     {
         var import = beatmapManager.Import(
