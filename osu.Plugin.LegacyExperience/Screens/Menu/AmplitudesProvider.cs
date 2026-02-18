@@ -1,7 +1,6 @@
 using osu.Framework.Allocation;
 using osu.Framework.Audio.Track;
 using osu.Framework.Graphics;
-using osu.Framework.Utils;
 using osu.Game.Beatmaps;
 using osu.Game.Overlays;
 using static osu.Plugin.LegacyExperience.Screens.Menu.IAmplitudesProvider;
@@ -65,23 +64,21 @@ public partial class AmplitudesProvider : Component, IAmplitudesProvider
     {
         var source = beatSyncProvider.CurrentAmplitudes.FrequencyAmplitudes.Span;
 
-        // FFT512 -> FFT2048 expansion, osu!framework hardcoded 256 samples for FFT512
-        const int expand_factor = SampleSize / ChannelAmplitudes.AMPLITUDES_SIZE;
-
         // TODO: may use better interpolation method if needed, but looks good to me for now. 
         for (int i = 0; i < ChannelAmplitudes.AMPLITUDES_SIZE; i++)
         {
-            float prev = source[(i - 1 + ChannelAmplitudes.AMPLITUDES_SIZE) % ChannelAmplitudes.AMPLITUDES_SIZE];
             float v = source[i];
             float next = source[(i + 1) % ChannelAmplitudes.AMPLITUDES_SIZE];
 
             int baseIndex = i * expand_factor;
 
-            // peak boosting, may look better when the source is too flat
-            data[baseIndex] = (float)Interpolation.Lerp(prev, v, 0.5f) * 0.2f;
-            data[baseIndex + 1] = (float)Interpolation.Lerp(v, next, 0.75f) * 0.6f;
-            data[baseIndex + 2] = v;
-            data[baseIndex + 3] = (float)Interpolation.Lerp(v, next, 0.25f) * 0.6f;
+            for (int j = 0; j < expand_factor; j++)
+            {
+                float t = (float)j / expand_factor;
+                float boost = boost_factors[j];
+
+                data[baseIndex + j] = LerpF(v, next, t) * boost;
+            }
         }
 
         if (Epicness != 1)
@@ -89,5 +86,22 @@ public partial class AmplitudesProvider : Component, IAmplitudesProvider
             for (int i = 0; i < SampleSize; i++)
                 data[i] *= Epicness;
         }
+    }
+
+    private static float LerpF(float start, float final, float amount) => start + (final - start) * amount;
+
+    // FFT512 -> FFT2048 expansion, osu!framework hardcoded 256 samples for FFT512
+    private const int expand_factor = SampleSize / ChannelAmplitudes.AMPLITUDES_SIZE;
+    private static readonly float[] boost_factors = Enumerable.Range(0, expand_factor)
+                                                              .Select(static i => boost_factor((float)i / expand_factor))
+                                                              .ToArray();
+
+    // peak boosting, may look better when the source is too flat
+    private static float boost_factor(float t)
+    {
+        const float alpha = 1.5f;
+
+        float exp_alpha = MathF.Exp(-alpha);
+        return (MathF.Exp(-alpha * t) - exp_alpha) / (1 - exp_alpha);
     }
 }
