@@ -32,14 +32,10 @@ public partial class AmplitudesProvider : Component, IAmplitudesProvider
             currentTrack.CurrentTime <= 0 ||
             currentTrack.CurrentTime >= currentTrack.Length;
 
-        if (!UseTrackAmplitudes && (!currentTrack.IsRunning || extendedTime))
-        {
-            applyShrinkage();
-        }
-        else
-        {
+        if (UseTrackAmplitudes || (currentTrack.IsRunning && !extendedTime))
             applyTrackAmplitudes();
-        }
+        else
+            applyShrinkage();
     }
 
     private void applyShrinkage()
