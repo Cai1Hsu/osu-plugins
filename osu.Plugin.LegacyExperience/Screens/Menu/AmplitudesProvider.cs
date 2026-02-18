@@ -35,7 +35,7 @@ public partial class AmplitudesProvider : Component, IAmplitudesProvider
 
         if (!UseTrackAmplitudes && (!currentTrack.IsRunning || extendedTime))
         {
-            applyShirnkage();
+            applyShrinkage();
         }
         else
         {
@@ -43,7 +43,7 @@ public partial class AmplitudesProvider : Component, IAmplitudesProvider
         }
     }
 
-    private void applyShirnkage()
+    private void applyShrinkage()
     {
         const double sixty_fps = 1000.0 / 60;
 
