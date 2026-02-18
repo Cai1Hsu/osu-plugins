@@ -102,23 +102,23 @@ public partial class MenuVisualisation : CompositeDrawable
         if (elapsed > 1000)
             return;
 
+        const double column_step = 10.0;
+
         while (elapsed > 0.0)
         {
-            columnCurrentMilliseconds += elapsed;
-            double step = Math.Max(0.0, columnCurrentMilliseconds - 10.0);
+            double remainingInCurrentColumn = column_step - columnCurrentMilliseconds;
+            double elapsedForCurrentColumn = Math.Min(elapsed, remainingInCurrentColumn);
 
-            elapsed -= step;
+            updateColumn(elapsedForCurrentColumn);
 
-            updateColumn(elapsed);
+            columnCurrentMilliseconds += elapsedForCurrentColumn;
+            elapsed -= elapsedForCurrentColumn;
 
-            if (step != 0.0)
-            {
-                columnCurrentMilliseconds = 0.0;
-                startOffset = (startOffset + 50.0) % sprites.Length;
-                elapsed = step;
-                continue;
-            }
-            break;
+            if (columnCurrentMilliseconds < column_step)
+                break;
+
+            columnCurrentMilliseconds = 0.0;
+            startOffset = (startOffset + 50.0) % sprites.Length;
         }
     }
 
