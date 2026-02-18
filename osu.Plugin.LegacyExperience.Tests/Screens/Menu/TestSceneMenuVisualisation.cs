@@ -82,9 +82,10 @@ public partial class TestSceneMenuVisualisation : OsuTestScene
     [Test]
     public void TestRadius()
     {
-        AddSliderStep("radius", 0f, 200f, 170f, value =>
+        // roughly stable default value(note that it's a dynamic value)
+        AddSliderStep("radius", 0f, 200f, 160f, value =>
         {
-            visualisation.Radius = value;
+            visualisation.Radius = value * LegacyExperiencePlugin.StableRatio;
         });
     }
 
