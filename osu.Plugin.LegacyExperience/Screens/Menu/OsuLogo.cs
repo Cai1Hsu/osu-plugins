@@ -198,7 +198,7 @@ public partial class OsuLogo : BeatSyncedContainer
 
         lastFrameBeatProgress = smoothedBeatProgress;
 
-        float valueAt(float start, float end, float progress, Easing easing) => Interpolation.ValueAt(progress, start, end, 0, 1, easing); ;
+        float valueAt(float start, float end, float progress, Easing easing) => Interpolation.ValueAt(progress, start, end, 0, 1, easing);
 
         logoContainer.Scale = new Vector2(valueAt(1.05f + hoverBonus, 1f + hoverBonus, smoothedBeatProgress, Easing.OutQuad));
         logo_glow.Alpha = valueAt(IsKiaiTime ? 0.1f : 0.4f, 0f, smoothedBeatProgress, Easing.OutQuad) * savedProgressMultiplier;
