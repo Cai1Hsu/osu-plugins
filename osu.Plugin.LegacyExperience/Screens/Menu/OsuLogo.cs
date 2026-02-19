@@ -218,7 +218,6 @@ public partial class OsuLogo : BeatSyncedContainer
 
     protected override bool OnClick(ClickEvent e)
     {
-        // FIXME: the value matches stable, but the animation doesn't look correct to me.
         hoverBonus -= 0.08f;
 
         Action?.Invoke();
