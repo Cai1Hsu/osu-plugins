@@ -3,6 +3,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Audio.Track;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
@@ -39,6 +40,10 @@ public partial class OsuLogo : BeatSyncedContainer
     [Resolved]
     private ISkinSource? skin { get; set; } = null;
 
+    private Container rippleContainer = null!;
+
+    private DrawablePool<MenuRipple> ripplePool = null!;
+
     [BackgroundDependencyLoader]
     private void load(TextureStore texture)
     {
@@ -50,6 +55,22 @@ public partial class OsuLogo : BeatSyncedContainer
 
         InternalChildren = new Drawable[]
         {
+            // 10 maybe a bit too much, but it depends on the BPM.
+            ripplePool = new DrawablePool<MenuRipple>(10),
+            rippleContainer = new Container
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                RelativeSizeAxes = Axes.Both,
+            },
+            visualisation = new LogoVisualisation
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                AlwaysPresent = true,
+                // doesn't matter
+                RelativeSizeAxes = Axes.Both,
+            },
             logoContainer = new CircularContainer
             {
                 Anchor = Anchor.Centre,
@@ -73,14 +94,6 @@ public partial class OsuLogo : BeatSyncedContainer
                 Origin = Anchor.Centre,
                 Alpha = 0.5f,
             },
-            visualisation = new LogoVisualisation
-            {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-                AlwaysPresent = true,
-                // doesn't matter
-                RelativeSizeAxes = Axes.Both,
-            }
         };
 
         skin?.SourceChanged += updateSkin;
@@ -116,6 +129,23 @@ public partial class OsuLogo : BeatSyncedContainer
         savedProgressMultiplier = menuAlpha2;
 
         audioEngine.PlaySample(LegacySample.heartbeat);
+        spawnRipple();
+    }
+
+    private void spawnRipple()
+    {
+        var ripple = ripplePool.Get();
+
+        var scale = logoContainer.Scale;
+
+        ripple.Scale = scale;
+        ripple.Alpha = 0.1f * menuAlpha2;
+
+        rippleContainer.Add(ripple);
+
+        ripple.FadeOut(1000, Easing.None)
+              .ScaleTo(scale * 1.4f, 1000, Easing.Out)
+              .Expire();
     }
 
     private const double sixty_fps = 1000.0 / 60.0;
@@ -212,5 +242,24 @@ public partial class OsuLogo : BeatSyncedContainer
         }
 
         public override void Show() => AlwaysPresent = true;
+    }
+
+    private partial class MenuRipple : PoolableDrawable
+    {
+        [BackgroundDependencyLoader]
+        private void load(TextureStore textures)
+        {
+            Anchor = Anchor.Centre;
+            Origin = Anchor.Centre;
+            AutoSizeAxes = Axes.Both;
+
+            InternalChild = new Sprite
+            {
+                // Anchor = Anchor.Centre,
+                // Origin = Anchor.Centre,
+                Texture = textures.GetAutoSized("UI/menu-osu-shockwave"),
+                Blending = BlendingParameters.Additive,
+            };
+        }
     }
 }
