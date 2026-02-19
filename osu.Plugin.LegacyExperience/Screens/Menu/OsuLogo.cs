@@ -189,7 +189,7 @@ public partial class OsuLogo : BeatSyncedContainer
             hoverBonus = Math.Min(hoverBonus + (float)(0.012 * frameRatio), 0.1f);
 
         var beatLength = TimeSinceLastBeat + TimeUntilNextBeat;
-        var beatProgress = TimeSinceLastBeat / beatLength;
+        var beatProgress = beatLength > 0 ? TimeSinceLastBeat / beatLength : 0.0;
 
         float smoothingDecay = (float)Math.Pow(0.5, frameRatio);
 
