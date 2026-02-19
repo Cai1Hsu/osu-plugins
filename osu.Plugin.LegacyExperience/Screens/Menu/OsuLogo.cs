@@ -222,7 +222,7 @@ public partial class OsuLogo : BeatSyncedContainer
         hoverBonus -= 0.08f;
 
         Action?.Invoke();
-        return base.OnClick(e);
+        return true;
     }
 
     protected override void Dispose(bool isDisposing)
