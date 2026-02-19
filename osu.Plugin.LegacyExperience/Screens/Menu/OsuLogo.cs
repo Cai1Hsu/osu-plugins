@@ -255,8 +255,6 @@ public partial class OsuLogo : BeatSyncedContainer
 
             InternalChild = new Sprite
             {
-                // Anchor = Anchor.Centre,
-                // Origin = Anchor.Centre,
                 Texture = textures.GetAutoSized("UI/menu-osu-shockwave"),
                 Blending = BlendingParameters.Additive,
             };
