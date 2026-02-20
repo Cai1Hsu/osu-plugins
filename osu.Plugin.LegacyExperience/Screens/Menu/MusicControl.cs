@@ -232,7 +232,7 @@ public partial class MusicControl : CompositeDrawable
             return base.OnHover(e);
         }
 
-        override protected void OnHoverLost(HoverLostEvent e)
+        protected override void OnHoverLost(HoverLostEvent e)
         {
             this.ScaleTo(1, 200, Easing.Out);
 
@@ -301,7 +301,7 @@ public partial class MusicControl : CompositeDrawable
             return true;
         }
 
-        override protected void OnHoverLost(HoverLostEvent e)
+        protected override void OnHoverLost(HoverLostEvent e)
         {
             background.FadeColour(bgDefaultColour, 100);
         }
