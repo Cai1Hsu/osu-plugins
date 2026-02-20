@@ -180,7 +180,7 @@ public partial class OsuLogo : BeatSyncedContainer
                 combinedChannelLevel *= amplitudes.LeftChannel + amplitudes.RightChannel;
             }
 
-            float targetMenuGlowAlpha = IsKiaiTime ? 1f : (0.6f + Math.Min(1f, Math.Max(0f, (float)(combinedChannelLevel - 30000) / 35536f)) * 0.4f);
+            float targetMenuGlowAlpha = IsKiaiTime ? 1f : (0.6f + Math.Clamp((float)(combinedChannelLevel - 30000) / 35536f, 0f, 1f) * 0.4f);
             menuAlpha2 = menuAlpha2 * 0.8f + 0.2f * targetMenuGlowAlpha;
         }
 
