@@ -128,7 +128,9 @@ public partial class OsuLogo : BeatSyncedContainer
         logo_glow.Blending = effectPoint.KiaiMode ? BlendingParameters.Additive : BlendingParameters.Inherit;
         savedProgressMultiplier = menuAlpha2;
 
-        audioEngine.PlaySample(LegacySample.heartbeat);
+        if (IsHovered)
+            audioEngine.PlaySample(LegacySample.heartbeat);
+
         spawnRipple();
     }
 
