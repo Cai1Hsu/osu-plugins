@@ -26,5 +26,7 @@ public enum LegacySample
     [Description("sectionpass")]
     sectionpass,
     [Description("sectionfail")]
-    sectionfail
+    sectionfail,
+    [Description("heartbeat")]
+    heartbeat,
 }
