@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Audio.Track;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Pooling;
@@ -12,6 +13,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics.Containers;
 using osu.Game.Online.API;
+using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
@@ -45,7 +47,7 @@ public partial class OsuLogo : BeatSyncedContainer
     private DrawablePool<MenuRipple> ripplePool = null!;
 
     [BackgroundDependencyLoader]
-    private void load(TextureStore texture)
+    private void load(TextureStore texture, IAPIProvider api)
     {
         var logoTexture = texture.GetAutoSized("UI/menu-osu");
 
@@ -96,12 +98,13 @@ public partial class OsuLogo : BeatSyncedContainer
             },
         };
 
+        localUser.BindTo(api.LocalUser);
+
         skin?.SourceChanged += updateSkin;
-        updateSkin();
+        localUser.BindValueChanged(_ => updateSkin(), true);
     }
 
-    [Resolved]
-    private IAPIProvider api { get; set; } = null!;
+    private readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
 
     private void updateSkin()
     {
@@ -109,7 +112,7 @@ public partial class OsuLogo : BeatSyncedContainer
 
         // We could remove the supporter requirement technically,
         // but i decide to respect ppy's decision to make menu glow a supporter feature.
-        if (api.LocalUser.Value.IsSupporter)
+        if (localUser.Value.IsSupporter)
             color = skin?.GetConfig<GlobalSkinColours, Color4>(GlobalSkinColours.MenuGlow)?.Value ?? color;
 
         visualisation.Colour = color;
