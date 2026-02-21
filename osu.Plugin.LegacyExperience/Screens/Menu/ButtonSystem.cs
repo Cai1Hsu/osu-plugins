@@ -257,6 +257,31 @@ public partial class ButtonSystem : CompositeDrawable
         state.Value = newState;
     }
 
+    public void FadeButtonsExcept(string name)
+    {
+        var button = buttonsContainer.OfType<Container<MenuButton>>()
+                                     .SelectMany(static c => c)
+                                     .FirstOrDefault(b => b.Name == name);
+
+        if (button?.Parent is not Container<MenuButton> buttonContainer)
+            return;
+
+        if (!buttonContainer.IsPresent)
+            return;
+
+        var screenSpacePos = buttonContainer.ToScreenSpace(buttonContainer.DrawPosition);
+
+        buttonContainer.Remove(button, false);
+
+        buttonContainer.MoveToOffset(new Vector2(-50, 0) * LegacyExperiencePlugin.StableRatio, 100, Easing.None)
+                       .FadeOut(100, Easing.None);
+
+        // this method is only used in screen transitions,
+        // so breaking the layout here doesn't really matter since the screen will be gone by the time it becomes an issue,
+        // and it saves us from having to add a lot of complexity to handle the layout readjustment after removing the button.
+        buttonsContainer.Add(button);
+    }
+
     protected override bool OnKeyDown(KeyDownEvent e)
     {
         if (state.Value is ButtonSystemState.Collapsed)
