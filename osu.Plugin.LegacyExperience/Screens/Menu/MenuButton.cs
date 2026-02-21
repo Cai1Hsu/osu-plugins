@@ -70,14 +70,13 @@ internal partial class MenuButton : CompositeDrawable
         audioEngine.PlaySamplePositional(HoverSample, null);
         spriteContainer.MoveToX(20, 580, Easing.OutElastic);
         hoverSprite.FadeIn(30, Easing.None);
-        return base.OnHover(e);
+        return true;
     }
 
     protected override void OnHoverLost(HoverLostEvent e)
     {
         spriteContainer.MoveToX(0, 400, Easing.OutCubic);
         hoverSprite.FadeOut(500, Easing.None);
-        base.OnHoverLost(e);
     }
 
     protected override bool OnClick(ClickEvent e)
