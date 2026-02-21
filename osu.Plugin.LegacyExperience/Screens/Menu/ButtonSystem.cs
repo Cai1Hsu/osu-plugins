@@ -2,8 +2,10 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Input.Events;
 using osu.Game.Input;
 using osuTK;
+using osuTK.Input;
 
 namespace osu.Plugin.LegacyExperience.Screens.Menu;
 
@@ -24,7 +26,11 @@ public partial class ButtonSystem : CompositeDrawable
     public Action? OnBackClick { get; set; }
 
     private MenuButton playButton = null!;
+    private MenuButton editButton = null!;
+    private MenuButton optionsButton = null!;
     private MenuButton soloButton = null!;
+    private MenuButton multiButton = null!;
+    private MenuButton backButton = null!;
 
     private Container maskingContainer = null!;
     private Container buttonsContainer = null!;
@@ -75,13 +81,13 @@ public partial class ButtonSystem : CompositeDrawable
                                     Position = new Vector2(-100f, -125f) * LegacyExperiencePlugin.StableRatio,
                                     Action = () => updateState(ButtonSystemState.Play),
                                 }.With(d => d.Action += () => OnPlayClick?.Invoke()),
-                                new MenuButton()
+                                editButton = new MenuButton()
                                 {
                                     Name = "edit",
                                     Position = new Vector2(-100f, -60f) * LegacyExperiencePlugin.StableRatio,
                                     Action = () => OnEditClick?.Invoke(),
                                 },
-                                new MenuButton()
+                                optionsButton = new MenuButton()
                                 {
                                     Name = "options",
                                     Position = new Vector2(-100f, 5f) * LegacyExperiencePlugin.StableRatio,
@@ -108,13 +114,13 @@ public partial class ButtonSystem : CompositeDrawable
                                     Position = new Vector2(-100f, -92.5f) * LegacyExperiencePlugin.StableRatio,
                                     Action = () => OnFreeplayClick?.Invoke(),
                                 },
-                                new MenuButton()
+                                multiButton = new MenuButton()
                                 {
                                     Name = "multiplayer",
                                     Position = new Vector2(-100f, -27.5f) * LegacyExperiencePlugin.StableRatio,
                                     Action = () => OnMultiplayerClick?.Invoke(),
                                 },
-                                new MenuButton()
+                                backButton = new MenuButton()
                                 {
                                     Name = "back",
                                     Position = new Vector2(-100f, 37.5f) * LegacyExperiencePlugin.StableRatio,
@@ -249,6 +255,51 @@ public partial class ButtonSystem : CompositeDrawable
         }
 
         state.Value = newState;
+    }
+
+    protected override bool OnKeyDown(KeyDownEvent e)
+    {
+        if (state.Value is ButtonSystemState.Collapsed)
+            updateState(ButtonSystemState.Main);
+
+        if (state.Value is ButtonSystemState.Play)
+        {
+            switch (e.Key)
+            {
+                case Key.Escape:
+                case Key.B:
+                    backButton.TriggerClick();
+                    return true;
+
+                case Key.P:
+                    logo.TriggerClick();
+                    return true;
+
+                case Key.M:
+                    multiButton.TriggerClick();
+                    return true;
+            }
+        }
+        // this condition is redudant since the first if will already switch to main state but just in case
+        else if (state.Value is ButtonSystemState.Main)
+        {
+            switch (e.Key)
+            {
+                case Key.O:
+                    optionsButton.TriggerClick();
+                    return true;
+
+                case Key.P:
+                    logo.TriggerClick();
+                    return true;
+
+                case Key.E:
+                    editButton.TriggerClick();
+                    return true;
+            }
+        }
+
+        return base.OnKeyDown(e);
     }
 
     public enum ButtonSystemState
