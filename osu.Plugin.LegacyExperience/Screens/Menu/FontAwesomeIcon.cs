@@ -39,7 +39,8 @@ public partial class FontAwesomeIcon : Sprite
 
             icon = value;
 
-            if (LoadState >= LoadState.Loaded)
+            // matches SpriteIcon
+            if (LoadState > LoadState.NotLoaded)
                 updateTexture();
         }
     }
