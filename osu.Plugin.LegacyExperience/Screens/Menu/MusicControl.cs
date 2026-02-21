@@ -99,7 +99,8 @@ public partial class MusicControl : CompositeDrawable
                         TooltipText = "Stop the music!",
                         Action = () =>
                         {
-                            musicController.Play(restart: true);
+                            // Don't use musicController.SeekTo, it schedules internally.
+                            musicController.CurrentTrack.Seek(0);
                             musicController.Stop(true);
                         },
                     },
