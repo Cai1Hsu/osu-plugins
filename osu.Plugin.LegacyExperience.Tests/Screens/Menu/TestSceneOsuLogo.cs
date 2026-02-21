@@ -2,6 +2,7 @@ using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Plugin.LegacyExperience.Screens.Menu;
+using osu.Plugin.LegacyExperience.Tests.Seasonal;
 
 namespace osu.Plugin.LegacyExperience.Tests.Screens.Menu;
 
@@ -12,17 +13,26 @@ public partial class TestSceneOsuLogo : TestSceneWithBeatmap
 
     private OsuLogo logo = null!;
 
+    private SeasonalContainer seasonalContainer = null!;
+
     [BackgroundDependencyLoader]
     private void load()
     {
         AddRange(new Drawable[]
         {
             (Drawable)amplitudes,
-            logo = new OsuLogo
+            seasonalContainer = new SeasonalContainer
             {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-            }
+                RecreateScene = c =>
+                {
+                    c.Child = logo = new OsuLogo
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                    };
+                },
+                RelativeSizeAxes = Axes.Both,
+            },
         });
     }
 
@@ -32,4 +42,7 @@ public partial class TestSceneOsuLogo : TestSceneWithBeatmap
         AddStep("hide visualisation", () => logo.Visualisation.Hide());
         AddStep("show visualisation", () => logo.Visualisation.Show());
     }
+
+    [Test]
+    public void TestSeasonal() => seasonalContainer.TestSeasonal();
 }
