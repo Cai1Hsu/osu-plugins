@@ -71,6 +71,7 @@ public partial class OsuLogo : BeatSyncedContainer
     /// </summary>
     public Drawable CreateEffectsProxy() => new Container
     {
+        RelativeSizeAxes = Axes.Both,
         Children = new Drawable[]
         {
             rippleContainer.CreateProxy(),
