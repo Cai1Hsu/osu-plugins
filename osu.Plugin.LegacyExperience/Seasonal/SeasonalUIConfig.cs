@@ -46,6 +46,10 @@ public class SeasonalUIConfig : ISeasonalConfig
 
     public static readonly string LogoHeartbeat;
 
+    public static readonly string? LogoTexture;
+
+    string? ISeasonalConfig.LogoTexture => LogoTexture;
+
     string? ISeasonalConfig.LogoHeartbeat => LogoHeartbeat;
 
     Colour4 ISeasonalConfig.SnowColour => SnowColour;
@@ -55,8 +59,11 @@ public class SeasonalUIConfig : ISeasonalConfig
     static SeasonalUIConfig()
     {
         if (ActiveEvents.HasFlagFast(SeasonalEvents.Christmas))
+        {
             // lazer actually packed the christmas's heartbeat sample, so we can use it directly.
             LogoHeartbeat = "Menu/osu-logo-heartbeat-bell";
+            LogoTexture = "Seasonal/Christmas/menu-osu";
+        }
         else
             LogoHeartbeat = "LegacyExperience/heartbeat";
 
