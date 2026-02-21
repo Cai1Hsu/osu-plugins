@@ -1,5 +1,6 @@
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Sprites;
 using osu.Plugin.LegacyExperience.Graphics;
 using osuTK;
@@ -54,18 +55,24 @@ public partial class FontAwesomeIcon : Sprite
 
     private void updateTexture()
     {
-        string c = icon.Icon.ToString();
+        Texture? texture = null;
+        Vector2 textureSize = Vector2.Zero;
 
-        nativeText.CreateText(new TextCreationParameters
+        if (fontSize > 0)
         {
-            Text = c,
-            FontFace = LegacyFontFace.FontAwesome,
-            Size = fontSize,
-            RenderFlags = TextRenderFlags.Render,
-        }, out var result);
+            string c = icon.Icon.ToString();
 
-        var texture = result.Texture;
-        var textureSize = texture?.DisplaySize ?? Vector2.Zero;
+            nativeText.CreateText(new TextCreationParameters
+            {
+                Text = c,
+                FontFace = LegacyFontFace.FontAwesome,
+                Size = fontSize,
+                RenderFlags = TextRenderFlags.Render,
+            }, out var result);
+
+            texture = result.Texture;
+            textureSize = texture?.DisplaySize ?? Vector2.Zero;
+        }
 
         Texture = texture;
         Size = textureSize;
