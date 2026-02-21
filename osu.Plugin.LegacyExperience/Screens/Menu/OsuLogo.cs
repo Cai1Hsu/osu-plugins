@@ -18,6 +18,7 @@ using osu.Game.Overlays;
 using osu.Game.Plugins;
 using osu.Game.Skinning;
 using osu.Plugin.LegacyExperience.Audio;
+using osu.Plugin.LegacyExperience.Seasonal;
 using osuTK;
 using osuTK.Graphics;
 
@@ -47,9 +48,9 @@ public partial class OsuLogo : BeatSyncedContainer
     private DrawablePool<MenuRipple> ripplePool = null!;
 
     [BackgroundDependencyLoader]
-    private void load(TextureStore texture, IAPIProvider api)
+    private void load(TextureStore texture, IAPIProvider api, ISeasonalConfig? seasonalConfig)
     {
-        var logoTexture = texture.GetAutoSized("UI/menu-osu");
+        var logoTexture = texture.GetAutoSized(seasonalConfig?.LogoTexture ?? "UI/menu-osu");
 
         Debug.Assert(logoTexture is not null, "Failed to load menu logo texture.");
 
