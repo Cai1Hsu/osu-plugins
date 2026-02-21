@@ -1,3 +1,4 @@
+using System.Reflection;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics;
 using LazerSeasonalUIConfig = osu.Game.Seasonal.SeasonalUIConfig;
@@ -40,41 +41,49 @@ public class SeasonalUIConfig : ISeasonalConfig
     // we can set the corresponding bits in this mask to 0.
     private static readonly SeasonalEvents deactiveEventMask = (SeasonalEvents)~0;
 
-    public static readonly Colour4 SnowColour;
+    string? ISeasonalConfig.LogoTexture { get; init; }
 
-    public static readonly string? SnowflakeTexture;
+    string? ISeasonalConfig.LogoHeartbeat { get; init; }
 
-    public static readonly string LogoHeartbeat;
+    Colour4 ISeasonalConfig.SnowColour { get; init; }
 
-    public static readonly string? LogoTexture;
+    string? ISeasonalConfig.SnowflakeTexture { get; init; }
 
-    string? ISeasonalConfig.LogoTexture => LogoTexture;
-
-    string? ISeasonalConfig.LogoHeartbeat => LogoHeartbeat;
-
-    Colour4 ISeasonalConfig.SnowColour => SnowColour;
-
-    string? ISeasonalConfig.SnowflakeTexture => SnowflakeTexture;
-
-    static SeasonalUIConfig()
+    public SeasonalUIConfig()
     {
-        if (ActiveEvents.HasFlagFast(SeasonalEvents.Christmas))
+        UpdateEventConfig(this, ActiveEvents);
+    }
+
+    internal static void UpdateEventConfig(ISeasonalConfig config, SeasonalEvents events)
+    {
+        // we do want modification to these properties generally,
+        // but for testing purposes we need to be able to update them on the fly, 
+        // so we will use reflection to bypass the init-only restriction.
+
+        if (events.HasFlagFast(SeasonalEvents.Christmas))
         {
             // lazer actually packed the christmas's heartbeat sample, so we can use it directly.
-            LogoHeartbeat = "Menu/osu-logo-heartbeat-bell";
-            LogoTexture = "Seasonal/Christmas/menu-osu";
+            setProp(nameof(ISeasonalConfig.LogoHeartbeat), "Menu/osu-logo-heartbeat-bell");
+            setProp(nameof(ISeasonalConfig.LogoTexture), "Seasonal/Christmas/menu-osu");
         }
-        else
-            LogoHeartbeat = "LegacyExperience/heartbeat";
 
-        if (ActiveEvents.HasFlagFast(SeasonalEvents.Halloween))
-            SnowColour = new Colour4(255, 201, 14, 255);
-        else
-            SnowColour = Colour4.White;
+        if (events.HasFlagFast(SeasonalEvents.Halloween))
+            setProp(nameof(ISeasonalConfig.SnowColour), new Colour4(255, 201, 14, 255));
 
-        if (ActiveEvents.HasFlagFast(SeasonalEvents.Summer))
-            SnowflakeTexture = "Seasonal/Summer/menu-beachball";
-        else if (ActiveEvents.HasFlagFast(SeasonalEvents.Halloween))
-            SnowflakeTexture = "Seasonal/Halloween/menu-snow";
+        if (events.HasFlagFast(SeasonalEvents.Summer))
+            setProp(nameof(ISeasonalConfig.SnowflakeTexture), "Seasonal/Summer/menu-beachball");
+        else if (events.HasFlagFast(SeasonalEvents.Halloween))
+            setProp(nameof(ISeasonalConfig.SnowflakeTexture), "Seasonal/Halloween/menu-snow");
+
+        void setProp(string prop, object? value)
+        {
+            var setter = config.GetType().GetProperty(prop, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?
+                .SetMethod;
+
+            if (setter is null)
+                throw new InvalidOperationException($"Property {prop} not found in {config.GetType()}.");
+
+            setter.Invoke(config, new[] { value });
+        }
     }
 }

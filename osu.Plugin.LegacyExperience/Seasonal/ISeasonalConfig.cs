@@ -4,10 +4,10 @@ namespace osu.Plugin.LegacyExperience.Seasonal;
 
 public interface ISeasonalConfig
 {
-    string? LogoTexture => null;
-    string? LogoHeartbeat => null;
+    string? LogoTexture { get; init; }
+    string? LogoHeartbeat { get; init; }
 
-    Colour4 SnowColour => Colour4.White;
+    Colour4 SnowColour { get; init; }
 
-    string? SnowflakeTexture => null;
+    string? SnowflakeTexture { get; init; }
 }
