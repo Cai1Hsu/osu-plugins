@@ -133,8 +133,12 @@ public partial class MusicControl : CompositeDrawable
                      }
                  }),
             },
-
         };
+    }
+
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
 
         beatmap.BindValueChanged(v =>
         {
