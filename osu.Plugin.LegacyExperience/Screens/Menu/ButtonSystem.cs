@@ -214,12 +214,16 @@ public partial class ButtonSystem : CompositeDrawable
 
         void hideButtons(Container<MenuButton> buttons)
         {
+            buttonsContainer.ChangeChildDepth(buttons, 1);
+
             buttons.FadeOut(500, Easing.None)
                    .MoveToX(-100 * LegacyExperiencePlugin.StableRatio, 2000, Easing.Out);
         }
 
         void presentButtons(Container<MenuButton> buttons)
         {
+            buttonsContainer.ChangeChildDepth(buttons, 0);
+
             buttons.X = -100f * LegacyExperiencePlugin.StableRatio;
             buttons.FadeIn(350, Easing.None)
                    .MoveToX(0, 400, Easing.Out);
