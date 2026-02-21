@@ -3,6 +3,7 @@ using osu.Game.Plugins;
 using osu.Plugin.LegacyExperience.Audio;
 using osu.Plugin.LegacyExperience.Graphics;
 using osu.Plugin.LegacyExperience.Localisations;
+using osu.Plugin.LegacyExperience.Seasonal;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -14,6 +15,7 @@ public static class GameExtensions
         {
             var game = (OsuGameBase)d;
 
+            game.CacheDependency(out ISeasonalConfig _, static () => new SeasonalUIConfig(), false);
             game.InjectDependency(out LegacyResourceManager _, static () => new());
             game.InjectDependency(out LegacyLocalisationManager _, static () => new());
             game.InjectDependency(out AudioEngine _, static () => new());
