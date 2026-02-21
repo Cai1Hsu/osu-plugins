@@ -7,6 +7,7 @@ using osu.Framework.Input.Events;
 using osu.Game.Graphics.Containers;
 using osu.Game.Skinning;
 using osu.Plugin.LegacyExperience.Audio;
+using osu.Plugin.LegacyExperience.Tests.Seasonal;
 using osuTK.Input;
 
 namespace osu.Plugin.LegacyExperience.Tests.Audio;
@@ -17,6 +18,8 @@ public partial class TestSceneAudioEngine : LocalSkinTestScene
     private AudioEngine audioEngine = null!;
 
     private readonly Bindable<LegacySample> clickSample = new Bindable<LegacySample>(LegacySample.menuhit);
+
+    private SeasonalContainer seasonalContainer = null!;
 
     [BackgroundDependencyLoader]
     private void load()
@@ -31,8 +34,14 @@ public partial class TestSceneAudioEngine : LocalSkinTestScene
                     Anchor = Anchor.TopCentre,
                     Origin = Anchor.TopCentre,
                     AutoSizeAxes = Axes.Both,
+                    // ugly way to prevent overlapping with SeasonalContainer's event text, but it works for now
+                    Margin = new MarginPadding { Top = 14 },
                 },
-                audioEngine = new AudioEngine()
+                seasonalContainer = new SeasonalContainer
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    RecreateScene = c => c.Child = audioEngine = new AudioEngine(),
+                }
             }
         };
 
@@ -68,4 +77,7 @@ public partial class TestSceneAudioEngine : LocalSkinTestScene
 
         AddStep("Click", () => audioEngine.Click(sample: clickSample.Value));
     }
+
+    [Test]
+    public void TestSeasonal() => seasonalContainer.TestSeasonal();
 }
