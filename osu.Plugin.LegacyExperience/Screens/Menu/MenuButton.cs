@@ -68,7 +68,7 @@ internal partial class MenuButton : CompositeDrawable
     protected override bool OnHover(HoverEvent e)
     {
         audioEngine.PlaySamplePositional(HoverSample, null);
-        spriteContainer.MoveToX(20, 580, Easing.OutElastic);
+        spriteContainer.MoveToX(20 * LegacyExperiencePlugin.StableRatio, 580, Easing.OutElastic);
         hoverSprite.FadeIn(30, Easing.None);
         return true;
     }
