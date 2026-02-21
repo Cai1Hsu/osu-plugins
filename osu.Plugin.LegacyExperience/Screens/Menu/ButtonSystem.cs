@@ -229,7 +229,7 @@ public partial class ButtonSystem : CompositeDrawable
 
             buttons.ClearTransforms();
 
-            buttons.X = isBack ? 15 : -30;
+            buttons.X = (isBack ? 15 : -30) * LegacyExperiencePlugin.StableRatio;
             buttons.FadeIn(80)
                    .MoveToX(0, 200, Easing.Out);
         }
