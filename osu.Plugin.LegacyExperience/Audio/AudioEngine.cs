@@ -8,6 +8,7 @@ using osu.Framework.Input;
 using osu.Game;
 using osu.Game.Audio;
 using osu.Game.Skinning;
+using osu.Plugin.LegacyExperience.Seasonal;
 using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Audio;
@@ -24,6 +25,9 @@ public partial class AudioEngine : Component
     [Resolved]
     private ISkinSource? skin { get; set; }
 
+    [Resolved]
+    private ISeasonalConfig? seasonalConfig { get; set; }
+
     private InputManager inputManager = null!;
 
     private FrozenDictionary<LegacySample, ISample?> samples = FrozenDictionary<LegacySample, ISample?>.Empty;
@@ -33,6 +37,9 @@ public partial class AudioEngine : Component
     [BackgroundDependencyLoader]
     private void load()
     {
+        for (int i = 0; i < all_usages.Length; i++)
+            all_sample_infos[i] = new SampleInfo(GetSampleResourceName(all_usages[i]));
+
         skin?.SourceChanged += updateSamples;
         updateSamples();
     }
@@ -45,14 +52,28 @@ public partial class AudioEngine : Component
     }
 
     private static readonly LegacySample[] all_usages = Enum.GetValues<LegacySample>();
-    private static readonly SampleInfo[] all_sample_infos = Array.ConvertAll(all_usages, static usage => new SampleInfo(usage.GetDescription()));
+
+    private readonly SampleInfo[] all_sample_infos = new SampleInfo[all_usages.Length];
 
     private static readonly string[] fallback_namespaces = new[]
     {
         sample_namespace,
+        string.Empty,
         "Gameplay",
         "UI",
     };
+
+    private string GetSampleResourceName(LegacySample sample)
+    {
+        switch (sample)
+        {
+            case LegacySample.heartbeat when seasonalConfig?.LogoHeartbeat is { } heartbeat:
+                return heartbeat;
+
+            default:
+                return sample.GetDescription();
+        }
+    }
 
     private void updateSamples()
     {
@@ -79,7 +100,8 @@ public partial class AudioEngine : Component
 
         return skin?.GetSample(sampleInfo)
             ?? sampleInfo.LookupNames
-                .SelectMany(n => fallback_namespaces.Select(ns => frameworkAudio.Samples.Get($"{ns}/{n}")))
+                .SelectMany(n => fallback_namespaces.Select(ns => frameworkAudio.Samples.Get(
+                    string.IsNullOrEmpty(ns) ? n : $"{ns}/{n}")))
                 .FirstOrDefault(static s => s is not null);
     }
 
