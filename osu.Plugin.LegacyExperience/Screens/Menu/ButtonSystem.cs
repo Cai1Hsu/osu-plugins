@@ -257,6 +257,11 @@ public partial class ButtonSystem : CompositeDrawable
         state.Value = newState;
     }
 
+    /// <summary>
+    /// Fades out all buttons except the one with the specified name and moves them to the left so that they don't peek out from behind the logo.
+    /// This is used in screen transitions to create a nice effect of the buttons fading out towards the logo.
+    /// </summary>
+    /// <param name="name">The name of the button to keep visible.</param>
     public void FadeButtonsExcept(string name)
     {
         var button = buttonsContainer.OfType<Container<MenuButton>>()
