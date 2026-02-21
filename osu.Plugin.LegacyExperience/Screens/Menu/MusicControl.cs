@@ -1,3 +1,4 @@
+using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -7,6 +8,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Overlays;
 using osu.Game.Plugins;
@@ -33,6 +35,9 @@ public partial class MusicControl : CompositeDrawable
 
     [Resolved]
     private IBindable<WorkingBeatmap> beatmap { get; set; } = null!;
+
+    [Resolved]
+    private NowPlayingOverlay? nowPlayingOverlay { get; set; } = null!;
 
     [BackgroundDependencyLoader]
     private void load(TextureStore textures)
@@ -121,6 +126,17 @@ public partial class MusicControl : CompositeDrawable
                     new(FontAwesome.Solid.Bars)
                     {
                         TooltipText = "Jump To window",
+                        Action = () =>
+                        {
+                            if (nowPlayingOverlay is  null)
+                                return;
+
+                            nowPlayingOverlay.Show();
+                            togglePlaylist_method?.Invoke(nowPlayingOverlay, null);
+
+                            if (togglePlaylist_method is null)
+                                Logger.Log("Failed to find togglePlaylist method via reflection, Jump To window may not work correctly.", level: LogLevel.Verbose);
+                        },
                     },
                 }.Select(configureButton)
                  .Concat(new Drawable[]
@@ -136,6 +152,9 @@ public partial class MusicControl : CompositeDrawable
             },
         };
     }
+
+    private static readonly MethodInfo? togglePlaylist_method = typeof(NowPlayingOverlay).
+        GetMethod("togglePlaylist", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
     protected override void LoadComplete()
     {
