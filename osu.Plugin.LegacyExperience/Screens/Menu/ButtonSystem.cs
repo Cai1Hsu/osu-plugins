@@ -35,6 +35,8 @@ public partial class ButtonSystem : CompositeDrawable
     [BackgroundDependencyLoader]
     private void load(IdleTracker? idleTracker)
     {
+        // i donno if we should manage logo here but since it's not used anywhere else
+        // and it has to interact with the buttons a lot it makes sense to just put it here
         logo = new OsuLogo
         {
             Anchor = Anchor.Centre,
