@@ -286,7 +286,7 @@ public partial class MusicControl : CompositeDrawable
                 background = new Box
                 {
                     Size = new Vector2(134, 3) * LegacyExperiencePlugin.StableRatio,
-                    Colour = new Colour4(20, 20, 20, 128),
+                    Colour = bgDefaultColour,
                 },
                 fill = new Box
                 {
