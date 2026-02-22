@@ -274,8 +274,6 @@ public partial class ButtonSystem : CompositeDrawable
         if (!buttonContainer.IsPresent)
             return;
 
-        var screenSpacePos = buttonContainer.ToScreenSpace(buttonContainer.DrawPosition);
-
         buttonContainer.Remove(button, false);
 
         buttonContainer.MoveToOffset(new Vector2(-50, 0) * LegacyExperiencePlugin.StableRatio, 100, Easing.None)
