@@ -225,7 +225,7 @@ public partial class MainMenu : CompositeDrawable
     private void localUserChanged(APIUser user)
     {
         foreach (var panel in userPanelContainer.Children)
-            panel.FadeOut(200);
+            panel.FadeOut(200).Expire();
 
         LegacyUserPanel newPanel;
 
