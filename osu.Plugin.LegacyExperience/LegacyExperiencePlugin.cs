@@ -59,6 +59,7 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
             typeof(LegacyFpsDisplay),
         }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.SongSelect));
 
+        hookMainMenu(game);
         hookSongSelectScreen(game);
     }
 }
