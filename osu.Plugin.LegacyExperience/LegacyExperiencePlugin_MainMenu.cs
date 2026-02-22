@@ -6,7 +6,6 @@ using osu.Framework.Graphics.Containers;
 using osu.Game;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Volume;
-using osu.Game.Screens;
 using osu.Game.Screens.Menu;
 using osu.Game.Seasonal;
 using osu.Game.Plugins;
@@ -52,13 +51,8 @@ partial class LegacyExperiencePlugin
     private static readonly MethodInfo? exitFrom_Method = typeof(ScreenStack)
         .GetMethod("exitFrom", BindingFlags.Instance | BindingFlags.NonPublic);
 
-    private partial class MenuScreen : OsuScreen
+    private partial class MenuScreen : LazerMenu
     {
-        public override bool ShowFooter => false;
-        public override bool HideOverlaysOnEnter => true;
-        public override bool AllowExternalScreenChange => true;
-        public override bool? AllowGlobalTrackControl => true;
-
         public MenuScreen()
         {
             BackButtonVisibility.Value = false;
@@ -89,19 +83,19 @@ partial class LegacyExperiencePlugin
 
         public override void OnEntering(ScreenTransitionEvent e)
         {
-            base.OnEntering(e);
-
             lazerLogo?.Hide();
             createNewMenu();
         }
 
         public override void OnResuming(ScreenTransitionEvent e)
         {
-            base.OnResuming(e);
-
             // ButtonSystem.FadeButtonsExcept breaks layout, so recreate the menu instead of just resuming it.
             lazerLogo?.Hide();
             createNewMenu();
+        }
+
+        public override void OnSuspending(ScreenTransitionEvent e)
+        {
         }
 
         private void createNewMenu()
@@ -130,7 +124,7 @@ partial class LegacyExperiencePlugin
         {
             // FIXME: exit button is also blocked.
             if (allowExiting || dialogOverlay is null)
-                return base.OnExiting(e);
+                return false;
 
             dialogOverlay.Push(new ConfirmExitDialog(onConfirm: confirmExit));
 
