@@ -106,7 +106,7 @@ partial class LegacyExperiencePlugin
         {
             // FIXME: exit button is also blocked.
             if (allowExiting || dialogOverlay is null)
-                return false;
+                return base.OnExiting(e);
 
             dialogOverlay.Push(new ConfirmExitDialog(onConfirm: confirmExit));
 
