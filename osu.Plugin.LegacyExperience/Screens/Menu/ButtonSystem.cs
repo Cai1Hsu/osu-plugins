@@ -43,7 +43,7 @@ public partial class ButtonSystem : Container
 
     private MenuParallaxContainer parallaxContainer;
 
-    protected override Container<Drawable> Content => parallaxContainer; 
+    protected override Container<Drawable> Content => parallaxContainer;
 
     public ButtonSystem()
     {
@@ -172,6 +172,19 @@ public partial class ButtonSystem : Container
         // stable actually has this bug but it looks really bad in lazer so here we are.
         maskingContainer.X = logo.X;
         buttonsContainer.X = -logo.X;
+    }
+
+    protected override void UpdateAfterChildren()
+    {
+        base.UpdateAfterChildren();
+
+        // we have to count the parallax offset as well to get the correct off-center amount.
+        var localPosition = ToLocalSpace(logo.ScreenSpaceDrawQuad.Centre).X;
+        var offCenter = localPosition - (DrawSize.X / 2); // center origin
+
+        var offAmount = Math.Abs(offCenter) / (120 * LegacyExperiencePlugin.StableRatio);
+
+        logo.Visualisation.Alpha = (1 - offAmount * 0.7f) * (logo.IsKiaiTime ? 1f : 0.7f);
     }
 
     private static MenuButton configureButton(MenuButton button)
@@ -307,7 +320,7 @@ public partial class ButtonSystem : Container
         // also we don't want to stop idle state via modifier keys since that would be really annoying
         if (e.AltPressed || e.ControlPressed || e.ShiftPressed || e.SuperPressed)
             return base.OnKeyDown(e);
-        
+
         if (state.Value is ButtonSystemState.Collapsed)
             updateState(ButtonSystemState.Main);
 

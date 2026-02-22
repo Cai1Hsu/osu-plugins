@@ -226,6 +226,8 @@ public partial class OsuLogo : BeatSyncedContainer
         }
     }
 
+    public new bool IsKiaiTime => base.IsKiaiTime;
+
     public Action? Action { get; set; }
 
     protected override bool OnClick(ClickEvent e)
