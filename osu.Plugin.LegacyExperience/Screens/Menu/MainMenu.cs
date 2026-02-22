@@ -50,7 +50,7 @@ public partial class MainMenu : CompositeDrawable
         get
         {
             var version = typeof(OsuGameBase).Assembly.GetName().Version ?? new Version();
-            return $"{version.Major}{version.Minor}{version.Build}{(version.Revision > 0 ? $".{version.Revision}" : string.Empty)}";
+            return $"{version.Major}{version.Minor}{(version.Build > 0 ? $".{version.Build}" : string.Empty)}";
         }
     }
 
