@@ -184,7 +184,7 @@ public partial class ButtonSystem : Container
 
         var offAmount = Math.Abs(offCenter) / (120 * LegacyExperiencePlugin.StableRatio);
 
-        logo.Visualisation.Alpha = (1 - offAmount * 0.7f) * (logo.IsKiaiTime ? 1f : 0.7f);
+        logo.Visualisation.Alpha = Math.Clamp(1 - offAmount * 0.7f, 0, 1) * (logo.IsKiaiTime ? 1f : 0.7f);
     }
 
     private static MenuButton configureButton(MenuButton button)
