@@ -328,7 +328,7 @@ public partial class ButtonSystem : Container
                     return true;
             }
         }
-        // this condition is redudant since the first if will already switch to main state but just in case
+        // this condition is redundant since the first if will already switch to main state but just in case
         else if (state.Value is ButtonSystemState.Main)
         {
             switch (e.Key)
