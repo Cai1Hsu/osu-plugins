@@ -62,4 +62,16 @@ public partial class TestSceneMainMenu : TestSceneWithBeatmap
 
         AddStep("log out", () => dummyAPI.Logout());
     }
+
+    [Test]
+    public void TestAPIState()
+    {
+        var dummyAPI = (DummyAPIAccess)API;
+        var localUser = dummyAPI.LocalUser;
+
+        foreach (var state in Enum.GetValues<APIState>())
+        {
+            AddStep($"set API state to {state}", () => dummyAPI.SetState(state));
+        }
+    }
 }
