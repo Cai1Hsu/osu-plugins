@@ -119,6 +119,7 @@ public partial class MainMenu : CompositeDrawable
                     {
                         Anchor = Anchor.CentreRight,
                         Origin = Anchor.CentreRight,
+                        Alpha = 0,
                         Action = () => transitionScreen(() => beatmapListing?.Show()),
                     },
                     new FontText
