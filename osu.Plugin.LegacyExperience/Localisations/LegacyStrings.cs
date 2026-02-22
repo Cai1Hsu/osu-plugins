@@ -87,5 +87,19 @@ public static class LegacyStrings
 
     #endregion // ModSelection_Mod
 
+    #region Menu
+
+    public static LocalisableString Menu_Supporter => new TranslatableString(getKey(nameof(Menu_Supporter)), "You are a supporter.\nThanks for your generosity!");
+
+    public static LocalisableString Menu_BAT => new TranslatableString(getKey(nameof(Menu_BAT)), "You are a QAT/GMT.\nYou mod beatmaps and make people happy. Good job.");
+
+    public static LocalisableString Menu_RunningSeconds => new TranslatableString(getKey(nameof(Menu_RunningSeconds)), "{0} seconds");
+
+    public static LocalisableString Menu_GeneralInformation => new TranslatableString(getKey(nameof(Menu_GeneralInformation)), "You have {0} beatmaps available!\nosu! has been running for {1}.\nIt is currently {2}.");
+
+    public static LocalisableString Menu_GeneralInformation_Offline => new TranslatableString(getKey(nameof(Menu_GeneralInformation_Offline)), "You have {0} beatmaps available!\nPlease sign in to enable online facilities.");
+
+    #endregion // Menu
+
     private static string getKey(string key) => LegacyLocalisationManager.GetKey(key);
 }
