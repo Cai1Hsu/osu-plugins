@@ -101,5 +101,11 @@ public static class LegacyStrings
 
     #endregion // Menu
 
+    #region Options
+
+    public static LocalisableString Options_Online_ClickToLogin => new TranslatableString(getKey(nameof(Options_Online_ClickToLogin)), "Click to sign in!");
+
+    #endregion // Options
+
     private static string getKey(string key) => LegacyLocalisationManager.GetKey(key);
 }
