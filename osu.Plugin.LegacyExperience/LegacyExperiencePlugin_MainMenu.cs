@@ -106,6 +106,7 @@ partial class LegacyExperiencePlugin
 
         private void createNewMenu()
         {
+            // FIXME: we may want to recreate button system only.
             menuContainer.Child = new MainMenu
             {
                 Anchor = Anchor.Centre,
