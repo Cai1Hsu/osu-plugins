@@ -16,6 +16,7 @@ using osu.Game.Users;
 using osu.Game.Users.Drawables;
 using osu.Plugin.LegacyExperience.Audio;
 using osu.Plugin.LegacyExperience.Graphics;
+using osu.Plugin.LegacyExperience.Localisations;
 using osuTK;
 using LegacyFont = osu.Plugin.LegacyExperience.Graphics.LegacyFont;
 using Vector3 = System.Numerics.Vector3;
@@ -26,6 +27,8 @@ namespace osu.Plugin.LegacyExperience.Online;
 public partial class LegacyUserPanel : CompositeDrawable
 {
     public APIUser User { get; }
+
+    public bool IsGuest => User.Id == APIUser.SYSTEM_USER_ID;
 
     public Action? Action { get; set; }
 
@@ -144,16 +147,19 @@ public partial class LegacyUserPanel : CompositeDrawable
 
         if (v.NewValue)
         {
-            levelBar.FadeIn(200);
             spriteBackground.Blending = BlendingParameters.Additive;
             spriteBorder.Alpha = 0;
         }
         else
         {
-            levelBar.FadeOut(200);
             spriteBackground.Blending = BlendingParameters.Inherit;
             spriteBorder.Alpha = 1;
         }
+
+        if (v.NewValue && !IsGuest)
+            levelBar.FadeIn(200);
+        else
+            levelBar.FadeOut(200);
 
         updatePlayerInfo();
         updateDisplayedInfo();
@@ -186,6 +192,12 @@ public partial class LegacyUserPanel : CompositeDrawable
 
     private void updatePlayerInfo()
     {
+        if (IsGuest)
+        {
+            playerInfoText.Text = LegacyStrings.Options_Online_ClickToLogin;
+            return;
+        }
+
         var textBuilder = new StringBuilder();
         var userStat = User.Statistics;
 
