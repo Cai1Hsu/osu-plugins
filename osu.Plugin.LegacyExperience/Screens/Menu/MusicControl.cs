@@ -330,12 +330,21 @@ public partial class MusicControl : CompositeDrawable
             background.FadeColour(bgDefaultColour, 100);
         }
 
+        private double? lastSeekGameTime;
+
         private void seekTo(Vector2 screenSpaceCursorPos)
         {
             var localPos = ToLocalSpace(screenSpaceCursorPos);
             float progress = Math.Clamp(localPos.X / background.DrawWidth, 0, 1);
 
-            SeekRequested?.Invoke(progress);
+            if (lastSeekGameTime == null || Time.Current - lastSeekGameTime > NowPlayingOverlay.TRACK_DRAG_SEEK_DEBOUNCE)
+            {
+                SeekRequested?.Invoke(progress);
+
+                lastSeekGameTime = Time.Current;
+            }
+
+            fill.Scale = new Vector2(progress, 1);
         }
 
         protected override bool OnDragStart(DragStartEvent e)
@@ -346,6 +355,7 @@ public partial class MusicControl : CompositeDrawable
         protected override void OnDragEnd(DragEndEvent e)
         {
             // don't call base as we didn't call it in OnDragStart
+            seekTo(e.ScreenSpaceMousePosition);
         }
 
         // stable doesn't allow you drag to seek,
