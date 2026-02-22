@@ -2,13 +2,16 @@ using System.Reflection;
 using osu.Framework.Allocation;
 using osu.Framework.Screens;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Game;
-using osu.Game.Plugins;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Volume;
 using osu.Game.Screens;
 using osu.Game.Screens.Menu;
+using osu.Game.Seasonal;
+using osu.Game.Plugins;
 using MainMenu = osu.Plugin.LegacyExperience.Screens.Menu.MainMenu;
 using LazerMenu = osu.Game.Screens.Menu.MainMenu;
-using osu.Game.Overlays;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -61,6 +64,26 @@ partial class LegacyExperiencePlugin
             BackButtonVisibility.Value = false;
         }
 
+        private Container menuContainer = null!;
+
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            InternalChildren = new Drawable[]
+            {
+                SeasonalUIConfig.ENABLED ? new MainMenuSeasonalLighting() : Empty(),
+                new GlobalScrollAdjustsVolume(),
+                SeasonalUIConfig.ENABLED ? new SeasonalMenuSideFlashes() : new MenuSideFlashes(),
+                SeasonalUIConfig.ENABLED ? Empty() : new KiaiMenuFountains(),
+                menuContainer = new Container
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    RelativeSizeAxes = Axes.Both,
+                }
+            };
+        }
+
         [Resolved]
         private OsuLogo? lazerLogo { get; set; }
 
@@ -83,7 +106,7 @@ partial class LegacyExperiencePlugin
 
         private void createNewMenu()
         {
-            InternalChild = new MainMenu
+            menuContainer.Child = new MainMenu
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
