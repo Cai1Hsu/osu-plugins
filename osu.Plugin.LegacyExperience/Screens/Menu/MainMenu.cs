@@ -12,6 +12,7 @@ using osu.Game;
 using osu.Game.Configuration;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Online.Chat;
 using osu.Game.Overlays;
 using osu.Game.Plugins;
 using osu.Game.Screens;
@@ -139,7 +140,9 @@ public partial class MainMenu : CompositeDrawable
                             Bottom = 2 * LegacyExperiencePlugin.StableRatio,
                             Left = 2 * LegacyExperiencePlugin.StableRatio,
                         },
-                        Action = () => game?.OpenUrlExternally("https://osu.ppy.sh/"),
+                        // this is ppy's official website, so it should be safe to open without warning.
+                        // and it matches stable's behaviour where clicking the copyright opens the website without warning.
+                        Action = () => game?.OpenUrlExternally("https://osu.ppy.sh/", LinkWarnMode.NeverWarn),
                     },
                     new Container
                     {
