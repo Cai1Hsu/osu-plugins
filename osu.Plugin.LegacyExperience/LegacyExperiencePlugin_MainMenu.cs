@@ -53,6 +53,8 @@ partial class LegacyExperiencePlugin
     {
         public override bool ShowFooter => false;
         public override bool HideOverlaysOnEnter => true;
+        public override bool AllowExternalScreenChange => true;
+        public override bool? AllowGlobalTrackControl => true;
 
         public MenuScreen()
         {
