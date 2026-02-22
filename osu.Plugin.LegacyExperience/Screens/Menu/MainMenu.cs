@@ -75,14 +75,20 @@ public partial class MainMenu : CompositeDrawable
     [Resolved]
     private IAPIProvider api { get; set; } = null!;
 
+    private readonly IBindable<APIState> apiState = new Bindable<APIState>();
+
+    private Sprite networkStatusSprite = null!;
+
     private Container fadeContainer = null!;
 
     [BackgroundDependencyLoader]
-    private void load(OsuConfigManager config)
+    private void load(OsuConfigManager config, TextureStore textures)
     {
         RelativeSizeAxes = Axes.Both;
 
         parallaxEnabled = config.GetBindable<bool>(OsuSetting.MenuParallax);
+
+        apiState.BindTo(api.State);
 
         InternalChildren = new Drawable[]
         {
@@ -183,6 +189,14 @@ public partial class MainMenu : CompositeDrawable
                     }
                 }
             },
+            networkStatusSprite = new Sprite
+            {
+                Alpha = 0,
+                Anchor = Anchor.BottomRight,
+                Origin = Anchor.Centre,
+                Position = new Vector2(-80, -30) * LegacyExperiencePlugin.StableRatio,
+                Texture = textures.GetAutoSized("UI/menu-connection"),
+            },
             buttonSystem = new ButtonSystem
             {
                 Anchor = Anchor.Centre,
@@ -218,6 +232,26 @@ public partial class MainMenu : CompositeDrawable
             transitionScreen(() => PushScreen(new Multiplayer()));
             buttonSystem.FadeButtonsExcept("multiplayer");
         };
+
+        apiState.BindValueChanged(apiStateChanged, true);
+    }
+
+    private void apiStateChanged(ValueChangedEvent<APIState> @event)
+    {
+        switch (@event.NewValue)
+        {
+            case APIState.Failing:
+                networkStatusSprite.FadeTo(0.6f, 500, Easing.None)
+                                   .Then()
+                                   .FadeTo(0.4f, 1600)
+                                   .Loop(500);
+                break;
+
+            default:
+                networkStatusSprite.ClearTransforms();
+                networkStatusSprite.FadeOut(500);
+                break;
+        }
     }
 
     private OsuScreenStack? screenStack;
