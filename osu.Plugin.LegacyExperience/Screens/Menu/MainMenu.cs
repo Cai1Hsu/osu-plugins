@@ -227,7 +227,10 @@ public partial class MainMenu : CompositeDrawable
         buttonSystem.OnMultiplayerClick = () =>
         {
             if (api.State.Value is not APIState.Online)
+            {
                 loginOverlay?.Show();
+                return;
+            }
 
             transitionScreen(() => PushScreen(new Multiplayer()));
             buttonSystem.FadeButtonsExcept("multiplayer");
