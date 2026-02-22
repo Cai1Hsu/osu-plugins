@@ -51,7 +51,12 @@ public partial class MainMenu : CompositeDrawable
         get
         {
             var version = typeof(OsuGameBase).Assembly.GetName().Version ?? new Version();
-            return $"{version.Major}{version.Minor}{(version.Build > 0 ? $".{version.Build}" : string.Empty)}";
+
+            // stable's release version adds leading zeros to month, 
+            // but lazer only adds to day, so we add leading zeros to month to match stable's version format.
+            string minor = version.Minor.ToString().PadLeft(4, '0');
+
+            return $"{version.Major}{minor}{(version.Build > 0 ? $".{version.Build}" : string.Empty)}";
         }
     }
 
