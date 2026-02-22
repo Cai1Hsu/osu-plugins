@@ -2,6 +2,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Input;
 using osu.Framework.Input.Events;
 using osu.Game.Input;
 using osuTK;
@@ -9,7 +10,7 @@ using osuTK.Input;
 
 namespace osu.Plugin.LegacyExperience.Screens.Menu;
 
-public partial class ButtonSystem : CompositeDrawable
+public partial class ButtonSystem : Container
 {
     private readonly Bindable<ButtonSystemState> state = new Bindable<ButtonSystemState>();
     public IBindable<ButtonSystemState> State => state;
@@ -38,6 +39,20 @@ public partial class ButtonSystem : CompositeDrawable
 
     private readonly IBindable<bool> isIdle = new BindableBool();
 
+    public Bindable<bool> ParallaxEnabled => parallaxContainer.ParallaxEnabled;
+
+    private MenuParallaxContainer parallaxContainer;
+
+    protected override Container<Drawable> Content => parallaxContainer; 
+
+    public ButtonSystem()
+    {
+        AddInternal(parallaxContainer = new MenuParallaxContainer()
+        {
+            RelativeSizeAxes = Axes.Both,
+        });
+    }
+
     [BackgroundDependencyLoader]
     private void load(IdleTracker? idleTracker)
     {
@@ -52,7 +67,7 @@ public partial class ButtonSystem : CompositeDrawable
             Action = logoClicked,
         };
 
-        InternalChildren = new Drawable[]
+        Children = new Drawable[]
         {
             logo.CreateEffectsProxy(),
             maskingContainer = new Container
@@ -335,5 +350,50 @@ public partial class ButtonSystem : CompositeDrawable
         Collapsed = 0,
         Main = 1,
         Play = 2,
+    }
+
+    private partial class MenuParallaxContainer : Container
+    {
+        public readonly Bindable<bool> ParallaxEnabled = new BindableBool();
+
+        private Container content;
+
+        protected override Container<Drawable> Content => content;
+
+        public MenuParallaxContainer()
+        {
+            AddInternal(content = new Container
+            {
+                RelativeSizeAxes = Axes.Both,
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre
+            });
+        }
+
+        private InputManager inputManager = null!;
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            inputManager = GetContainingInputManager();
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (ParallaxEnabled.Value)
+            {
+                var localPosition = ToLocalSpace(inputManager.CurrentState.Mouse.Position);
+                var centerOffset = localPosition - (content.DrawSize / 2);
+
+                content.Position = -centerOffset / 60f;
+            }
+            else
+            {
+                content.Position = Vector2.Zero;
+            }
+        }
     }
 }
