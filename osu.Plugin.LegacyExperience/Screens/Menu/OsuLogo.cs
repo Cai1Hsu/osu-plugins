@@ -35,16 +35,36 @@ public partial class OsuLogo : BeatSyncedContainer
 
     private CircularContainer logoContainer = null!;
 
-    private MenuVisualisation visualisation = null!;
+    private MenuVisualisation visualisation;
 
     public MenuVisualisation Visualisation => visualisation;
+
+    public Drawable Ripples => rippleContainer;
 
     [Resolved]
     private ISkinSource? skin { get; set; } = null;
 
-    private Container rippleContainer = null!;
+    private readonly Container rippleContainer;
 
-    private DrawablePool<MenuRipple> ripplePool = null!;
+    private readonly DrawablePool<MenuRipple> ripplePool;
+
+    public OsuLogo()
+    {
+        ripplePool = new DrawablePool<MenuRipple>(10);
+        rippleContainer = new Container
+        {
+            Anchor = Anchor.Centre,
+            Origin = Anchor.Centre,
+            RelativeSizeAxes = Axes.Both,
+        };
+        visualisation = new LogoVisualisation
+        {
+            Anchor = Anchor.Centre,
+            Origin = Anchor.Centre,
+            AlwaysPresent = true,
+            RelativeSizeAxes = Axes.Both,
+        };
+    }
 
     [BackgroundDependencyLoader]
     private void load(TextureStore texture, IAPIProvider api)
@@ -57,22 +77,9 @@ public partial class OsuLogo : BeatSyncedContainer
 
         InternalChildren = new Drawable[]
         {
-            // 10 maybe a bit too much, but it depends on the BPM.
-            ripplePool = new DrawablePool<MenuRipple>(10),
-            rippleContainer = new Container
-            {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-                RelativeSizeAxes = Axes.Both,
-            },
-            visualisation = new LogoVisualisation
-            {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-                AlwaysPresent = true,
-                // doesn't matter
-                RelativeSizeAxes = Axes.Both,
-            },
+            ripplePool,
+            rippleContainer,
+            visualisation,
             logoContainer = new CircularContainer
             {
                 Anchor = Anchor.Centre,
@@ -218,6 +225,8 @@ public partial class OsuLogo : BeatSyncedContainer
             visualisation.Radius = valueAt(1.05f + hoverBonus, 1.08f + hoverBonus, 1 - smoothedBeatProgress, Easing.InQuad) * 150f * LegacyExperiencePlugin.StableRatio;
         }
     }
+
+    public new bool IsKiaiTime => base.IsKiaiTime;
 
     public Action? Action { get; set; }
 
