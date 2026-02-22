@@ -17,6 +17,7 @@ public static class GameExtensions
             game.InjectDependency(out LegacyResourceManager _, static () => new());
             game.InjectDependency(out LegacyLocalisationManager _, static () => new());
             game.InjectDependency(out AudioEngine _, static () => new());
+            game.InjectDependency(out TransitionManager _, static () => new());
             game.CacheDependency(out INativeText _, CreateNativeText, true);
         });
     }
