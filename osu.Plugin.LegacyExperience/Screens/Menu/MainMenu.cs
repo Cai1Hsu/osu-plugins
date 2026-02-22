@@ -76,12 +76,6 @@ public partial class MainMenu : CompositeDrawable
         InternalChildren = new Drawable[]
         {
             amplitudesProvider,
-            buttonSystem = new ButtonSystem
-            {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-                ParallaxEnabled = { BindTarget = parallaxEnabled },
-            },
             fadeContainer = new Container
             {
                 RelativeSizeAxes = Axes.Both,
@@ -176,6 +170,12 @@ public partial class MainMenu : CompositeDrawable
                         }
                     }
                 }
+            },
+            buttonSystem = new ButtonSystem
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                ParallaxEnabled = { BindTarget = parallaxEnabled },
             },
         };
 
