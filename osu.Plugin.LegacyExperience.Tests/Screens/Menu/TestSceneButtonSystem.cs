@@ -48,6 +48,12 @@ public partial class TestSceneButtonSystem : TestSceneWithBeatmap
     }
 
     [Test]
+    public void TestParallaxEffect()
+    {
+        AddToggleStep("toggle parallax", value => buttonSystem.ParallaxEnabled.Value = value);
+    }
+
+    [Test]
     public void TestFadeButtonsExcept()
     {
         string[] buttons =
