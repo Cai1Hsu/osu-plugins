@@ -69,10 +69,16 @@ public partial class MainMenu : CompositeDrawable
     [Resolved]
     private SettingsOverlay? settings { get; set; }
 
+    [Resolved]
+    private LoginOverlay? loginOverlay { get; set; }
+
+    [Resolved]
+    private IAPIProvider api { get; set; } = null!;
+
     private Container fadeContainer = null!;
 
     [BackgroundDependencyLoader]
-    private void load(OsuConfigManager config, IAPIProvider api)
+    private void load(OsuConfigManager config)
     {
         RelativeSizeAxes = Axes.Both;
 
@@ -206,6 +212,9 @@ public partial class MainMenu : CompositeDrawable
         };
         buttonSystem.OnMultiplayerClick = () =>
         {
+            if (api.State.Value is not APIState.Online)
+                loginOverlay?.Show();
+
             transitionScreen(() => PushScreen(new Multiplayer()));
             buttonSystem.FadeButtonsExcept("multiplayer");
         };
@@ -240,6 +249,7 @@ public partial class MainMenu : CompositeDrawable
             Anchor = Anchor.TopLeft,
             Origin = Anchor.TopLeft,
             ExtendedStyle = { Value = true },
+            Action = () => loginOverlay?.Show(),
         });
 
         newPanel.FadeInFromZero(200);
