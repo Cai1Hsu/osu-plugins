@@ -39,6 +39,8 @@ public partial class OsuLogo : BeatSyncedContainer
 
     public MenuVisualisation Visualisation => visualisation;
 
+    public Drawable Ripples => rippleContainer;
+
     [Resolved]
     private ISkinSource? skin { get; set; } = null;
 
@@ -63,21 +65,6 @@ public partial class OsuLogo : BeatSyncedContainer
             RelativeSizeAxes = Axes.Both,
         };
     }
-
-    /// <summary>
-    /// Creates a proxy container for the ripple and visualisation effects.
-    /// This allows the effects to be drawn at a different position in the scene graph
-    /// (e.g. behind menu buttons) while remaining in sync with the logo's position.
-    /// </summary>
-    public Drawable CreateEffectsProxy() => new Container
-    {
-        RelativeSizeAxes = Axes.Both,
-        Children = new Drawable[]
-        {
-            rippleContainer.CreateProxy(),
-            visualisation.CreateProxy(),
-        }
-    };
 
     [BackgroundDependencyLoader]
     private void load(TextureStore texture, IAPIProvider api)

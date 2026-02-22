@@ -69,7 +69,8 @@ public partial class ButtonSystem : Container
 
         Children = new Drawable[]
         {
-            logo.CreateEffectsProxy(),
+            logo.Ripples.CreateProxy(),
+            logo.Visualisation.CreateProxy(),
             maskingContainer = new Container
             {
                 Anchor = Anchor.Centre,
