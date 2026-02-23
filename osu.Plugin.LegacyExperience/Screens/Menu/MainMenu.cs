@@ -26,6 +26,7 @@ using osu.Plugin.LegacyExperience.Graphics;
 using osu.Plugin.LegacyExperience.Localisations;
 using osu.Plugin.LegacyExperience.Online;
 using osuTK;
+using static osu.Plugin.LegacyExperience.Screens.Menu.ButtonSystem;
 using LazerLogo = osu.Game.Screens.Menu.OsuLogo;
 
 namespace osu.Plugin.LegacyExperience.Screens.Menu;
@@ -84,6 +85,8 @@ public partial class MainMenu : CompositeDrawable
     private Sprite networkStatusSprite = null!;
 
     private Container fadeContainer = null!;
+
+    private IBindable<ButtonSystemState> buttonSystemState = new Bindable<ButtonSystemState>();
 
     [BackgroundDependencyLoader]
     private void load(OsuConfigManager config, TextureStore textures, RealmDetachedBeatmapStore beatmapStore)
@@ -259,6 +262,25 @@ public partial class MainMenu : CompositeDrawable
         beatmapSets = beatmapStore.GetBeatmapSets(null);
 
         beatmapSets.BindCollectionChanged((_, _) => beatmapCount = beatmapSets.Sum(static set => set.Beatmaps.Count), true);
+
+        buttonSystemState.BindTo(buttonSystem.State);
+
+        buttonSystemState.BindValueChanged(buttonSystemStateChanged, true);
+    }
+
+    private void buttonSystemStateChanged(ValueChangedEvent<ButtonSystemState> @event)
+    {
+        switch (@event.NewValue)
+        {
+            case ButtonSystemState.Collapsed:
+                generalText.FadeOut(500);
+                break;
+
+            case ButtonSystemState.Main:
+            case ButtonSystemState.Play:
+                generalText.FadeIn(500);
+                break;
+        }
     }
 
     private void apiStateChanged(ValueChangedEvent<APIState> @event)
