@@ -26,6 +26,7 @@ using osu.Plugin.LegacyExperience.Graphics;
 using osu.Plugin.LegacyExperience.Localisations;
 using osu.Plugin.LegacyExperience.Online;
 using osuTK;
+using Realms;
 using static osu.Plugin.LegacyExperience.Screens.Menu.ButtonSystem;
 using LazerLogo = osu.Game.Screens.Menu.OsuLogo;
 
@@ -88,8 +89,11 @@ public partial class MainMenu : CompositeDrawable
 
     private IBindable<ButtonSystemState> buttonSystemState = new Bindable<ButtonSystemState>();
 
+    [Resolved]
+    private RealmAccess realm { get; set; } = null!;
+
     [BackgroundDependencyLoader]
-    private void load(OsuConfigManager config, TextureStore textures, RealmDetachedBeatmapStore beatmapStore)
+    private void load(OsuConfigManager config, TextureStore textures)
     {
         RelativeSizeAxes = Axes.Both;
 
@@ -135,6 +139,7 @@ public partial class MainMenu : CompositeDrawable
                         t.Shadow = true;
                     })
                     {
+                        Alpha = 0,
                         Position = new Vector2(210f, 0f) * LegacyExperiencePlugin.StableRatio,
                         ParagraphSpacing = 0,
                     },
@@ -259,26 +264,35 @@ public partial class MainMenu : CompositeDrawable
 
         apiState.BindValueChanged(apiStateChanged, true);
 
-        beatmapSets = beatmapStore.GetBeatmapSets(null);
-
-        beatmapSets.BindCollectionChanged((_, _) => beatmapCount = beatmapSets.Sum(static set => set.Beatmaps.Count), true);
-
         buttonSystemState.BindTo(buttonSystem.State);
 
-        buttonSystemState.BindValueChanged(buttonSystemStateChanged, true);
+        buttonSystemState.BindValueChanged(_ => buttonSystemStateChanged(), true);
+
+        realmSubscription = realm.RegisterForNotifications(r => r.All<BeatmapInfo>(), beatmasChanged);
     }
 
-    private void buttonSystemStateChanged(ValueChangedEvent<ButtonSystemState> @event)
-    {
-        switch (@event.NewValue)
-        {
-            case ButtonSystemState.Collapsed:
-                generalText.FadeOut(500);
-                break;
+    private IDisposable? realmSubscription;
 
+    private int? beatmapCount = null;
+
+    private void beatmasChanged(IRealmCollection<BeatmapInfo> sender, ChangeSet? changes)
+    {
+        beatmapCount = sender.Count;
+        buttonSystemStateChanged();
+    }
+
+    private void buttonSystemStateChanged()
+    {
+        switch (@buttonSystemState.Value)
+        {
+            case { } when !beatmapCount.HasValue:
             case ButtonSystemState.Main:
             case ButtonSystemState.Play:
                 generalText.FadeIn(500);
+                break;
+
+            case ButtonSystemState.Collapsed:
+                generalText.FadeOut(500);
                 break;
         }
     }
@@ -382,9 +396,6 @@ public partial class MainMenu : CompositeDrawable
         updateGeneral();
     }
 
-    private IBindableList<BeatmapSetInfo> beatmapSets = null!;
-    private int beatmapCount = 0;
-
     [Resolved]
     private OsuGameBase gameBase { get; set; } = null!;
 
@@ -394,7 +405,7 @@ public partial class MainMenu : CompositeDrawable
     {
         int runningSeconds = (int)gameBase.Time.Current / 1000;
 
-        if (runningSeconds == lastSeconds)
+        if (runningSeconds == lastSeconds || !beatmapCount.HasValue)
             return;
 
         lastSeconds = runningSeconds;
@@ -403,27 +414,34 @@ public partial class MainMenu : CompositeDrawable
 
         if (localUser.Value.Id != APIUser.SYSTEM_USER_ID)
         {
-            int hours = runningSeconds / 3600000;
-            int minutes = runningSeconds % 3600000 / 60000;
-            int seconds = runningSeconds % 60000;
+            int hours = runningSeconds / 3600;
+            int minutes = runningSeconds % 3600 / 60;
+            int seconds = runningSeconds % 60;
 
             LocalisableString runningTime;
 
             if (hours > 0)
                 runningTime = $"{hours:00}:{minutes:00}:{seconds:00}";
             else if (minutes > 0)
-                runningTime = $"{minutes}m {seconds}s";
+                runningTime = $"{minutes:00}:{seconds:00}";
             else
                 runningTime = LegacyStrings.Menu_RunningSeconds(seconds);
 
-            text = LegacyStrings.Menu_GeneralInformation(beatmapCount, runningTime, DateTime.Now.ToShortTimeString());
+            text = LegacyStrings.Menu_GeneralInformation(beatmapCount.Value, runningTime, DateTime.Now.ToShortTimeString());
         }
         else
         {
-            text = LegacyStrings.Menu_GeneralInformation_Offline(beatmapCount);
+            text = LegacyStrings.Menu_GeneralInformation_Offline(beatmapCount.Value);
         }
 
         generalText.Text = text;
+    }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        realmSubscription?.Dispose();
+
+        base.Dispose(isDisposing);
     }
 
     private partial class MenuIcon : Sprite, IHasLegacyTooltip
