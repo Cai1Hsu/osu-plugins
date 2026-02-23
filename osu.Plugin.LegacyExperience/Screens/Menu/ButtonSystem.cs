@@ -322,7 +322,10 @@ public partial class ButtonSystem : Container
             return base.OnKeyDown(e);
 
         if (state.Value is ButtonSystemState.Collapsed)
+        {
             updateState(ButtonSystemState.Main);
+            return true;
+        }
 
         if (state.Value is ButtonSystemState.Play)
         {
@@ -342,7 +345,6 @@ public partial class ButtonSystem : Container
                     return true;
             }
         }
-        // this condition is redundant since the first if will already switch to main state but just in case
         else if (state.Value is ButtonSystemState.Main)
         {
             switch (e.Key)

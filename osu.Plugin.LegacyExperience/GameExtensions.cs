@@ -14,6 +14,8 @@ public static class GameExtensions
         {
             var game = (OsuGameBase)d;
 
+            // register TransitionManager at frist as the main menu requires it and it's quite lightweight compared to the other dependencies.
+            game.InjectDependency(out TransitionManager _, static () => new());
             game.InjectDependency(out LegacyResourceManager _, static () => new());
             game.InjectDependency(out LegacyLocalisationManager _, static () => new());
             game.InjectDependency(out AudioEngine _, static () => new());
