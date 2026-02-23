@@ -132,13 +132,9 @@ public partial class ImageSharpNativeText : NativeTextBase
     /// </summary>
     public void Warmup()
     {
-        CreateText(new NativeText.TextCreationParameters
-        {
-            Text = "Load", // must be non-null and non-empty to trigger font collection.
-            Size = 14,
-            FontFace = NativeText.LegacyFontFace.DefaultRegular,
-            RenderFlags = NativeText.TextRenderFlags.MeasureUnrestrictedBounds,
-        }, out _);
+        var font = SystemFonts.Families.First().CreateFont(12);
+        var textOptions = new RichTextOptions(font);
+        TextMeasurer.MeasureAdvance("Load", textOptions);
     }
 
     /// <summary>
