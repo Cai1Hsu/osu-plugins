@@ -285,20 +285,23 @@ public partial class MainMenu : CompositeDrawable
 
     private void apiStateChanged(ValueChangedEvent<APIState> @event)
     {
-        switch (@event.NewValue)
+        Scheduler.AddOnce(state =>
         {
-            case APIState.Failing:
-                networkStatusSprite.FadeTo(0.6f, 500, Easing.None)
-                                   .Then()
-                                   .FadeTo(0.4f, 1600)
-                                   .Loop(500);
-                break;
+            switch (state)
+            {
+                case APIState.Failing:
+                    networkStatusSprite.FadeTo(0.6f, 500, Easing.None)
+                                    .Then()
+                                    .FadeTo(0.4f, 1600)
+                                    .Loop(500);
+                    break;
 
-            default:
-                networkStatusSprite.ClearTransforms();
-                networkStatusSprite.FadeOut(500);
-                break;
-        }
+                default:
+                    networkStatusSprite.ClearTransforms();
+                    networkStatusSprite.FadeOut(500);
+                    break;
+            }
+        }, @event.NewValue);
     }
 
     private OsuScreenStack? screenStack;
