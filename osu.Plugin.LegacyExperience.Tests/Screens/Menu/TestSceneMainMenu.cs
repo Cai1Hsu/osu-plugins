@@ -1,25 +1,18 @@
 using osu.Framework.Graphics;
 using osu.Framework.Allocation;
-using osu.Game.Tests.Visual;
 using osu.Plugin.LegacyExperience.Screens.Menu;
 using NUnit.Framework;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Users;
-using osu.Game.Database;
 
 namespace osu.Plugin.LegacyExperience.Tests.Screens.Menu;
 
 public partial class TestSceneMainMenu : TestSceneWithBeatmap
 {
-    [Cached]
-    private RealmDetachedBeatmapStore beatmapStore = new RealmDetachedBeatmapStore();
-
     [BackgroundDependencyLoader]
     private void load()
     {
-        Add(beatmapStore);
-
         Add(new MainMenu
         {
             Anchor = Anchor.Centre,
