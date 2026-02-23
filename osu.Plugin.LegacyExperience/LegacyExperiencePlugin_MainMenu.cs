@@ -66,15 +66,15 @@ partial class LegacyExperiencePlugin
             InternalChildren = new Drawable[]
             {
                 SeasonalUIConfig.ENABLED ? new MainMenuSeasonalLighting() : Empty(),
-                new GlobalScrollAdjustsVolume(),
                 SeasonalUIConfig.ENABLED ? new SeasonalMenuSideFlashes() : new MenuSideFlashes(),
-                SeasonalUIConfig.ENABLED ? Empty() : new KiaiMenuFountains(),
                 menuContainer = new Container
                 {
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
                     RelativeSizeAxes = Axes.Both,
-                }
+                },
+                new GlobalScrollAdjustsVolume(),
+                SeasonalUIConfig.ENABLED ? Empty() : new KiaiMenuFountains(),
             };
         }
 
