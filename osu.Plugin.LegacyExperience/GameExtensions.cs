@@ -1,3 +1,4 @@
+using osu.Framework.Logging;
 using osu.Game;
 using osu.Game.Plugins;
 using osu.Plugin.LegacyExperience.Audio;
@@ -24,7 +25,11 @@ public static class GameExtensions
             // see ImageSharpNativeText.Warmup for details.
             // At this time isnt should be loaded and ready to be warmed up, so we can safely run it in a separate thread to avoid blocking the update thread.
             if (nt is ImageSharpNativeText isnt)
-                Task.Run(isnt.Warmup);
+            {
+                Task.Run(isnt.Warmup).ContinueWith(
+                    t => Logger.Log($"ImageSharpNativeText warmup failed: {t.Exception}", LoggingTarget.Runtime, LogLevel.Error),
+                    TaskContinuationOptions.OnlyOnFaulted);
+            }
         });
     }
 
