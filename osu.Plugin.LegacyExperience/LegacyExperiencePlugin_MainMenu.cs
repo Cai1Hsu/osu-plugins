@@ -11,6 +11,7 @@ using osu.Game.Seasonal;
 using osu.Game.Plugins;
 using MainMenu = osu.Plugin.LegacyExperience.Screens.Menu.MainMenu;
 using LazerMenu = osu.Game.Screens.Menu.MainMenu;
+using osuTK.Graphics;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -66,7 +67,7 @@ partial class LegacyExperiencePlugin
             InternalChildren = new Drawable[]
             {
                 SeasonalUIConfig.ENABLED ? new MainMenuSeasonalLighting() : Empty(),
-                SeasonalUIConfig.ENABLED ? new SeasonalMenuSideFlashes() : new MenuSideFlashes(),
+                SeasonalUIConfig.ENABLED ? new SeasonalMenuSideFlashes() : new LegacyMenuSideFlashes(),
                 menuContainer = new Container
                 {
                     Anchor = Anchor.Centre,
@@ -130,5 +131,10 @@ partial class LegacyExperiencePlugin
 
             return true;
         }
+    }
+
+    private partial class LegacyMenuSideFlashes : MenuSideFlashes
+    {
+        protected override Color4 GetBaseColour() => Colour4.White;
     }
 }
