@@ -64,15 +64,8 @@ public partial class FontText : SpriteText
 
         private static bool shouldScale(char c)
         {
-            return checkCjkCharacter(c);
-        }
-
-        // the ranges here are based on the ranges used by NativeText in stable.
-        private static bool checkCjkCharacter(char c)
-        {
-            return (c >= '一' && c <= '鿿') ||
-                (c >= '㐀' && c <= '䷿') ||
-                (c >= '豈' && c <= '\ufaff');
+            return NativeText.DetectScript(new ReadOnlySpan<char>(in c)) 
+                is NativeText.ScriptType.Japanese or NativeText.ScriptType.Korean or NativeText.ScriptType.CjkUnified;
         }
 
         // TODO: the calculation here may be incorrect, but looks good enough for now.
