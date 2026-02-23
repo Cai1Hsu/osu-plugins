@@ -199,6 +199,11 @@ public partial class MainMenu : CompositeDrawable
                                 TextureName = "UI/menu-bat",
                             },
                         }
+                    },
+                    new LegacyFpsDisplay
+                    {
+                        Anchor = Anchor.BottomRight,
+                        Origin = Anchor.BottomRight,
                     }
                 }
             },
