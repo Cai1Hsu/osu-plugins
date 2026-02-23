@@ -133,7 +133,10 @@ public partial class ImageSharpNativeText : NativeTextBase
     public void Warmup()
     {
         var font = SystemFonts.Families.First().CreateFont(12);
-        var textOptions = new RichTextOptions(font);
+        var textOptions = new RichTextOptions(font)
+        {
+            FallbackFontFamilies = fallbackFontFamilies,
+        };
         TextMeasurer.MeasureAdvance("Load", textOptions);
     }
 
