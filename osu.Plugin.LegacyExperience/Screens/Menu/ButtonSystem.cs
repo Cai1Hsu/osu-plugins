@@ -322,7 +322,10 @@ public partial class ButtonSystem : Container
             return base.OnKeyDown(e);
 
         if (state.Value is ButtonSystemState.Collapsed)
+        {
             updateState(ButtonSystemState.Main);
+            return true;
+        }
 
         if (state.Value is ButtonSystemState.Play)
         {
