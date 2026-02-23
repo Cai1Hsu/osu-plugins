@@ -19,7 +19,12 @@ public static class GameExtensions
             game.InjectDependency(out LegacyResourceManager _, static () => new());
             game.InjectDependency(out LegacyLocalisationManager _, static () => new());
             game.InjectDependency(out AudioEngine _, static () => new());
-            game.CacheDependency(out INativeText _, CreateNativeText, true);
+            game.CacheDependency(out INativeText nt, CreateNativeText, true);
+
+            // see ImageSharpNativeText.Warmup for details.
+            // At this time isnt should be loaded and ready to be warmed up, so we can safely run it in a separate thread to avoid blocking the update thread.
+            if (nt is ImageSharpNativeText isnt)
+                Task.Run(isnt.Warmup);
         });
     }
 
