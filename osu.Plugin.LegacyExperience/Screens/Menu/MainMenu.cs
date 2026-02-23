@@ -9,7 +9,9 @@ using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Screens;
 using osu.Game;
+using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Game.Database;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Chat;
@@ -60,6 +62,8 @@ public partial class MainMenu : CompositeDrawable
         }
     }
 
+    private LegacyTextFlowContainer generalText = null!;
+
     [Resolved]
     private OsuGame? game { get; set; } = null;
 
@@ -82,7 +86,7 @@ public partial class MainMenu : CompositeDrawable
     private Container fadeContainer = null!;
 
     [BackgroundDependencyLoader]
-    private void load(OsuConfigManager config, TextureStore textures)
+    private void load(OsuConfigManager config, TextureStore textures, RealmDetachedBeatmapStore beatmapStore)
     {
         RelativeSizeAxes = Axes.Both;
 
@@ -121,6 +125,15 @@ public partial class MainMenu : CompositeDrawable
                         Anchor = Anchor.TopLeft,
                         Origin = Anchor.TopLeft,
                         AutoSizeAxes = Axes.Both,
+                    },
+                    generalText = new LegacyTextFlowContainer(static t =>
+                    {
+                        t.Font = LegacyFont.Default.With(size: 14);
+                        t.Shadow = true;
+                    })
+                    {
+                        Position = new Vector2(210f, 0f) * LegacyExperiencePlugin.StableRatio,
+                        ParagraphSpacing = 0,
                     },
                     new MusicControl
                     {
@@ -237,6 +250,10 @@ public partial class MainMenu : CompositeDrawable
         };
 
         apiState.BindValueChanged(apiStateChanged, true);
+
+        beatmapSets = beatmapStore.GetBeatmapSets(null);
+
+        beatmapSets.BindCollectionChanged((_, _) => beatmapCount = beatmapSets.Sum(static set => set.Beatmaps.Count), true);
     }
 
     private void apiStateChanged(ValueChangedEvent<APIState> @event)
@@ -326,6 +343,57 @@ public partial class MainMenu : CompositeDrawable
 
             osuDirectButton.FadeOut(100);
         }
+    }
+
+    protected override void Update()
+    {
+        base.Update();
+
+        updateGeneral();
+    }
+
+    private IBindableList<BeatmapSetInfo> beatmapSets = null!;
+    private int beatmapCount = 0;
+
+    [Resolved]
+    private OsuGameBase gameBase { get; set; } = null!;
+
+    private int lastSeconds;
+
+    private void updateGeneral()
+    {
+        int runningSeconds = (int)gameBase.Time.Current / 1000;
+
+        if (runningSeconds == lastSeconds)
+            return;
+
+        lastSeconds = runningSeconds;
+
+        LocalisableString text;
+
+        if (localUser.Value.Id != APIUser.SYSTEM_USER_ID)
+        {
+            int hours = runningSeconds / 3600000;
+            int minutes = runningSeconds % 3600000 / 60000;
+            int seconds = runningSeconds % 60000;
+
+            LocalisableString runningTime;
+
+            if (hours > 0)
+                runningTime = $"{hours:00}:{minutes:00}:{seconds:00}";
+            else if (minutes > 0)
+                runningTime = $"{minutes}m {seconds}s";
+            else
+                runningTime = LegacyStrings.Menu_RunningSeconds(seconds);
+
+            text = LegacyStrings.Menu_GeneralInformation(beatmapCount, runningTime, DateTime.Now.ToShortTimeString());
+        }
+        else
+        {
+            text = LegacyStrings.Menu_GeneralInformation_Offline(beatmapCount);
+        }
+
+        generalText.Text = text;
     }
 
     private partial class MenuIcon : Sprite, IHasLegacyTooltip
