@@ -127,6 +127,20 @@ public partial class ImageSharpNativeText : NativeTextBase
     private const float target_dpi = 96f;
 
     /// <summary>
+    /// ImageSharp takes a relatively long time to collect fonts during its first font rendering (primarily due to TextMeasurer, ~2s).
+    /// To avoid game freezes when entering main menu, we trigger font collection asynchronously during loading.
+    /// </summary>
+    public void Warmup()
+    {
+        var font = SystemFonts.Families.First().CreateFont(12);
+        var textOptions = new RichTextOptions(font)
+        {
+            FallbackFontFamilies = fallbackFontFamilies,
+        };
+        TextMeasurer.MeasureAdvance("Load", textOptions);
+    }
+
+    /// <summary>
     /// Creates a texture containing the rendered text using ImageSharp backend.
     /// </summary>
     /// <param name="parameters">The text creation parameters.</param>
