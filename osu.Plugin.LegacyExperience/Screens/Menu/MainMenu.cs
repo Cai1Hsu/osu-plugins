@@ -268,14 +268,14 @@ public partial class MainMenu : CompositeDrawable
 
         buttonSystemState.BindValueChanged(_ => buttonSystemStateChanged(), true);
 
-        realmSubscription = realm.RegisterForNotifications(r => r.All<BeatmapInfo>(), beatmasChanged);
+        realmSubscription = realm.RegisterForNotifications(r => r.All<BeatmapInfo>(), beatmapsChanged);
     }
 
     private IDisposable? realmSubscription;
 
     private int? beatmapCount = null;
 
-    private void beatmasChanged(IRealmCollection<BeatmapInfo> sender, ChangeSet? changes)
+    private void beatmapsChanged(IRealmCollection<BeatmapInfo> sender, ChangeSet? changes)
     {
         beatmapCount = sender.Count;
         buttonSystemStateChanged();
@@ -283,7 +283,7 @@ public partial class MainMenu : CompositeDrawable
 
     private void buttonSystemStateChanged()
     {
-        switch (@buttonSystemState.Value)
+        switch (buttonSystemState.Value)
         {
             case { } when !beatmapCount.HasValue:
             case ButtonSystemState.Main:
