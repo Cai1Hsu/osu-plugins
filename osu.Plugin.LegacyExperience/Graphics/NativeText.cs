@@ -135,4 +135,47 @@ public static partial class NativeText
             UnrestrictedBoundsSize != Vector2.Zero &&
             (DrawSize.X < UnrestrictedBoundsSize.X || DrawSize.Y < UnrestrictedBoundsSize.Y);
     }
+
+    /// <summary>
+    /// Detects the primary script type of the text based on the first non-Latin character.
+    /// Extracted from unicode.org scripts data, may differ slightly from stable's implementation.
+    /// </summary>
+    public static ScriptType DetectScript(ReadOnlySpan<char> text)
+    {
+        foreach (char c in text)
+        {
+            // Japanese: Hiragana + Katakana
+            if (c is >= '\u3040' and <= '\u309F' or >= '\u30A0' and <= '\u30FF')
+                return ScriptType.Japanese;
+
+            // Korean: Hangul syllables + Jamo
+            if (c is >= '\uAC00' and <= '\uD7AF' or >= '\u1100' and <= '\u11FF')
+                return ScriptType.Korean;
+
+            if (c is >= '\u0400' and <= '\u04FF' or // Cyrillic
+                     >= '\u0500' and <= '\u052F' or // Cyrillic Supplement
+                     >= '\u2DE0' and <= '\u2DFF' or // Cyrillic Extended-A
+                     >= '\uA640' and <= '\uA69F' or // Cyrillic Extended-B
+                     >= '\u1C80' and <= '\u1C8F' or // Cyrillic Extended-C
+                                                    // Skipping Cyrillic Extended-D (U+1E030 to U+1E08F) as out of 16-bit char range
+                     >= '\uFE2E' and <= '\uFE2F' || // Combining Half Marks
+                     c is '\u1D2B' or '\u1D78') // Phonetic Extensions (Cyrillic chars only) 
+                return ScriptType.Cyrillic;
+
+            // CJK Unified Ideographs + Extension A
+            if (c is >= '\u4E00' and <= '\u9FFF' or >= '\u3400' and <= '\u4DBF')
+                return ScriptType.CjkUnified;
+        }
+
+        return ScriptType.Latin;
+    }
+
+    public enum ScriptType
+    {
+        Latin,
+        Japanese,
+        Korean,
+        Cyrillic,
+        CjkUnified,
+    }
 }
