@@ -319,7 +319,14 @@ public partial class ButtonSystem : Container
         // ignore keybinds with modifiers to avoid interfering with user keybinds (e.g. ctrl+e to open editor)
         // also we don't want to stop idle state via modifier keys since that would be really annoying
         if (e.Repeat || e.AltPressed || e.ControlPressed || e.ShiftPressed || e.SuperPressed)
-            return base.OnKeyDown(e);
+            return false;
+
+        // copied from lazer's ButtonSystem.
+        if (e.Key >= Key.F1 && e.Key <= Key.F35)
+            return false;
+
+        if (e.Key >= Key.Mute && e.Key <= Key.TrackNext)
+            return false;
 
         if (state.Value is ButtonSystemState.Collapsed)
         {
