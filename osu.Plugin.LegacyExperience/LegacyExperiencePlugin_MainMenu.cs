@@ -126,6 +126,7 @@ partial class LegacyExperiencePlugin
         public override void OnSuspending(ScreenTransitionEvent e)
         {
             OsuScreen_OnSuspending(this, e);
+            lazerLogo?.FinishTransforms(true);
         }
 
         private void createNewMenu()
