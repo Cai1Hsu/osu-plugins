@@ -12,6 +12,8 @@ using osu.Game.Plugins;
 using MainMenu = osu.Plugin.LegacyExperience.Screens.Menu.MainMenu;
 using LazerMenu = osu.Game.Screens.Menu.MainMenu;
 using osuTK.Graphics;
+using osu.Game.Screens;
+using osu.Game.Screens.Backgrounds;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -45,14 +47,14 @@ partial class LegacyExperiencePlugin
             });
         }, new Type[] { typeof(LazerMenu) });
     }
-    
+
     private static readonly FieldInfo? logoProxy_Field = typeof(LazerMenu)
         .GetField("logoProxy", BindingFlags.Instance | BindingFlags.NonPublic);
 
     private static readonly MethodInfo? exitFrom_Method = typeof(ScreenStack)
         .GetMethod("exitFrom", BindingFlags.Instance | BindingFlags.NonPublic);
 
-    private partial class MenuScreen : LazerMenu
+    private unsafe partial class MenuScreen : LazerMenu
     {
         public MenuScreen()
         {
@@ -82,21 +84,45 @@ partial class LegacyExperiencePlugin
         [Resolved]
         private OsuLogo? lazerLogo { get; set; }
 
+        [Resolved]
+        private MusicController musicController { get; set; } = null!;
+
+        private static readonly delegate* managed<OsuScreen, ScreenTransitionEvent, void> OsuScreen_OnEntering =
+            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)resolveLifecyclePointer(nameof(OsuScreen.OnEntering), typeof(ScreenTransitionEvent));
+
         public override void OnEntering(ScreenTransitionEvent e)
         {
+            // see https://stackoverflow.com/a/32562464
+            // calling base of base without invoking base.
+            // OsuScreen's implementations manages things like music, background, etc. which we want to keep working.
+            // But we don't want LazerMenu's OnEntering to run, as it will mess up our menu. So we call OsuScreen's OnEntering directly.
+            OsuScreen_OnEntering(this, e);
+
             lazerLogo?.Hide();
             createNewMenu();
         }
 
+        private static readonly delegate* managed<OsuScreen, ScreenTransitionEvent, void> OsuScreen_OnResuming =
+            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)resolveLifecyclePointer(nameof(OsuScreen.OnResuming), typeof(ScreenTransitionEvent));
         public override void OnResuming(ScreenTransitionEvent e)
         {
+            OsuScreen_OnResuming(this, e);
+
+            ApplyToBackground(b => (b as BackgroundScreenDefault)?.Next());
+
+            musicController.EnsurePlayingSomething();
+
             // ButtonSystem.FadeButtonsExcept breaks layout, so recreate the menu instead of just resuming it.
             lazerLogo?.Hide();
             createNewMenu();
         }
 
+        private static readonly delegate* managed<OsuScreen, ScreenTransitionEvent, void> OsuScreen_OnSuspending =
+            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)resolveLifecyclePointer(nameof(OsuScreen.OnSuspending), typeof(ScreenTransitionEvent));
+
         public override void OnSuspending(ScreenTransitionEvent e)
         {
+            OsuScreen_OnSuspending(this, e);
         }
 
         private void createNewMenu()
@@ -130,6 +156,21 @@ partial class LegacyExperiencePlugin
             dialogOverlay.Push(new ConfirmExitDialog(onConfirm: confirmExit));
 
             return true;
+        }
+
+        private static void* resolveLifecyclePointer(string methodName, params Type[] parameterTypes)
+        {
+            var method = typeof(OsuScreen).GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly,
+                binder: null,
+                types: parameterTypes,
+                modifiers: null);
+
+            if (method is null)
+                throw new MissingMethodException(typeof(OsuScreen).FullName, methodName);
+
+            return (void*)method.MethodHandle.GetFunctionPointer();
         }
     }
 
