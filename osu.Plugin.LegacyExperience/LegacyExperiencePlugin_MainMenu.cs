@@ -88,9 +88,7 @@ partial class LegacyExperiencePlugin
         private MusicController musicController { get; set; } = null!;
 
         private static readonly delegate* managed<OsuScreen, ScreenTransitionEvent, void> OsuScreen_OnEntering =
-            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)(void*)typeof(OsuScreen)
-                .GetMethod(nameof(OsuScreen.OnEntering), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?
-                .MethodHandle.GetFunctionPointer()!;
+            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)resolveLifecyclePointer(nameof(OsuScreen.OnEntering), typeof(ScreenTransitionEvent));
 
         public override void OnEntering(ScreenTransitionEvent e)
         {
@@ -105,9 +103,7 @@ partial class LegacyExperiencePlugin
         }
 
         private static readonly delegate* managed<OsuScreen, ScreenTransitionEvent, void> OsuScreen_OnResuming =
-            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)(void*)typeof(OsuScreen)
-                .GetMethod(nameof(OsuScreen.OnResuming), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?
-                .MethodHandle.GetFunctionPointer()!;
+            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)resolveLifecyclePointer(nameof(OsuScreen.OnResuming), typeof(ScreenTransitionEvent));
         public override void OnResuming(ScreenTransitionEvent e)
         {
             OsuScreen_OnResuming(this, e);
@@ -122,9 +118,7 @@ partial class LegacyExperiencePlugin
         }
 
         private static readonly delegate* managed<OsuScreen, ScreenTransitionEvent, void> OsuScreen_OnSuspending =
-            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)(void*)typeof(OsuScreen)
-                .GetMethod(nameof(OsuScreen.OnSuspending), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?
-                .MethodHandle.GetFunctionPointer()!;
+            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)resolveLifecyclePointer(nameof(OsuScreen.OnSuspending), typeof(ScreenTransitionEvent));
 
         public override void OnSuspending(ScreenTransitionEvent e)
         {
@@ -162,6 +156,21 @@ partial class LegacyExperiencePlugin
             dialogOverlay.Push(new ConfirmExitDialog(onConfirm: confirmExit));
 
             return true;
+        }
+
+        private static void* resolveLifecyclePointer(string methodName, params Type[] parameterTypes)
+        {
+            var method = typeof(OsuScreen).GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly,
+                binder: null,
+                types: parameterTypes,
+                modifiers: null);
+
+            if (method is null)
+                throw new MissingMethodException(typeof(OsuScreen).FullName, methodName);
+
+            return (void*)method.MethodHandle.GetFunctionPointer();
         }
     }
 
