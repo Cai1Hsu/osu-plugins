@@ -13,6 +13,7 @@ using MainMenu = osu.Plugin.LegacyExperience.Screens.Menu.MainMenu;
 using LazerMenu = osu.Game.Screens.Menu.MainMenu;
 using osuTK.Graphics;
 using osu.Game.Screens;
+using osu.Game.Screens.Backgrounds;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -83,6 +84,9 @@ partial class LegacyExperiencePlugin
         [Resolved]
         private OsuLogo? lazerLogo { get; set; }
 
+        [Resolved]
+        private MusicController musicController { get; set; } = null!;
+
         private static readonly delegate* managed<OsuScreen, ScreenTransitionEvent, void> OsuScreen_OnEntering =
             (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)(void*)typeof(OsuScreen)
                 .GetMethod(nameof(OsuScreen.OnEntering), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?
@@ -108,13 +112,17 @@ partial class LegacyExperiencePlugin
         {
             OsuScreen_OnResuming(this, e);
 
+            ApplyToBackground(b => (b as BackgroundScreenDefault)?.Next());
+
+            musicController.EnsurePlayingSomething();
+
             // ButtonSystem.FadeButtonsExcept breaks layout, so recreate the menu instead of just resuming it.
             lazerLogo?.Hide();
             createNewMenu();
         }
 
         private static readonly delegate* managed<OsuScreen, ScreenTransitionEvent, void> OsuScreen_OnSuspending =
-            (delegate* managed <OsuScreen, ScreenTransitionEvent, void>)(void*)typeof(OsuScreen)
+            (delegate* managed<OsuScreen, ScreenTransitionEvent, void>)(void*)typeof(OsuScreen)
                 .GetMethod(nameof(OsuScreen.OnSuspending), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?
                 .MethodHandle.GetFunctionPointer()!;
 
