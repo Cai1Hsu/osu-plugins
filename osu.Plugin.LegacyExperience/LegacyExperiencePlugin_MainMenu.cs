@@ -56,6 +56,9 @@ partial class LegacyExperiencePlugin
 
     private unsafe partial class MenuScreen : LazerMenu
     {
+        // hide toolbar when entering/returning to menu, as it doesn't fit well with our menu.
+        public override bool HideOverlaysOnEnter => true;
+
         public MenuScreen()
         {
             BackButtonVisibility.Value = false;
