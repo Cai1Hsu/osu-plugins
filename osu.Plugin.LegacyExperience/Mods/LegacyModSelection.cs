@@ -87,6 +87,8 @@ public partial class LegacyModSelection : LegacyDialog
         {
             b.BackgroundColour = Colour4.OrangeRed;
             b.Action = () => selectedMods.Value = Array.Empty<Mod>();
+
+            selectedMods.BindDisabledChanged(v => b.Enabled.Value = !v, true);
         });
         AddOption(LegacyStrings.General_Close, b =>
         {
