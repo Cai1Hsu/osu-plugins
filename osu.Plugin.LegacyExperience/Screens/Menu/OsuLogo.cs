@@ -171,6 +171,10 @@ public partial class OsuLogo : BeatSyncedContainer
     private float menuAlpha2 = 0.5f;
     private float savedProgressMultiplier;
 
+    protected override bool OnHover(HoverEvent e) => true;
+
+    protected override void OnHoverLost(HoverLostEvent e) { }
+
     protected override void Update()
     {
         base.Update();
