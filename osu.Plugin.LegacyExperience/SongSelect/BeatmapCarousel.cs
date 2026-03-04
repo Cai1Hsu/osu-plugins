@@ -360,11 +360,14 @@ public partial class BeatmapCarousel : BeatmapCarouselV2
     private void calculateReferenceInfo()
     {
         // visiblePanels are from last frame, so all panels are in use here.
-        upwardsReference = visiblePanels.Select(toReferenceInfo).FirstOrDefault();
-        downwardsReference = visiblePanels.Select(toReferenceInfo).LastOrDefault();
+        upwardsReference = toReferenceInfo(visiblePanels.FirstOrDefault());
+        downwardsReference = toReferenceInfo(visiblePanels.LastOrDefault());
 
-        ReferenceInfo? toReferenceInfo(LegacyPanel panel)
+        ReferenceInfo? toReferenceInfo(LegacyPanel? panel)
         {
+            if (panel?.Item is null)
+                return null;
+
             return new ReferenceInfo
             {
                 Position = panel.Position,
