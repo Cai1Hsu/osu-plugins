@@ -7,7 +7,7 @@ using osu.Framework.Threading;
 using osu.Game;
 using osu.Game.Plugins;
 using osu.Game.Screens.Footer;
-using SongSelectV2 = osu.Game.Screens.SelectV2.SongSelect;
+using SongSelectV2 = osu.Game.Screens.Select.SongSelect;
 
 namespace osu.Plugin.StableIntegrationPlugin;
 

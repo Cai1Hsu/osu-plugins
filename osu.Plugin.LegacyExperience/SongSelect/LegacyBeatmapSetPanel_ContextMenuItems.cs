@@ -17,7 +17,7 @@ using osu.Game.Localisation;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
-using osu.Game.Screens.SelectV2;
+using osu.Game.Screens.Select;
 using WebCommonStrings = osu.Game.Resources.Localisation.Web.CommonStrings;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;

@@ -1,7 +1,7 @@
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
-using osu.Game.Screens.SelectV2;
+using osu.Game.Screens.Select;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 

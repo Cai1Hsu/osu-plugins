@@ -20,7 +20,7 @@ using osu.Game.Plugins;
 using osu.Game.Screens;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.OnlinePlay.Multiplayer;
-using osu.Game.Screens.SelectV2;
+using osu.Game.Screens.Select;
 using osu.Plugin.LegacyExperience.Audio;
 using osu.Plugin.LegacyExperience.Graphics;
 using osu.Plugin.LegacyExperience.Localisations;

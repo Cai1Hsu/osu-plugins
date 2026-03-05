@@ -2,7 +2,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Containers;
-using osu.Game.Screens.Select.Leaderboards;
+using osu.Game.Screens.Play.Leaderboards;
 using osu.Game.Skinning;
 using System.Diagnostics;
 using osuTK;

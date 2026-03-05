@@ -4,7 +4,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics;
 using osuTK;
 using System.Diagnostics;
-using osu.Game.Screens.SelectV2;
+using osu.Game.Screens.Select;
 using osu.Framework.Localisation;
 using osu.Framework.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterface;

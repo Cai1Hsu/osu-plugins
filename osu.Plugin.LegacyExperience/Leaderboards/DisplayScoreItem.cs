@@ -1,6 +1,6 @@
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Pooling;
-using osu.Game.Screens.Select.Leaderboards;
+using osu.Game.Screens.Play.Leaderboards;
 
 namespace osu.Plugin.LegacyExperience.Leaderboards;
 

@@ -7,7 +7,7 @@ using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Framework.Bindables;
 using osu.Game.Skinning;
-using osu.Game.Screens.Select.Leaderboards;
+using osu.Game.Screens.Play.Leaderboards;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Users;
 using osu.Game.Screens.Play;
