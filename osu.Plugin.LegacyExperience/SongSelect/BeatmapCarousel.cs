@@ -26,13 +26,13 @@ using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Plugins;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
-using osu.Game.Screens.SelectV2;
+using osu.Game.Screens.Select;
 using osu.Game.Skinning;
 using osuTK;
 using Realms;
 using static osu.Plugin.LegacyExperience.SongSelect.LegacyPanel;
-using BeatmapCarouselV2 = osu.Game.Screens.SelectV2.BeatmapCarousel;
-using PanelV2 = osu.Game.Screens.SelectV2.Panel;
+using BeatmapCarouselV2 = osu.Game.Screens.Select.BeatmapCarousel;
+using PanelV2 = osu.Game.Screens.Select.Panel;
 
 namespace osu.Plugin.LegacyExperience.SongSelect;
 
