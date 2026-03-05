@@ -44,9 +44,10 @@
     .\PackForRelease.ps1 2025.1209.0 -Target osu.Game.Plugins\osu.Game.Plugins.csproj
 
 .EXAMPLE
-    .\PackForRelease.ps1 -Target osu-plugins.slnx -Configuration Release -- -p:ContinuousIntegrationBuild=true
+    .\PackForRelease.ps1 2025.1209.0 -Target osu-plugins.slnx -Configuration Release -- -p:ContinuousIntegrationBuild=true
 #>
 
+[CmdletBinding()]
 param(
     [Parameter(Position = 0)]
     [string]$OsuVersion,
@@ -60,6 +61,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $PSBoundParameters.ContainsKey('InformationAction')) {
+    $InformationPreference = 'Continue'
+}
 
 $scriptDir = $PSScriptRoot
 if (-not $scriptDir) {
@@ -117,7 +122,7 @@ try {
     }
     New-Item -Path $localPackagesPath -ItemType Directory -Force | Out-Null
 
-    Write-Host "Packing local osu packages from: $osuRepoPath"
+    Write-Information "Packing local osu packages from: $osuRepoPath"
     foreach ($packageId in $packageIds) {
         $projectName = $packageId -replace '^ppy\.', ''
         $projectPath = Join-Path $osuRepoPath "$projectName/$projectName.csproj"
@@ -125,7 +130,7 @@ try {
             throw "Local osu project not found for package $packageId at: $projectPath"
         }
 
-        Write-Host "  Packing $packageId"
+        Write-Information "  Packing $packageId"
         & dotnet pack $projectPath -c $Configuration -o $localFeedPath -p:Version=$OsuVersion
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to pack local osu project: $projectPath"
@@ -147,15 +152,15 @@ try {
     [System.IO.File]::WriteAllText($tempNuGetConfig, $nugetConfigContent, [System.Text.UTF8Encoding]::new($false))
 
     if ($localModeActive) {
-        Write-Host "Detected local osu references. Switching to NuGet version $OsuVersion for publishing..."
+        Write-Information "Detected local osu references. Switching to NuGet version $OsuVersion for publishing..."
         & $useLocalScript $OsuVersion
         if (-not $?) {
             throw "Failed to switch to NuGet references."
         }
         $switchedFromLocal = $true
     }
-    elseif (-not [string]::IsNullOrWhiteSpace($OsuVersion)) {
-        Write-Host "Applying requested NuGet version $OsuVersion before publishing..."
+    else {
+        Write-Information "Applying requested NuGet version $OsuVersion before publishing..."
         & $useLocalScript $OsuVersion
         if (-not $?) {
             throw "Failed to apply NuGet version."
@@ -168,7 +173,7 @@ try {
 
     if (-not [string]::IsNullOrWhiteSpace($Output)) {
         if ($isSolutionTarget) {
-            Write-Host "Output path is ignored for solution target: $Target"
+            Write-Information "Output path is ignored for solution target: $Target"
         }
         else {
             $publishArguments += @("-o", $Output)
@@ -179,15 +184,15 @@ try {
     if ($NoBuild) { $publishArguments += "--no-build" }
     if ($DotnetPublishArgs) { $publishArguments += $DotnetPublishArgs }
 
-    Write-Host ""
-    Write-Host "Running: dotnet $($publishArguments -join ' ')"
+    Write-Information ""
+    Write-Information "Running: dotnet $($publishArguments -join ' ')"
     & dotnet @publishArguments
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet publish failed with exit code $LASTEXITCODE"
     }
 
-    Write-Host ""
-    Write-Host "Publish completed successfully."
+    Write-Information ""
+    Write-Information "Publish completed successfully."
 }
 catch {
     $capturedError = $_
@@ -199,12 +204,12 @@ finally {
 
     if ($switchedFromLocal) {
         try {
-            Write-Host "Restoring local osu references..."
+            Write-Information "Restoring local osu references..."
             & $useLocalScript local
             if (-not $?) {
                 throw "Failed to restore local references."
             }
-            Write-Host "Local references restored."
+            Write-Information "Local references restored."
         }
         catch {
             if (-not $capturedError) {

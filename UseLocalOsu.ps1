@@ -33,12 +33,18 @@
     # Switch to NuGet packages with version 2025.1209.0
 #>
 
+[CmdletBinding()]
 param(
     [Parameter(Position = 0)]
     [string]$Action = "local"
 )
 
 $ErrorActionPreference = "Stop"
+
+# Show informational messages by default; callers can pass -InformationAction to override
+if (-not $PSBoundParameters.ContainsKey('InformationAction')) {
+    $InformationPreference = 'Continue'
+}
 
 $ScriptDir = $PSScriptRoot
 if (-not $ScriptDir) {
@@ -71,17 +77,15 @@ if ($Action -eq "-h" -or $Action -eq "--help") {
 
 if ($Action -eq "local") {
     if (-not (Test-Path $OsuBasePath -PathType Container)) {
-        Write-Host "Error: osu repository not found at: $OsuBasePath" -ForegroundColor Red
-        Write-Host "Expected the osu repository to be cloned as a sibling directory (../osu)."
-        exit 1
+        Write-Error "osu repository not found at: $OsuBasePath. Expected the osu repository to be cloned as a sibling directory (../osu)."
     }
-    Write-Host "Switching to local osu references from: $OsuBasePath"
+    Write-Information "Switching to local osu references from: $OsuBasePath"
 }
 else {
-    Write-Host "Switching to osu NuGet version: $Action"
+    Write-Information "Switching to osu NuGet version: $Action"
 }
 
-Write-Host ""
+Write-Information ""
 
 # --- Process all csproj files ---
 
@@ -167,18 +171,18 @@ foreach ($file in $csprojFiles) {
         [System.IO.File]::WriteAllText($file.FullName, $content, $encoding)
         $updatedCount++
         $relPath = [System.IO.Path]::GetRelativePath($ScriptDir, $file.FullName) -replace '\\', '/'
-        Write-Host "  Updated: $relPath"
+        Write-Information "  Updated: $relPath"
     }
 }
 
-Write-Host ""
+Write-Information ""
 if ($updatedCount -eq 0) {
-    Write-Host "No files were modified."
+    Write-Information "No files were modified."
 }
 elseif ($Action -eq "local") {
-    Write-Host "Switched $updatedCount file(s) to local osu project references."
-    Write-Host "To restore NuGet references: .\UseLocalOsu.ps1 <version>"
+    Write-Information "Switched $updatedCount file(s) to local osu project references."
+    Write-Information "To restore NuGet references: .\UseLocalOsu.ps1 <version>"
 }
 else {
-    Write-Host "Updated $updatedCount file(s) to osu NuGet version: $Action"
+    Write-Information "Updated $updatedCount file(s) to osu NuGet version: $Action"
 }

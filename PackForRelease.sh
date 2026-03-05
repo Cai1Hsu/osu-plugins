@@ -47,19 +47,23 @@ usage() {
 while [ $# -gt 0 ]; do
     case "$1" in
         --osu-version)
-            OSU_VERSION="${2:-}"
+            [ $# -ge 2 ] || { echo "Error: --osu-version requires a value"; exit 1; }
+            OSU_VERSION="$2"
             shift 2
             ;;
         --target)
-            TARGET="${2:-}"
+            [ $# -ge 2 ] || { echo "Error: --target requires a value"; exit 1; }
+            TARGET="$2"
             shift 2
             ;;
         --configuration)
-            CONFIGURATION="${2:-}"
+            [ $# -ge 2 ] || { echo "Error: --configuration requires a value"; exit 1; }
+            CONFIGURATION="$2"
             shift 2
             ;;
         --output)
-            OUTPUT="${2:-}"
+            [ $# -ge 2 ] || { echo "Error: --output requires a value"; exit 1; }
+            OUTPUT="$2"
             shift 2
             ;;
         --no-restore)
@@ -185,7 +189,7 @@ if [ "$LOCAL_MODE_ACTIVE" -eq 1 ]; then
     echo "Detected local osu references. Switching to NuGet version $OSU_VERSION for publishing..."
     "$USE_LOCAL_SCRIPT" "$OSU_VERSION"
     SWITCHED_FROM_LOCAL=1
-elif [ -n "$OSU_VERSION" ]; then
+else
     echo "Applying requested NuGet version $OSU_VERSION before publishing..."
     "$USE_LOCAL_SCRIPT" "$OSU_VERSION"
 fi
@@ -209,7 +213,9 @@ fi
 if [ "$NO_BUILD" -eq 1 ]; then
     PUBLISH_ARGS+=(--no-build)
 fi
-PUBLISH_ARGS+=("${DOTNET_ARGS[@]}")
+if [ ${#DOTNET_ARGS[@]} -gt 0 ]; then
+    PUBLISH_ARGS+=("${DOTNET_ARGS[@]}")
+fi
 
 echo ""
 echo "Running: dotnet ${PUBLISH_ARGS[*]}"

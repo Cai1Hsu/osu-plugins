@@ -91,7 +91,7 @@ while IFS= read -r -d '' file; do
         # Pattern 2: Self-closing <PackageReference ... />
         perl -0777 -i -pe '
             BEGIN { $osu_rel = "'"$OSU_REL"'"; }
-            s{(?m)^([ \t]*)<PackageReference Include="(ppy\.osu\.[^"]*)" Version="[^"]*"\s*/?>}{
+            s{(?m)^([ \t]*)<PackageReference Include="(ppy\.osu\.[^"]*)" Version="[^"]*"\s*/>}{
                 my ($indent, $pkg) = ($1, $2);
                 (my $proj = $pkg) =~ s/^ppy\.//;
                 my $ref = "$osu_rel/$proj/$proj.csproj";
