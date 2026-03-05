@@ -23,6 +23,27 @@ After the loader is installed, create a folder named `plugins` in the user stora
 
 To create your own plugin, simply create a new class library project that references the `osu.Game.Plugins` project in this repo and `ppy.osu.Game` packet from NuGet. There's a template project in this repo that you can use as a starting point: [osu.Plugin.Template](./osu.Plugin.Template).
 
+## Test with local osu
+
+When developing plugins, you may want to test with a local osu! checkout. To do this, check out the osu! at the same level as this repo, then execute the `UseLocalOsu.*` scripts to switch project references to local osu! projects. See documentation in the scripts for details.
+
+## Publish for release
+
+When using local osu project references (via `UseLocalOsu.*`), game assets from the local checkout may be copied into publish output. To avoid this, use the release pack scripts:
+
+- `./PackForRelease.ps1` (PowerShell)
+- `./PackForRelease.sh` (bash)
+
+These scripts first pack local osu projects from `../osu` into a local NuGet source, then temporarily switch plugin references to that package version, run `dotnet publish`, and finally restore local references.
+
+Examples:
+
+- `./PackForRelease.ps1 2025.1209.0`
+- `./PackForRelease.ps1 2025.1209.0 -Target osu.Plugin.LegacyExperience/osu.Plugin.LegacyExperience.csproj`
+- `./PackForRelease.sh 2025.1209.0`
+
+By default, both scripts publish the whole solution (`osu-plugins.slnx`).
+
 ## Credit
 
 - [MATRIX-feather/LLin](https://github.com/MATRIX-feather/LLin): Some ideas are inspired by this project.
