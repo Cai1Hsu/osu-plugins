@@ -1,0 +1,157 @@
+name: Build
+
+on:
+  push:
+  schedule:
+    # Nightly at 10:00 UTC+9
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Release channel to build'
+        required: true
+        type: choice
+        options:
+          - lazer
+          - tachyon
+          - both
+        default: both
+      osu_tag:
+        description: 'Specific osu tag (leave empty for latest)'
+        required: false
+        type: string
+      upload_artifacts:
+        description: 'Upload build artifacts'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  resolve:
+    name: Resolve osu versions
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.resolve.outputs.matrix }}
+      upload: ${{ steps.config.outputs.upload }}
+    steps:
+      - name: Determine upload behavior
+        id: config
+        run: |
+          case "${{ github.event_name }}" in
+            schedule)
+              echo "upload=true" >> "$GITHUB_OUTPUT"
+              ;;
+            workflow_dispatch)
+              echo "upload=${{ inputs.upload_artifacts }}" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "upload=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Resolve osu tags
+        id: resolve
+        env:
+          INPUT_CHANNEL: ${{ inputs.channel }}
+          INPUT_OSU_TAG: ${{ inputs.osu_tag }}
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CHANNEL="$INPUT_CHANNEL"
+            SPECIFIC_TAG="$INPUT_OSU_TAG"
+          else
+            CHANNEL="both"
+            SPECIFIC_TAG=""
+          fi
+
+          # If a specific tag is provided, use it directly
+          if [ -n "$SPECIFIC_TAG" ]; then
+            if [[ "$SPECIFIC_TAG" == *-tachyon ]]; then
+              DETECTED_CHANNEL="tachyon"
+            else
+              DETECTED_CHANNEL="lazer"
+            fi
+            MATRIX=$(jq -nc --arg ch "$DETECTED_CHANNEL" --arg tag "$SPECIFIC_TAG" \
+              '{include: [{channel: $ch, ref: $tag, version: $tag}]}')
+            echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Fetch tags from ppy/osu
+          TAGS=$(git ls-remote --tags --refs https://github.com/ppy/osu 'refs/tags/20*' \
+            | awk '{print $2}' | sed 's|refs/tags/||')
+
+          INCLUDES="[]"
+
+          if [ "$CHANNEL" = "lazer" ] || [ "$CHANNEL" = "both" ]; then
+            # Lazer tags: YYYY.DDD.N or YYYY.DDD.N-lazer
+            LAZER_TAG=$(echo "$TAGS" | grep -E '^[0-9]{4}\.[0-9]+\.[0-9]+(-lazer)?$' | sort -V | tail -1)
+            if [ -n "$LAZER_TAG" ]; then
+              INCLUDES=$(echo "$INCLUDES" | jq --arg tag "$LAZER_TAG" '. + [{channel: "lazer", ref: $tag, version: $tag}]')
+              echo "Resolved lazer tag: $LAZER_TAG"
+            else
+              echo "::warning::No lazer tag found"
+            fi
+          fi
+
+          if [ "$CHANNEL" = "tachyon" ] || [ "$CHANNEL" = "both" ]; then
+            # Tachyon tags: YYYY.DDD.N-tachyon
+            TACHYON_TAG=$(echo "$TAGS" | grep -E '^[0-9]{4}\.[0-9]+\.[0-9]+-tachyon$' | sort -V | tail -1)
+            if [ -n "$TACHYON_TAG" ]; then
+              INCLUDES=$(echo "$INCLUDES" | jq --arg tag "$TACHYON_TAG" '. + [{channel: "tachyon", ref: $tag, version: $tag}]')
+              echo "Resolved tachyon tag: $TACHYON_TAG"
+            else
+              echo "::warning::No tachyon tag found"
+            fi
+          fi
+
+          # Always include master branch with a generated version
+          MASTER_VERSION="0.0.0-master"
+          INCLUDES=$(echo "$INCLUDES" | jq --arg ver "$MASTER_VERSION" '. + [{channel: "master", ref: "master", version: $ver}]')
+          echo "Resolved master: $MASTER_VERSION"
+
+          MATRIX=$(echo "$INCLUDES" | jq -c '{include: .}')
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build (${{ matrix.ref }})
+    needs: resolve
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.resolve.outputs.matrix) }}
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Clone osu (${{ matrix.ref }})
+        run: git clone --depth 1 --recurse-submodules --branch "${{ matrix.ref }}" https://github.com/ppy/osu ../osu
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      # the bash version is a little bit buggy, 
+      # so use powershell to run the scripts for now.
+      - name: Use local osu references
+        shell: pwsh
+        run: ./UseLocalOsu.ps1 local
+
+      - name: Build and publish
+        shell: pwsh
+        run: ./PackForRelease.ps1 "${{ matrix.version }}"
+
+      - name: Upload artifacts
+        if: needs.resolve.outputs.upload == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.channel }}
+          if-no-files-found: error
+          path: |
+            **/bin/Release/**/publish/
+            !**/*.Tests/**/publish/
+            !**/*.Benchmarks/**/publish/
