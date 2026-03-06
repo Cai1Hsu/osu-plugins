@@ -147,6 +147,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.channel }}
+          if-no-files-found: error
           path: |
             **/bin/Release/**/publish/
             !**/*.Tests/**/publish/
