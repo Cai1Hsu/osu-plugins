@@ -126,15 +126,15 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # the shell version is a little bit buggy, 
+      # so use powershell to run the scripts for now.
       - name: Use local osu references
-        run: |
-          chmod +x UseLocalOsu.sh
-          ./UseLocalOsu.sh local
+        shell: pwsh
+        run: ./UseLocalOsu.ps1 local
 
       - name: Build and publish
-        run: |
-          chmod +x PackForRelease.sh
-          ./PackForRelease.sh "${{ matrix.tag }}"
+        shell: pwsh
+        run: ./PackForRelease.ps1 "${{ matrix.tag }}"
 
       - name: Upload artifacts
         if: needs.resolve.outputs.upload == 'true'
