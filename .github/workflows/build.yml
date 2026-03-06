@@ -71,7 +71,7 @@ jobs:
               DETECTED_CHANNEL="lazer"
             fi
             MATRIX=$(jq -nc --arg ch "$DETECTED_CHANNEL" --arg tag "$SPECIFIC_TAG" \
-              '{include: [{channel: $ch, tag: $tag}]}')
+              '{include: [{channel: $ch, ref: $tag, version: $tag}]}')
             echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -86,7 +86,7 @@ jobs:
             # Lazer tags: YYYY.DDD.N or YYYY.DDD.N-lazer
             LAZER_TAG=$(echo "$TAGS" | grep -E '^[0-9]{4}\.[0-9]+\.[0-9]+(-lazer)?$' | sort -V | tail -1)
             if [ -n "$LAZER_TAG" ]; then
-              INCLUDES=$(echo "$INCLUDES" | jq --arg tag "$LAZER_TAG" '. + [{channel: "lazer", tag: $tag}]')
+              INCLUDES=$(echo "$INCLUDES" | jq --arg tag "$LAZER_TAG" '. + [{channel: "lazer", ref: $tag, version: $tag}]')
               echo "Resolved lazer tag: $LAZER_TAG"
             else
               echo "::warning::No lazer tag found"
@@ -97,18 +97,23 @@ jobs:
             # Tachyon tags: YYYY.DDD.N-tachyon
             TACHYON_TAG=$(echo "$TAGS" | grep -E '^[0-9]{4}\.[0-9]+\.[0-9]+-tachyon$' | sort -V | tail -1)
             if [ -n "$TACHYON_TAG" ]; then
-              INCLUDES=$(echo "$INCLUDES" | jq --arg tag "$TACHYON_TAG" '. + [{channel: "tachyon", tag: $tag}]')
+              INCLUDES=$(echo "$INCLUDES" | jq --arg tag "$TACHYON_TAG" '. + [{channel: "tachyon", ref: $tag, version: $tag}]')
               echo "Resolved tachyon tag: $TACHYON_TAG"
             else
               echo "::warning::No tachyon tag found"
             fi
           fi
 
+          # Always include master branch with a generated version
+          MASTER_VERSION="0.0.0-master"
+          INCLUDES=$(echo "$INCLUDES" | jq --arg ver "$MASTER_VERSION" '. + [{channel: "master", ref: "master", version: $ver}]')
+          echo "Resolved master: $MASTER_VERSION"
+
           MATRIX=$(echo "$INCLUDES" | jq -c '{include: .}')
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
   build:
-    name: Build (${{ matrix.tag }})
+    name: Build (${{ matrix.channel }} - ${{ matrix.ref }})
     needs: resolve
     runs-on: ubuntu-latest
     strategy:
@@ -120,8 +125,8 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Clone osu (${{ matrix.tag }})
-        run: git clone --depth 1 --branch "${{ matrix.tag }}" https://github.com/ppy/osu ../osu
+      - name: Clone osu (${{ matrix.ref }})
+        run: git clone --depth 1 --recurse-submodules --branch "${{ matrix.ref }}" https://github.com/ppy/osu ../osu
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -136,7 +141,7 @@ jobs:
 
       - name: Build and publish
         shell: pwsh
-        run: ./PackForRelease.ps1 "${{ matrix.tag }}"
+        run: ./PackForRelease.ps1 "${{ matrix.version }}"
 
       - name: Upload artifacts
         if: needs.resolve.outputs.upload == 'true'
