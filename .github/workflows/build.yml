@@ -51,12 +51,15 @@ jobs:
 
       - name: Resolve osu tags
         id: resolve
+        env:
+          INPUT_CHANNEL: ${{ inputs.channel }}
+          INPUT_OSU_TAG: ${{ inputs.osu_tag }}
         run: |
           set -euo pipefail
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            CHANNEL="${{ inputs.channel }}"
-            SPECIFIC_TAG="${{ inputs.osu_tag }}"
+            CHANNEL="$INPUT_CHANNEL"
+            SPECIFIC_TAG="$INPUT_OSU_TAG"
           else
             CHANNEL="both"
             SPECIFIC_TAG=""
