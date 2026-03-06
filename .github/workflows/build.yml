@@ -143,4 +143,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.channel }}
-          path: '**/bin/Release/**/publish/'
+          path: |
+            **/bin/Release/**/publish/
+            !**/*.Tests/**/publish/
+            !**/*.Benchmarks/**/publish/
