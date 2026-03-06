@@ -132,7 +132,7 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      # the shell version is a little bit buggy, 
+      # the bash version is a little bit buggy, 
       # so use powershell to run the scripts for now.
       - name: Use local osu references
         shell: pwsh
