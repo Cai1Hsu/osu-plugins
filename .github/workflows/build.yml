@@ -112,7 +112,7 @@ jobs:
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
   build:
-    name: Build (${{ matrix.channel }} - ${{ matrix.ref }})
+    name: Build (${{ matrix.ref }})
     needs: resolve
     runs-on: ubuntu-latest
     strategy:
