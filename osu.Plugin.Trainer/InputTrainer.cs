@@ -1,6 +1,5 @@
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
-using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
@@ -15,7 +14,6 @@ using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Play;
 using osu.Game.Screens.Play.HUD;
 using osu.Game.Utils;
-using osuTK.Graphics;
 using static osu.Game.Screens.Play.HUD.InputTrigger;
 
 namespace osu.Plugin.Trainer;
@@ -46,6 +44,9 @@ public abstract partial class InputTrainer : CompositeDrawable
         MaxValue = 1,
         Precision = 0.01f,
     };
+
+    [SettingSource("Flash colour", "The colour of the flash indicating the expected next key.")]
+    public BindableColour4 FlashColour { get; } = new BindableColour4(new Colour4(66, 187, 255, 255));
 
     [Resolved]
     private GameplayClockContainer gameplayClock { get; set; } = null!;
@@ -87,6 +88,16 @@ public abstract partial class InputTrainer : CompositeDrawable
         gameplayClock.OnSeek += onRewind;
 
         FlashTransparency.BindValueChanged(t => flashContainer.Alpha = t.NewValue, true);
+
+        FlashColour.BindValueChanged(c =>
+        {
+            // taken from MenuSideFlashes, as well as the default value of FlashColour.
+            var gradientDark = c.NewValue.Opacity(0).ToLinear();
+            var gradientLight = c.NewValue.Opacity(0.6f).ToLinear();
+
+            leftFlash.Colour = ColourInfo.GradientHorizontal(gradientLight, gradientDark);
+            rightFlash.Colour = ColourInfo.GradientHorizontal(gradientDark, gradientLight);
+        }, true);
     }
 
     protected virtual bool ShouldFlash => true;
@@ -119,11 +130,6 @@ public abstract partial class InputTrainer : CompositeDrawable
 
     private void initializeVisuals()
     {
-        // taken from MenuSideFlashes
-        Color4 baseColour = new Color4(66, 187, 255, 255);
-        Color4 gradientDark = baseColour.Opacity(0).ToLinear();
-        Color4 gradientLight = baseColour.Opacity(0.6f).ToLinear();
-
         InternalChildren = new Drawable[]
         {
             flashContainer = new Container
@@ -140,7 +146,6 @@ public abstract partial class InputTrainer : CompositeDrawable
                         Height = 1.5f,
                         Alpha = 0,
                         Blending = BlendingParameters.Additive,
-                        Colour = ColourInfo.GradientHorizontal(gradientLight, gradientDark),
                     },
                     rightFlash = new Box
                     {
@@ -151,7 +156,6 @@ public abstract partial class InputTrainer : CompositeDrawable
                         Height = 1.5f,
                         Alpha = 0,
                         Blending = BlendingParameters.Additive,
-                        Colour = ColourInfo.GradientHorizontal(gradientDark, gradientLight),
                     },
                 }
             }
