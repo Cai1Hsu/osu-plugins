@@ -48,6 +48,14 @@ public abstract partial class InputTrainer : CompositeDrawable
     [SettingSource("Flash colour", "The colour of the flash indicating the expected next key.")]
     public BindableColour4 FlashColour { get; } = new BindableColour4(new Colour4(66, 187, 255, 255));
 
+    [SettingSource("Flash spacing", "The horizontal spacing between the flash and the playfield.")]
+    public BindableFloat FlashSpacing { get; } = new BindableFloat(1)
+    {
+        MinValue = 0,
+        MaxValue = 2,
+        Precision = 0.01f,
+    };
+
     [Resolved]
     private GameplayClockContainer gameplayClock { get; set; } = null!;
 
@@ -98,6 +106,8 @@ public abstract partial class InputTrainer : CompositeDrawable
             leftFlash.Colour = ColourInfo.GradientHorizontal(gradientLight, gradientDark);
             rightFlash.Colour = ColourInfo.GradientHorizontal(gradientDark, gradientLight);
         }, true);
+
+        FlashSpacing.BindValueChanged(s => flashContainer.Width = s.NewValue, true);
     }
 
     protected virtual bool ShouldFlash => true;
@@ -134,6 +144,8 @@ public abstract partial class InputTrainer : CompositeDrawable
         {
             flashContainer = new Container
             {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
