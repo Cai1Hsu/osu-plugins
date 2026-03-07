@@ -138,15 +138,24 @@ partial class BeatmapCarousel
 
             if (DrawHeight > 0.0 && scrollDistance != 0.0)
             {
+                double desiredPosition = Current + scrollDistance;
+
                 // use ScrollTo here to ensure OsuScrollContainer don't touch Current
-                ScrollTo(Current + scrollDistance, false);
+                ScrollTo(desiredPosition, false);
+
+                // Reset velocity when hitting scroll boundaries to prevent
+                // needing to overcome built-up velocity when reversing direction.
+                if (!Precision.AlmostEquals(desiredPosition, Clamp(desiredPosition), 1))
+                {
+                    scrollVelocity = 0.0;
+                }
             }
 
             // Catch any scroll request and manage it ourselves.
             if (previousCurrent != previousTarget)
             {
                 scrollDistance = 0; // clear distance as we're going to jump to the new target.
-                ScrollToPosition(previousTarget, decay ?? default_decay);
+                ScrollToPosition(Clamp(previousTarget), decay ?? default_decay);
             }
         }
 
