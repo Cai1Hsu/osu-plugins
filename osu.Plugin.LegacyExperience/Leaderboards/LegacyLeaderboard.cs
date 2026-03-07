@@ -256,8 +256,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         displayScore.ScorePosition.BindValueChanged(_ => Scheduler.AddOnce(sort));
         displayScore.ProviderDisplayOrder.BindValueChanged(_ => Scheduler.AddOnce(sort));
 
-        // in case position is already available, sort immediately.
-        Scheduler.AddOnce(sort);
+        Scheduler.AddOnce(initialSort);
     }
 
     private const float transition_duration = 600;
@@ -279,9 +278,9 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
     /// <param name="score">The score item to get index for.</param>
     /// <param name="displayCount">The maximum number of entries to be displayed.</param>
     /// <returns>The display index, negative value indicates not displayed.</returns>
-    private long GetScoreDisplayIndex(DisplayScoreItem score, int displayCount, long firstPositionIndex)
+    private long GetScoreDisplayIndex(DisplayScoreItem score, int displayCount, long firstPositionIndex, Func<DisplayScoreItem, long> displayIndexGetter)
     {
-        var providerDisplayOrderIndex = score.ProviderDisplayOrder.Value;
+        var providerDisplayOrderIndex = displayIndexGetter(score);
 
         if (providerDisplayOrderIndex < 0)
             return -1; // uninitialized
@@ -297,7 +296,7 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             if (trackingScore is not null)
             {
                 // ensure tracking is always displayed, so cutoff index is based on its position
-                long trackingIndex = trackingScore.ProviderDisplayOrder.Value;
+                long trackingIndex = displayIndexGetter(trackingScore);
 
                 Debug.Assert(trackingIndex >= 0); // don't call this method when tracking is uninitialised
 
@@ -398,6 +397,38 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             Scheduler.Add(() => FlashExplosionAt(trackingScore));
     }
 
+    private void initialSort()
+    {
+        if (scores.Count == 0)
+            return;
+
+        // if provider is ready, sort with display order directly.
+        if (scores.All(s => s.GameplayScore.Position.Value.HasValue))
+        {
+            sort();
+            return;
+        }
+
+        bool hasInitialPosition = scores.All(s => s.GameplayScore.InitialPosition.HasValue);
+
+        Dictionary<DisplayScoreItem, long> initialPositions = hasInitialPosition
+            ? scores.ToDictionary(static s => s, static s => (long)s.GameplayScore.InitialPosition!.Value)
+            : scores.Select(static (s, i) => (s, (long)i)).ToDictionary();
+
+        long firstPositionIndex = initialPositions.Values.Min();
+
+        foreach (var score in scores)
+        {
+            long displayIndex = GetScoreDisplayIndex(score, MaxEntries.Value, firstPositionIndex,
+                s => initialPositions[s]);
+
+            if (displayIndex < 0)
+                handleInvisibleScore(score, displayIndex, MaxEntries.Value);
+            else
+                handleVisibleScore(score, displayIndex, MaxEntries.Value);
+        }
+    }
+
     private void sort()
     {
         int displayCount = Math.Max(1, MaxEntries.Value);
@@ -421,7 +452,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
         for (int i = 0; i < scores.Count; i++)
         {
             var score = scores[i];
-            long displayIndex = GetScoreDisplayIndex(score, displayCount, firstPositionIndex);
+            long displayIndex = GetScoreDisplayIndex(score, displayCount, firstPositionIndex,
+                static s => s.ProviderDisplayOrder.Value);
 
             if (displayIndex < 0)
             {
