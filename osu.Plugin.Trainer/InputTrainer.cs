@@ -174,6 +174,7 @@ public abstract partial class InputTrainer : CompositeDrawable
     }
 
     private readonly IBindableList<InputTrigger> gameplayTriggers = new BindableList<InputTrigger>();
+    private readonly Dictionary<KeyCounterActionTrigger<OsuAction>, OnActivateCallback> triggerHandlers = new();
 
     private void registerGameplayActionTriggers(InputCountController? inputCountController)
     {
@@ -188,11 +189,14 @@ public abstract partial class InputTrainer : CompositeDrawable
             OnActivateCallback activateHandler(KeyCounterActionTrigger<OsuAction> trigger)
                 => _ => handleAction(trigger.Action);
 
-            foreach (var t in oldTriggers)
-                t.OnActivate -= activateHandler(t);
+            foreach (var t in oldTriggers.Where(t => triggerHandlers.ContainsKey(t)))
+            {
+                t.OnActivate -= triggerHandlers[t];
+                triggerHandlers.Remove(t);
+            }
 
             foreach (var t in newTriggers)
-                t.OnActivate += activateHandler(t);
+                t.OnActivate += triggerHandlers[t] = activateHandler(t);
         }, true);
     }
 
