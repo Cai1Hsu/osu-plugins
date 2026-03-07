@@ -243,6 +243,9 @@ public abstract partial class InputTrainer : CompositeDrawable
     {
         base.Dispose(isDisposing);
 
+        foreach (var (trigger, handler) in triggerHandlers)
+            trigger.OnActivate -= handler;
+
         if (gameplayClock is not null)
             gameplayClock.OnSeek -= onRewind;
     }
