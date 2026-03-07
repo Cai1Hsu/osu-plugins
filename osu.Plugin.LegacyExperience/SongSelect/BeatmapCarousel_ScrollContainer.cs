@@ -146,7 +146,7 @@ partial class BeatmapCarousel
             if (previousCurrent != previousTarget)
             {
                 scrollDistance = 0; // clear distance as we're going to jump to the new target.
-                ScrollToPosition(previousTarget, decay ?? default_decay);
+                ScrollToPosition(Clamp(previousTarget), decay ?? default_decay);
             }
         }
 
