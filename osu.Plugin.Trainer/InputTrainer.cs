@@ -6,6 +6,7 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Beatmaps.Timing;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.UI;
@@ -37,6 +38,14 @@ public abstract partial class InputTrainer : CompositeDrawable
     private Box rightFlash = null!;
 
     private PeriodTracker nonGameplayPeriods = null!;
+
+    [SettingSource("Flash transparency", "The opacity of the flash indicating the expected next key.")]
+    public BindableFloat FlashTransparency { get; } = new BindableFloat(1)
+    {
+        MinValue = 0,
+        MaxValue = 1,
+        Precision = 0.01f,
+    };
 
     [Resolved]
     private GameplayClockContainer gameplayClock { get; set; } = null!;
@@ -76,6 +85,8 @@ public abstract partial class InputTrainer : CompositeDrawable
         registerGameplayActionTriggers(inputCountController);
 
         gameplayClock.OnSeek += onRewind;
+
+        FlashTransparency.BindValueChanged(t => flashContainer.Alpha = t.NewValue, true);
     }
 
     protected virtual bool ShouldFlash => true;
@@ -104,6 +115,8 @@ public abstract partial class InputTrainer : CompositeDrawable
         nonGameplayPeriods = new PeriodTracker(periods);
     }
 
+    private Container flashContainer = null!;
+
     private void initializeVisuals()
     {
         // taken from MenuSideFlashes
@@ -113,28 +126,35 @@ public abstract partial class InputTrainer : CompositeDrawable
 
         InternalChildren = new Drawable[]
         {
-            leftFlash = new Box
+            flashContainer = new Container
             {
-                Anchor = Anchor.CentreLeft,
-                Origin = Anchor.CentreLeft,
-                RelativeSizeAxes = Axes.Y,
-                Width = box_width,
-                Height = 1.5f,
-                Alpha = 0,
-                Blending = BlendingParameters.Additive,
-                Colour = ColourInfo.GradientHorizontal(gradientLight, gradientDark),
-            },
-            rightFlash = new Box
-            {
-                Anchor = Anchor.CentreRight,
-                Origin = Anchor.CentreRight,
-                RelativeSizeAxes = Axes.Y,
-                Width = box_width,
-                Height = 1.5f,
-                Alpha = 0,
-                Blending = BlendingParameters.Additive,
-                Colour = ColourInfo.GradientHorizontal(gradientDark, gradientLight),
-            },
+                RelativeSizeAxes = Axes.Both,
+                Children = new Drawable[]
+                {
+                    leftFlash = new Box
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                        RelativeSizeAxes = Axes.Y,
+                        Width = box_width,
+                        Height = 1.5f,
+                        Alpha = 0,
+                        Blending = BlendingParameters.Additive,
+                        Colour = ColourInfo.GradientHorizontal(gradientLight, gradientDark),
+                    },
+                    rightFlash = new Box
+                    {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight,
+                        RelativeSizeAxes = Axes.Y,
+                        Width = box_width,
+                        Height = 1.5f,
+                        Alpha = 0,
+                        Blending = BlendingParameters.Additive,
+                        Colour = ColourInfo.GradientHorizontal(gradientDark, gradientLight),
+                    },
+                }
+            }
         };
     }
 
