@@ -8,4 +8,5 @@
   <Project Path="osu.Plugin.MainMenuPlayer/osu.Plugin.MainMenuPlayer.csproj" />
   <Project Path="osu.Plugin.StableIntegration/osu.Plugin.StableIntegration.csproj" />
   <Project Path="osu.Plugin.Template/osu.Plugin.Template.csproj" />
+  <Project Path="osu.Plugin.Trainer/osu.Plugin.Trainer.csproj" />
 </Solution>
