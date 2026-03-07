@@ -74,11 +74,6 @@ public abstract partial class InputTrainer : CompositeDrawable
         initializeVisuals();
 
         registerGameplayActionTriggers(inputCountController);
-    }
-
-    protected override void LoadComplete()
-    {
-        base.LoadComplete();
 
         gameplayClock.OnSeek += onRewind;
     }
