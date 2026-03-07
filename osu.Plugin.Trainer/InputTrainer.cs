@@ -208,13 +208,16 @@ public abstract partial class InputTrainer : CompositeDrawable
         var expected = GetExpectedAction();
 
         if (expected == null)
+        {
+            fadeOutBox(leftFlash);
+            fadeOutBox(rightFlash);
             return;
+        }
 
         var (correct, theOther) = (leftFlash, rightFlash);
 
         if (expected is OsuAction.RightButton)
             (correct, theOther) = (theOther, correct);
-
 
         if (ShouldFlash)
         {
