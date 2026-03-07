@@ -11,6 +11,7 @@ using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
+using osu.Game.Screens.Play;
 using osu.Game.Screens.Play.HUD;
 using osu.Game.Utils;
 using osuTK.Graphics;
@@ -36,7 +37,9 @@ public abstract partial class InputTrainer : CompositeDrawable
     private Box rightFlash = null!;
 
     private PeriodTracker nonGameplayPeriods = null!;
-    private IFrameStableClock gameplayClock = null!;
+
+    [Resolved]
+    private GameplayClockContainer gameplayClock { get; set; } = null!;
 
     /// <summary>
     /// The last accepted (left/right) action during gameplay.
@@ -73,6 +76,13 @@ public abstract partial class InputTrainer : CompositeDrawable
         registerGameplayActionTriggers(inputCountController);
     }
 
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        gameplayClock.OnSeek += onRewind;
+    }
+
     protected virtual bool ShouldFlash => true;
 
     private void initializePeriods()
@@ -97,7 +107,6 @@ public abstract partial class InputTrainer : CompositeDrawable
         }
 
         nonGameplayPeriods = new PeriodTracker(periods);
-        gameplayClock = drawableRuleset.FrameStableClock;
     }
 
     private void initializeVisuals()
@@ -143,9 +152,23 @@ public abstract partial class InputTrainer : CompositeDrawable
 
         if (nonGameplayPeriods.IsInAny(gameplayClock.CurrentTime))
             LastAcceptedAction = null;
+    }
 
-        if (gameplayClock.IsRewinding)
-            LastAcceptedAction = null;
+    private void onRewind()
+    {
+        LastAcceptedAction = null;
+        fadeOutBox(leftFlash);
+        fadeOutBox(rightFlash);
+    }
+
+    private void flashBox(Box box)
+    {
+        box.FadeTo(0.8f, flash_fade_in);
+    }
+
+    private void fadeOutBox(Box box)
+    {
+        box.FadeOut(flash_fade_out, Easing.OutQuint);
     }
 
     private void flashExpectedAction()
@@ -163,13 +186,13 @@ public abstract partial class InputTrainer : CompositeDrawable
 
         if (ShouldFlash)
         {
-            correct.FadeTo(0.8f, flash_fade_in);
-            theOther.FadeOut(flash_fade_out, Easing.OutQuint);
+            flashBox(correct);
+            fadeOutBox(theOther);
         }
         else
         {
-            correct.FadeOut(flash_fade_out, Easing.OutQuint);
-            theOther.FadeOut(flash_fade_out, Easing.OutQuint);
+            fadeOutBox(correct);
+            fadeOutBox(theOther);
         }
     }
 
@@ -219,5 +242,13 @@ public abstract partial class InputTrainer : CompositeDrawable
 
         LastAcceptedAction = action;
         flashExpectedAction();
+    }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        if (gameplayClock is not null)
+            gameplayClock.OnSeek -= onRewind;
     }
 }
