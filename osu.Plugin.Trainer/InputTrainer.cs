@@ -15,6 +15,7 @@ using osu.Game.Screens.Play;
 using osu.Game.Screens.Play.HUD;
 using osu.Game.Utils;
 using static osu.Game.Screens.Play.HUD.InputTrigger;
+using OsuKeyTrigger = osu.Game.Screens.Play.HUD.KeyCounterActionTrigger<osu.Game.Rulesets.Osu.OsuAction>;
 
 namespace osu.Plugin.Trainer;
 
@@ -228,7 +229,7 @@ public abstract partial class InputTrainer : CompositeDrawable
     }
 
     private readonly IBindableList<InputTrigger> gameplayTriggers = new BindableList<InputTrigger>();
-    private readonly Dictionary<KeyCounterActionTrigger<OsuAction>, OnActivateCallback> triggerHandlers = new();
+    private readonly Dictionary<OsuKeyTrigger, OnActivateCallback> triggerHandlers = new();
 
     private void registerGameplayActionTriggers(InputCountController? inputCountController)
     {
@@ -237,10 +238,10 @@ public abstract partial class InputTrainer : CompositeDrawable
 
         gameplayTriggers.BindCollectionChanged((_, arg) =>
         {
-            var oldTriggers = arg.OldItems?.OfType<KeyCounterActionTrigger<OsuAction>>() ?? Array.Empty<KeyCounterActionTrigger<OsuAction>>();
-            var newTriggers = arg.NewItems?.OfType<KeyCounterActionTrigger<OsuAction>>() ?? Array.Empty<KeyCounterActionTrigger<OsuAction>>();
+            var oldTriggers = arg.OldItems?.OfType<OsuKeyTrigger>() ?? Array.Empty<OsuKeyTrigger>();
+            var newTriggers = arg.NewItems?.OfType<OsuKeyTrigger>() ?? Array.Empty<OsuKeyTrigger>();
 
-            OnActivateCallback activateHandler(KeyCounterActionTrigger<OsuAction> trigger)
+            OnActivateCallback activateHandler(OsuKeyTrigger trigger)
                 => _ => handleAction(trigger.Action);
 
             foreach (var t in oldTriggers.Where(t => triggerHandlers.ContainsKey(t)))
