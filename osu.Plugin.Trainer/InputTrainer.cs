@@ -179,7 +179,7 @@ public abstract partial class InputTrainer : CompositeDrawable
     {
         base.Update();
 
-        if (gameplayClock == null)
+        if (gameplayClock is null || nonGameplayPeriods is null)
             return;
 
         if (nonGameplayPeriods.IsInAny(gameplayClock.CurrentTime))
