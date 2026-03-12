@@ -73,6 +73,7 @@ partial class LegacyExperiencePlugin
             {
                 SeasonalUIConfig.ENABLED ? new MainMenuSeasonalLighting() : Empty(),
                 SeasonalUIConfig.ENABLED ? new SeasonalMenuSideFlashes() : new LegacyMenuSideFlashes(),
+                SeasonalUIConfig.ENABLED ? Empty() : new KiaiMenuFountains(),
                 menuContainer = new Container
                 {
                     Anchor = Anchor.Centre,
@@ -80,7 +81,6 @@ partial class LegacyExperiencePlugin
                     RelativeSizeAxes = Axes.Both,
                 },
                 new GlobalScrollAdjustsVolume(),
-                SeasonalUIConfig.ENABLED ? Empty() : new KiaiMenuFountains(),
             };
         }
 
