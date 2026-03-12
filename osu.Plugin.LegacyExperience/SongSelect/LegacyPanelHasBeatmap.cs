@@ -129,6 +129,10 @@ public abstract partial class LegacyPanelHasBeatmap : LegacyPanel
         bool isActivated = Expanded.Value || Selected.Value;
         bool activatedBySet = !isActivated && (Carousel?.IsBeatmapPanelFromExpandedSet(this) ?? false);
 
+        cover.Blending = (isActivated || activatedBySet)
+                            ? BlendingParameters.Inherit
+                            : BlendingParameters.Additive;
+
         UpdatePanelState(isActivated, activatedBySet);
     }
 
