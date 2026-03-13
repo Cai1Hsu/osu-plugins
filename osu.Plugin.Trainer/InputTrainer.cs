@@ -241,8 +241,8 @@ public abstract partial class InputTrainer : CompositeDrawable
 
         gameplayTriggers.BindCollectionChanged((_, arg) =>
         {
-            var oldTriggers = arg.OldItems?.OfType<OsuKeyTrigger>() ?? Array.Empty<OsuKeyTrigger>();
-            var newTriggers = arg.NewItems?.OfType<OsuKeyTrigger>() ?? Array.Empty<OsuKeyTrigger>();
+            var oldTriggers = arg.OldItems?.OfType<OsuKeyTrigger>().ToArray() ?? Array.Empty<OsuKeyTrigger>();
+            var newTriggers = arg.NewItems?.OfType<OsuKeyTrigger>().ToArray() ?? Array.Empty<OsuKeyTrigger>();
 
             OnActivateCallback activateHandler(OsuKeyTrigger trigger)
                 => _ => handleAction(trigger.Action);

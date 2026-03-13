@@ -129,8 +129,8 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
 
         gameplayTriggers.BindCollectionChanged((_, arg) =>
         {
-            var oldTriggers = arg.OldItems?.OfType<InputTrigger>() ?? Array.Empty<InputTrigger>();
-            var newTriggers = arg.NewItems?.OfType<InputTrigger>() ?? Array.Empty<InputTrigger>();
+            var oldTriggers = arg.OldItems?.OfType<InputTrigger>().ToArray() ?? Array.Empty<InputTrigger>();
+            var newTriggers = arg.NewItems?.OfType<InputTrigger>().ToArray() ?? Array.Empty<InputTrigger>();
 
             foreach (var t in oldTriggers)
                 t.OnActivate -= onActivate;
