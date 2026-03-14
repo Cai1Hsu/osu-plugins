@@ -347,10 +347,11 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
                                                                       // since the destination is the same, lower scores look move slower,
                                                                       // if they are covered by faster moving higher scores it looks jarring.
 
-            model
-                .FadeOut(transition_duration)
-                .MoveToY(targetY, transition_duration, Easing.Out)
-                .Expire();
+            model.MoveToY(targetY, transition_duration, Easing.Out)
+                 .Expire();
+
+            // i guess this is safe even if for tracking score, as it should always be visible.
+            model.Drawable.UpdateTransparency(0, static (t, a) => t.FadeTo(a, transition_duration));
         }
     }
 
@@ -379,9 +380,10 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
 
         updateEntryDepth(score, newDepth);
 
-        pooledEntry
-            .FadeTo(CalculateEntryTransparency(displayIndex), transition_duration)
-            .MoveToY(targetY, transition_duration, Easing.Out);
+        pooledEntry.MoveToY(targetY, transition_duration, Easing.Out);
+
+        pooledEntry.Drawable.UpdateTransparency(CalculateEntryTransparency(displayIndex),
+            static (t, a) => t.FadeTo(a, transition_duration));
     }
 
     private void handleTrackingExplosion(ValueChangedEvent<long> @event)
