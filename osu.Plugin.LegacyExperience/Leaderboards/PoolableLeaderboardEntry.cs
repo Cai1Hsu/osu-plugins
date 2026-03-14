@@ -49,6 +49,15 @@ internal sealed partial class PoolableLeaderboardEntry : PoolableDrawable
         ClearTransforms(true);
     }
 
+    protected override void PrepareForUse()
+    {
+        base.PrepareForUse();
+
+        // i forgot why FadeOut exists in FreeAfterUse,
+        // so let's just fade in here to make everything works as expected.
+        this.FadeIn();
+    }
+
     private DisplayScoreItem? boundScore;
 
     public void BindScoreItem(DisplayScoreItem displayScore)
