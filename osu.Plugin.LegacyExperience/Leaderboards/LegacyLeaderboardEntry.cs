@@ -44,6 +44,8 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
         Size = new Vector2(WIDTH, HEIGHT);
     }
 
+    private Container textContainer = null!;
+
     [BackgroundDependencyLoader]
     private void load(ISkinSource skin, TextureStore textures,OsuConfigManager config)
     {
@@ -55,47 +57,54 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
                 Origin = Anchor.TopLeft,
                 Scale = new Vector2(background_scale),
             },
-            // TODO: use stable's font
-            nameSprite = new TruncatingSpriteText
+            textContainer = new Container
             {
-                Anchor = Anchor.TopLeft,
-                Origin = Anchor.TopLeft,
-                Font = LegacyFont.Default.With(size: 14),
-                RelativeSizeAxes = Axes.X,
-                Position = background_offset + new Vector2(2.5f, -2f) * stable_ratio,
-                AllowMultiline = false,
+                RelativeSizeAxes = Axes.Both,
+                Children = new Drawable[]
+                {
+                    // TODO: use stable's font
+                    nameSprite = new TruncatingSpriteText
+                    {
+                        Anchor = Anchor.TopLeft,
+                        Origin = Anchor.TopLeft,
+                        Font = LegacyFont.Default.With(size: 14),
+                        RelativeSizeAxes = Axes.X,
+                        Position = background_offset + new Vector2(2.5f, -2f) * stable_ratio,
+                        AllowMultiline = false,
+                    },
+                    scoreSprite = new ScoreEntrySpriteText()
+                    {
+                        Anchor = Anchor.TopLeft,
+                        Origin = Anchor.TopLeft,
+                        FixedWidth = true,
+                        Position = background_offset + new Vector2(2f, 18f) * stable_ratio,
+                        Colour = Color4.White,
+                        FontOverlap = 2.5f * stable_ratio,
+                        TextureLookup = skin.GetTexture,
+                    },
+                    comboSprite = new ScoreEntrySpriteText()
+                    {
+                        Anchor = Anchor.TopRight,
+                        Origin = Anchor.TopRight,
+                        FixedWidth = true,
+                        Colour = new Color4(153, 251, 255, 255),
+                        Position = background_offset + new Vector2(0, 18f) * stable_ratio,
+                        FontOverlap = 2.5f * stable_ratio,
+                        TextureLookup = skin.GetTexture,
+                    },
+                    rankSprite = new ScoreEntrySpriteText()
+                    {
+                        Anchor = Anchor.TopRight,
+                        Origin = Anchor.TopRight,
+                        Position = background_offset + new Vector2(0, -2f) * stable_ratio,
+                        Colour = new Color4(255, 255, 255, 80),
+                        Scale = new Vector2(2.2f),
+                        Alpha = 0,
+                        FontOverlap = 3f,
+                        TextureLookup = skin.GetTexture,
+                    }      
+                }
             },
-            scoreSprite = new ScoreEntrySpriteText()
-            {
-                Anchor = Anchor.TopLeft,
-                Origin = Anchor.TopLeft,
-                FixedWidth = true,
-                Position = background_offset + new Vector2(2f, 18f) * stable_ratio,
-                Colour = Color4.White,
-                FontOverlap = 2.5f * stable_ratio,
-                TextureLookup = skin.GetTexture,
-            },
-            comboSprite = new ScoreEntrySpriteText()
-            {
-                Anchor = Anchor.TopRight,
-                Origin = Anchor.TopRight,
-                FixedWidth = true,
-                Colour = new Color4(153, 251, 255, 255),
-                Position = background_offset + new Vector2(0, 18f) * stable_ratio,
-                FontOverlap = 2.5f * stable_ratio,
-                TextureLookup = skin.GetTexture,
-            },
-            rankSprite = new ScoreEntrySpriteText()
-            {
-                Anchor = Anchor.TopRight,
-                Origin = Anchor.TopRight,
-                Position = background_offset + new Vector2(0, -2f) * stable_ratio,
-                Colour = new Color4(255, 255, 255, 80),
-                Scale = new Vector2(2.2f),
-                Alpha = 0,
-                FontOverlap = 3f,
-                TextureLookup = skin.GetTexture,
-            }
         };
 
         Texture? getCroppedBackground()
@@ -228,6 +237,15 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
     public void FlashBackground()
     {
         backgroundSprite.FlashColour(Color4.White, 200);
+    }
+
+    public void UpdateTransparency(float alpha, Action<Drawable, float> transform)
+    {
+        float backgroundAlpha = alpha;
+        float textAlpha = IsTracking ? 1 : alpha;
+
+        transform(backgroundSprite, backgroundAlpha);
+        transform(textContainer, textAlpha);
     }
 
     private void updateScore()
