@@ -201,13 +201,13 @@ public partial class LegacyLeaderboardEntry : CompositeDrawable
         {
             backgroundColour = tracked_color;
         }
-        else if (ScorePosition.Value == 1)
-        {
-            backgroundColour = first_place_color;
-        }
         else if (isFriend)
         {
             backgroundColour = friend_color;
+        }
+        else if (ScorePosition.Value == 1)
+        {
+            backgroundColour = first_place_color;
         }
 
         nameSprite.FadeColour(nameColour, 150);
