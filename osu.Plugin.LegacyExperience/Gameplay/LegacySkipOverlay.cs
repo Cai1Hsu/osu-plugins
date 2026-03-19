@@ -136,9 +136,6 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
                 t.OnActivate -= onActivate;
 
             registerNewTriggers(triggers);
-
-            registeredTriggers.Clear();
-            registeredTriggers.AddRange(triggers);
         }, true);
 
         SkipOnSmokeAction.BindValueChanged(v =>
@@ -158,6 +155,9 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
 
             foreach (var t in triggers)
                 t.OnActivate += onActivate;
+            
+            registeredTriggers.Clear();
+            registeredTriggers.AddRange(triggers);
         }
     }
 
