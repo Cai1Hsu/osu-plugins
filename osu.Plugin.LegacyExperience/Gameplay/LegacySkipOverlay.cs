@@ -118,6 +118,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     }
 
     private readonly IBindableList<InputTrigger> gameplayTriggers = new BindableList<InputTrigger>();
+    private readonly List<InputTrigger> registeredTriggers = new List<InputTrigger>();
 
     private void registerGameplayActionTriggers(InputCountController? inputCountController)
     {
@@ -129,23 +130,22 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
 
         gameplayTriggers.BindCollectionChanged((_, arg) =>
         {
-            var oldTriggers = arg.OldItems?.OfType<InputTrigger>().ToArray() ?? Array.Empty<InputTrigger>();
-            var newTriggers = arg.NewItems?.OfType<InputTrigger>().ToArray() ?? Array.Empty<InputTrigger>();
+            var triggers = gameplayTriggers.ToArray();
 
-            foreach (var t in oldTriggers)
+            foreach (var t in registeredTriggers)
                 t.OnActivate -= onActivate;
 
-            registerNewTriggers(newTriggers);
+            registerNewTriggers(triggers);
         }, true);
 
         SkipOnSmokeAction.BindValueChanged(v =>
         {
-            var triggers = gameplayTriggers.OfType<InputTrigger>();
-
-            foreach (var t in triggers)
+            foreach (var t in registeredTriggers)
                 t.OnActivate -= onActivate;
 
-            registerNewTriggers(triggers);
+            // registerNewTriggers clears registeredTriggers first
+            // so we should make a copy of the list before passing it in to avoid modifying the collection while enumerating it.
+            registerNewTriggers(registeredTriggers.ToArray());
         });
 
         void registerNewTriggers(IEnumerable<InputTrigger> triggers)
@@ -155,16 +155,19 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
 
             foreach (var t in triggers)
                 t.OnActivate += onActivate;
-        }
 
-        void onActivate(bool dontcare)
-        {
-            // avoid spamming skip requests when the intro is already skipped.
-            if (!skipOverlayContainer!.IsPresent || isGameStarted)
-                return;
-
-            drawable.TriggerClick();
+            registeredTriggers.Clear();
+            registeredTriggers.AddRange(triggers);
         }
+    }
+
+    private void onActivate(bool dontcare)
+    {
+        // avoid spamming skip requests when the intro is already skipped.
+        if (!skipOverlayContainer!.IsPresent || isGameStarted)
+            return;
+
+        drawable.TriggerClick();
     }
 
     private static bool isOsuActionSmokeTrigger(InputTrigger trigger)
@@ -216,6 +219,14 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     private static readonly MethodInfo? SkipIntroOverlay_getter = typeof(Player)
         .GetProperty("SkipIntroOverlay", BindingFlags.NonPublic | BindingFlags.Instance)?
         .GetMethod;
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        foreach (var t in registeredTriggers)
+            t.OnActivate -= onActivate;
+    }
 
     private partial class FadeContainer : VisibilityContainer
     {
