@@ -143,7 +143,9 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
             foreach (var t in registeredTriggers)
                 t.OnActivate -= onActivate;
 
-            registerNewTriggers(registeredTriggers);
+            // registerNewTriggers clears registeredTriggers first
+            // so we should make a copy of the list before passing it in to avoid modifying the collection while enumerating it.
+            registerNewTriggers(registeredTriggers.ToArray());
         });
 
         void registerNewTriggers(IEnumerable<InputTrigger> triggers)
@@ -153,7 +155,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
 
             foreach (var t in triggers)
                 t.OnActivate += onActivate;
-            
+
             registeredTriggers.Clear();
             registeredTriggers.AddRange(triggers);
         }
