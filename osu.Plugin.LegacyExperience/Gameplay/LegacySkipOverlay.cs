@@ -140,7 +140,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
 
         SkipOnSmokeAction.BindValueChanged(v =>
         {
-            var triggers = gameplayTriggers.OfType<InputTrigger>();
+            var triggers = gameplayTriggers.ToArray();
 
             foreach (var t in triggers)
                 t.OnActivate -= onActivate;
