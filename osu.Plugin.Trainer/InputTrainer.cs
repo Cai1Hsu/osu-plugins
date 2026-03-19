@@ -233,28 +233,31 @@ public abstract partial class InputTrainer : CompositeDrawable
 
     private readonly IBindableList<InputTrigger> gameplayTriggers = new BindableList<InputTrigger>();
     private readonly Dictionary<OsuKeyTrigger, OnActivateCallback> triggerHandlers = new();
+    private readonly List<OsuKeyTrigger> registeredTriggers = new();
 
     private void registerGameplayActionTriggers(InputCountController? inputCountController)
     {
         if (inputCountController is not null)
             gameplayTriggers.BindTo(inputCountController.Triggers);
 
-        gameplayTriggers.BindCollectionChanged((_, arg) =>
+        gameplayTriggers.BindCollectionChanged((_, _) =>
         {
-            var oldTriggers = arg.OldItems?.OfType<OsuKeyTrigger>().ToArray() ?? Array.Empty<OsuKeyTrigger>();
-            var newTriggers = arg.NewItems?.OfType<OsuKeyTrigger>().ToArray() ?? Array.Empty<OsuKeyTrigger>();
+            // avoid accessing arg's newItems and oldItems because they may change during enumeration due to poor design of BindableList's CollectionChanged event. 
+            // Instead, we will just clear all handlers and re-add them according to the current state of gameplayTriggers.
+            var triggers = gameplayTriggers.OfType<OsuKeyTrigger>()
+                                           .ToArray();
 
-            OnActivateCallback activateHandler(OsuKeyTrigger trigger)
-                => _ => handleAction(trigger.Action);
-
-            foreach (var t in oldTriggers.Where(t => triggerHandlers.ContainsKey(t)))
+            foreach (var t in registeredTriggers.Where(triggerHandlers.ContainsKey))
             {
                 t.OnActivate -= triggerHandlers[t];
                 triggerHandlers.Remove(t);
             }
 
-            foreach (var t in newTriggers)
-                t.OnActivate += triggerHandlers[t] = activateHandler(t);
+            foreach (var t in triggers)
+                t.OnActivate += triggerHandlers[t] = _ => handleAction(t.Action);
+
+            registeredTriggers.Clear();
+            registeredTriggers.AddRange(triggers);
         }, true);
     }
 

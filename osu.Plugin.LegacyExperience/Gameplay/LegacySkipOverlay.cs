@@ -118,6 +118,7 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     }
 
     private readonly IBindableList<InputTrigger> gameplayTriggers = new BindableList<InputTrigger>();
+    private readonly List<InputTrigger> registeredTriggers = new List<InputTrigger>();
 
     private void registerGameplayActionTriggers(InputCountController? inputCountController)
     {
@@ -129,13 +130,15 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
 
         gameplayTriggers.BindCollectionChanged((_, arg) =>
         {
-            var oldTriggers = arg.OldItems?.OfType<InputTrigger>().ToArray() ?? Array.Empty<InputTrigger>();
-            var newTriggers = arg.NewItems?.OfType<InputTrigger>().ToArray() ?? Array.Empty<InputTrigger>();
+            var triggers = gameplayTriggers.ToArray();
 
-            foreach (var t in oldTriggers)
+            foreach (var t in registeredTriggers)
                 t.OnActivate -= onActivate;
 
-            registerNewTriggers(newTriggers);
+            registerNewTriggers(triggers);
+
+            registeredTriggers.Clear();
+            registeredTriggers.AddRange(triggers);
         }, true);
 
         SkipOnSmokeAction.BindValueChanged(v =>
