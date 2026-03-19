@@ -159,15 +159,15 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
             foreach (var t in triggers)
                 t.OnActivate += onActivate;
         }
+    }
 
-        void onActivate(bool dontcare)
-        {
-            // avoid spamming skip requests when the intro is already skipped.
-            if (!skipOverlayContainer!.IsPresent || isGameStarted)
-                return;
+    private void onActivate(bool dontcare)
+    {
+        // avoid spamming skip requests when the intro is already skipped.
+        if (!skipOverlayContainer!.IsPresent || isGameStarted)
+            return;
 
-            drawable.TriggerClick();
-        }
+        drawable.TriggerClick();
     }
 
     private static bool isOsuActionSmokeTrigger(InputTrigger trigger)
@@ -219,6 +219,14 @@ public partial class LegacySkipOverlay : CompositeDrawable, ISerialisableDrawabl
     private static readonly MethodInfo? SkipIntroOverlay_getter = typeof(Player)
         .GetProperty("SkipIntroOverlay", BindingFlags.NonPublic | BindingFlags.Instance)?
         .GetMethod;
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        foreach (var t in registeredTriggers)
+            t.OnActivate -= onActivate;
+    }
 
     private partial class FadeContainer : VisibilityContainer
     {
