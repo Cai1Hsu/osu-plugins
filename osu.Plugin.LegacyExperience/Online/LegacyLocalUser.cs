@@ -23,7 +23,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
     public LegacyUserPanel UserPanel => userPanel;
 
-    public event Action UserUpdated = null!;
+    public event Action? UserUpdated;
 
     private readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
 
