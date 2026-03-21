@@ -34,7 +34,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
     private void load(UserStatisticsWatcher? userStatisticsWatcher)
     {
         // user-bg's size
-        Size = new Vector2(330, 86) * LegacyExperiencePlugin.StableRatio;
+        Size = new Vector2(330, 86);
 
         localUser.BindTo(api.LocalUser);
 
