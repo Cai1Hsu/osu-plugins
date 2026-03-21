@@ -21,6 +21,10 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
     private LegacyUserPanel userPanel = null!;
 
+    public LegacyUserPanel UserPanel => userPanel;
+
+    public event Action UserUpdated = null!;
+
     private readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
 
     [Resolved]
@@ -57,6 +61,8 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
             // ensure the user panel is always at the back of the hierarchy so that it doesn't cover any other elements.
             ChangeInternalChildDepth(userPanel, float.MaxValue);
+
+            UserUpdated?.Invoke();
         }, true);
 
         LatestUpdate.BindValueChanged(update =>
