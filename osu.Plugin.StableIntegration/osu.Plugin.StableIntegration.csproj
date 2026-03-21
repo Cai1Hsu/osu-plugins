@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ppy.osu.Game" Version="2025.1209.0">
+    <PackageReference Include="ppy.osu.Game" Version="2026.317.0">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
