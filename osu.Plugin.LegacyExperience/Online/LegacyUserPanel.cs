@@ -110,7 +110,7 @@ public partial class LegacyUserPanel : CompositeDrawable
                     // GDI's DrawString method seems to add a little extra space at the end of the text
                     Right = 4,
                 },
-            }.With(updateRankText),
+            },
             new OsuSpriteText
             {
                 Position = new Vector2(52, 2) * LegacyExperiencePlugin.StableRatio,
@@ -156,6 +156,7 @@ public partial class LegacyUserPanel : CompositeDrawable
 
         updatePlayerInfo();
         updateRulesetIcon();
+        updateRankText();
     }
 
     private void updateStyle(ValueChangedEvent<bool> v)
@@ -358,7 +359,7 @@ public partial class LegacyUserPanel : CompositeDrawable
         }
     }
 
-    private void updateRankText(SpriteText rankText)
+    private void updateRankText()
     {
         if (UserStatistics.GlobalRank is not { } rank)
             return;
