@@ -53,6 +53,8 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
                 ExtendedStyle = { Value = true },
             });
 
+            userPanel.FadeInFromZero(200);
+
             // ensure the user panel is always at the back of the hierarchy so that it doesn't cover any other elements.
             ChangeInternalChildDepth(userPanel, float.MaxValue);
         }, true);
