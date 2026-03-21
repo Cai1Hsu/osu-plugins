@@ -47,7 +47,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
             if (user.NewValue is null)
                 return;
 
-            userPanel?.Expire();
+            userPanel?.FadeOut(200).Expire();
             AddInternal(userPanel = new LegacyUserPanel(user.NewValue)
             {
                 ExtendedStyle = { Value = true },
