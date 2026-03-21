@@ -83,7 +83,9 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
                 // so we need to use its position for the animation.
                 var playInfoText = userPanel.PlayerInfoText.InnerFlow;
 
-                var textPosition = userPanel.PlayerInfoText.Position + new Vector2(playInfoText.DrawWidth / 2, 0);
+                var flowPosition = ToLocalSpace(playInfoText.ScreenSpaceDrawQuad.TopLeft);
+
+                var textPosition = flowPosition + new Vector2(playInfoText.DrawWidth / 2, 0);
                 var textMovement = new Vector2(playInfoText.DrawWidth / 2 + 2, 0);
 
                 var scoreChanged = curr.RankedScore - prev.RankedScore;
