@@ -46,8 +46,6 @@ public partial class MainMenu : CompositeDrawable
 
     private OsuDirectButton osuDirectButton = null!;
 
-    private Container<LegacyUserPanel> userPanelContainer = null!;
-
     private readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
 
     private string versionString
@@ -92,6 +90,8 @@ public partial class MainMenu : CompositeDrawable
     [Resolved]
     private RealmAccess realm { get; set; } = null!;
 
+    private LegacyLocalUser localUserDrawable = null!;
+
     [BackgroundDependencyLoader]
     private void load(OsuConfigManager config, TextureStore textures)
     {
@@ -127,12 +127,7 @@ public partial class MainMenu : CompositeDrawable
                         Alpha = 0.4f,
                         Colour = Colour4.Black,
                     },
-                    userPanelContainer = new Container<LegacyUserPanel>
-                    {
-                        Anchor = Anchor.TopLeft,
-                        Origin = Anchor.TopLeft,
-                        AutoSizeAxes = Axes.Both,
-                    },
+                    localUserDrawable = new LegacyLocalUser(),
                     generalText = new LegacyTextFlowContainer(static t =>
                     {
                         t.Font = LegacyFont.Default.With(size: 14);
@@ -235,7 +230,6 @@ public partial class MainMenu : CompositeDrawable
             screenStack = game.ScreenStack;
 
         localUser.BindTo(api.LocalUser);
-        localUser.BindValueChanged(v => localUserChanged(v.NewValue), true);
 
         buttonSystem.OnEditClick = () =>
         {
@@ -269,6 +263,8 @@ public partial class MainMenu : CompositeDrawable
         buttonSystemState.BindValueChanged(_ => buttonSystemStateChanged(), true);
 
         realmSubscription = realm.RegisterForNotifications(r => r.All<BeatmapInfo>(), beatmapsChanged);
+
+        localUserDrawable.UserUpdated += localUserChanged;
     }
 
     private IDisposable? realmSubscription;
@@ -335,22 +331,13 @@ public partial class MainMenu : CompositeDrawable
 
     private const float permission_icon_scale = 0.25f;
 
-    private void localUserChanged(APIUser user)
+    private void localUserChanged()
     {
-        foreach (var panel in userPanelContainer.Children)
-            panel.FadeOut(200).Expire();
+        localUserDrawable.UserPanel.Action = () => loginOverlay?.Show();
 
-        LegacyUserPanel newPanel;
-
-        userPanelContainer.Add(newPanel = new LegacyUserPanel(user)
-        {
-            Anchor = Anchor.TopLeft,
-            Origin = Anchor.TopLeft,
-            ExtendedStyle = { Value = true },
-            Action = () => loginOverlay?.Show(),
-        });
-
-        newPanel.FadeInFromZero(200);
+        // updateGeneral uses localUser.Value, but since it updates every second,
+        // it should be safe to use localUser.Value here without worrying about it being out of sync with the displayed user.
+        var user = localUserDrawable.UserPanel.User;
 
         float delay = 250;
 
