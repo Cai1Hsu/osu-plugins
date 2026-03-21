@@ -57,6 +57,9 @@ public partial class LegacyUserPanel : CompositeDrawable
     [Resolved]
     private MetadataClient? metadata { get; set; }
 
+    public LegacyTextFlowContainer PlayerInfoText => playerInfoText;
+    public OsuSpriteText RankText => rankText;
+
     private readonly BindableDouble levelProgress = new BindableDouble()
     {
         MinValue = 0,
