@@ -28,6 +28,8 @@ public partial class LegacyUserPanel : CompositeDrawable
 {
     public APIUser User { get; }
 
+    protected UserStatistics UserStatistics { get; private set; } = null!;
+
     public bool IsGuest => User.Id == APIUser.SYSTEM_USER_ID;
 
     public Action? Action { get; set; }
@@ -35,6 +37,7 @@ public partial class LegacyUserPanel : CompositeDrawable
     public LegacyUserPanel(APIUser user)
     {
         User = user;
+        UserStatistics = User.Statistics;
     }
 
     public BindableBool ExtendedStyle { get; } = new BindableBool();
@@ -54,12 +57,16 @@ public partial class LegacyUserPanel : CompositeDrawable
     [Resolved]
     private MetadataClient? metadata { get; set; }
 
+    private readonly BindableDouble levelProgress = new BindableDouble()
+    {
+        MinValue = 0,
+        MaxValue = 1,
+    };
+
     [BackgroundDependencyLoader]
     private void load()
     {
         AutoSizeAxes = Axes.Both;
-
-        var userStat = User.Statistics;
 
         InternalChildren =
         [
@@ -131,14 +138,24 @@ public partial class LegacyUserPanel : CompositeDrawable
                 Position = new Vector2(124, 66),
                 // Bindable seems to be unnecessary since level info is only updated on user change.
                 // However this helps for testing and also keeps the code cleaner.
-                Progress = { Value = userStat.Level.Progress / 100f },
+                Progress = { BindTarget = levelProgress },
             },
         ];
 
         ExtendedStyle.BindValueChanged(updateStyle, true);
 
-        updateRulesetIcon();
+        UpdateStatistics(UserStatistics);
         FinishTransforms(true);
+    }
+
+    public void UpdateStatistics(UserStatistics statistics)
+    {
+        UserStatistics = statistics;
+
+        levelProgress.Value = UserStatistics.Level.Progress / 100f;
+
+        updatePlayerInfo();
+        updateRulesetIcon();
     }
 
     private void updateStyle(ValueChangedEvent<bool> v)
@@ -199,7 +216,7 @@ public partial class LegacyUserPanel : CompositeDrawable
         }
 
         var textBuilder = new StringBuilder();
-        var userStat = User.Statistics;
+        var userStat = UserStatistics;
 
         if (userStat.PP > 0)
         {
@@ -318,7 +335,7 @@ public partial class LegacyUserPanel : CompositeDrawable
     {
         var playMode = User.PlayMode is "fruits" or "mania" or "taiko" or "osu" ? User.PlayMode : null;
 
-        bool showIcon = User.Statistics.RankedScore > 0 ||
+        bool showIcon = UserStatistics.RankedScore > 0 ||
                         lastLegacyStatus is LegacyUserStatus.Playing or
                                             LegacyUserStatus.Multiplaying or
                                             LegacyUserStatus.Testing;
@@ -343,7 +360,7 @@ public partial class LegacyUserPanel : CompositeDrawable
 
     private void updateRankText(SpriteText rankText)
     {
-        if (User.Statistics.GlobalRank is not { } rank)
+        if (UserStatistics.GlobalRank is not { } rank)
             return;
 
         rankText.Colour = rank switch
