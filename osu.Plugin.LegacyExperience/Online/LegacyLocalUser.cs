@@ -145,7 +145,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
                         Text = wrapNumericString($"{rankChanged}", rankChanged > 0),
                         Font = LegacyFont.Default.With(size: 30),
                         Colour = Colour4.White,
-                        Position = userPanel.RankText.Position,
+                        Position = ToLocalSpace(userPanel.RankText.ScreenSpaceDrawQuad.TopRight),
                     };
 
                     AddInternal(text);
