@@ -52,15 +52,18 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
                 return;
 
             userPanel?.FadeOut(200).Expire();
-            AddInternal(userPanel = new LegacyUserPanel(user.NewValue)
+
+            var newPanel = userPanel = new LegacyUserPanel(user.NewValue)
             {
                 ExtendedStyle = { Value = true },
-            });
+            };
 
-            userPanel.FadeInFromZero(200);
+            AddInternal(newPanel);
+
+            newPanel.FadeInFromZero(200);
 
             // ensure the user panel is always at the back of the hierarchy so that it doesn't cover any other elements.
-            ChangeInternalChildDepth(userPanel, float.MaxValue);
+            ChangeInternalChildDepth(newPanel, float.MaxValue);
 
             UserUpdated?.Invoke();
         }, true);
@@ -73,6 +76,8 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
             var change = update.NewValue;
             var prev = change.Before;
             var curr = change.After;
+
+            var userPanel = UserPanel;
 
             Scheduler.AddOnce(userPanel.UpdateStatistics, curr);
 
