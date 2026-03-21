@@ -9,6 +9,7 @@ using osu.Game.Skinning;
 using osu.Plugin.LegacyExperience.Buttons;
 using osu.Plugin.LegacyExperience.Gameplay;
 using osu.Plugin.LegacyExperience.Leaderboards;
+using osu.Plugin.LegacyExperience.Online;
 
 namespace osu.Plugin.LegacyExperience;
 
@@ -57,6 +58,7 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
             typeof(LegacyChatButton),
             typeof(LegacyDashboardButton),
             typeof(LegacyFpsDisplay),
+            typeof(LegacyLocalUser),
         }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.SongSelect));
 
         hookMainMenu(game);
