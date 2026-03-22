@@ -40,7 +40,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
     [Resolved]
     private LocalUserStatisticsProvider? localUserStatisticsProvider { get; set; } = null!;
 
-    internal readonly Bindable<UserStatistics?> userStatistics = new Bindable<UserStatistics?>();
+    internal readonly Bindable<UserStatistics?> UserStatistics = new Bindable<UserStatistics?>();
 
     [BackgroundDependencyLoader]
     private void load(UserStatisticsWatcher? userStatisticsWatcher)
@@ -84,7 +84,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
                 if (newPanel.IsGuest)
                 {
-                    userStatistics.Value = null!;
+                    UserStatistics.Value = null!;
                 }
                 else
                 {
@@ -105,10 +105,10 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
             if (update.Score.Ruleset != ruleset.Value)
                 return;
 
-            userStatistics.Value = update.After;
+            UserStatistics.Value = update.After;
         }, true);
 
-        userStatistics.BindValueChanged(v =>
+        UserStatistics.BindValueChanged(v =>
         {
             playUpdateAnimation(v.OldValue, v.NewValue);
         });
@@ -118,7 +118,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
     {
         var stats = localUserStatisticsProvider?.GetStatisticsFor(ruleset) ?? new();
 
-        userStatistics.Value = stats;
+        UserStatistics.Value = stats;
     }
 
     private readonly ConcurrentDictionary<RulesetInfo, bool> fetchedRulesets = new ConcurrentDictionary<RulesetInfo, bool>();
