@@ -40,7 +40,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
     [Resolved]
     private LocalUserStatisticsProvider? localUserStatisticsProvider { get; set; } = null!;
 
-    internal readonly Bindable<UserStatistics> userStatistics = new Bindable<UserStatistics>();
+    internal readonly Bindable<UserStatistics?> userStatistics = new Bindable<UserStatistics?>();
 
     [BackgroundDependencyLoader]
     private void load(UserStatisticsWatcher? userStatisticsWatcher)
@@ -146,7 +146,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
         }
     }
 
-    private void playUpdateAnimation(UserStatistics previous, UserStatistics current)
+    private void playUpdateAnimation(UserStatistics? previous, UserStatistics? current)
     {
         Scheduler.AddOnce(s => userPanel.InvokeWhenReady(d =>
         {
