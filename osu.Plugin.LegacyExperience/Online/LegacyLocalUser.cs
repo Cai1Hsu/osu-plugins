@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -59,6 +60,8 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
         localUser.BindValueChanged(user =>
         {
+            fetchedRulesets.Clear();
+
             if (user.NewValue is null)
                 return;
 
@@ -85,26 +88,14 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
                 }
                 else
                 {
-                    var ruleset = this.ruleset.Value;
-
-                    // don't know why this value is still sometimes wrong, but this is the best we can do.
-                    localUserStatisticsProvider?.RefetchStatistics(ruleset, v =>
-                    {
-                        updateRulesetStatistics(ruleset);
-                    });
+                    updateStatisticsForRuleset(ruleset.Value);
                 }
 
                 UserUpdated?.Invoke();
             }, user.NewValue);
         }, true);
 
-        ruleset.BindValueChanged(r =>
-        {
-            if (!r.NewValue.IsLegacyRuleset())
-                return;
-
-            updateRulesetStatistics(r.NewValue);
-        }, true);
+        ruleset.BindValueChanged(r => updateStatisticsForRuleset(r.NewValue), true);
 
         LatestUpdate.BindValueChanged(u =>
         {
@@ -128,6 +119,31 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
         var stats = localUserStatisticsProvider?.GetStatisticsFor(ruleset) ?? new();
 
         userStatistics.Value = stats;
+    }
+
+    private readonly ConcurrentDictionary<RulesetInfo, bool> fetchedRulesets = new ConcurrentDictionary<RulesetInfo, bool>();
+
+    private void updateStatisticsForRuleset(RulesetInfo ruleset)
+    {
+        if (!ruleset.IsLegacyRuleset())
+            return;
+
+        if (fetchedRulesets.ContainsKey(ruleset))
+        {
+            updateRulesetStatistics(ruleset);
+        }
+        else
+        {
+            // don't know why this value is still sometimes wrong, but this is the best we can do.
+            localUserStatisticsProvider?.RefetchStatistics(ruleset, v =>
+            {
+                if (v.Ruleset != ruleset)
+                    return;
+
+                updateRulesetStatistics(ruleset);
+                fetchedRulesets[ruleset] = true;
+            });
+        }
     }
 
     private void playUpdateAnimation(UserStatistics previous, UserStatistics current)
