@@ -111,6 +111,9 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
             if (u.NewValue is not { } update)
                 return;
 
+            if (update.Score.Ruleset != ruleset.Value)
+                return;
+
             userStatistics.Value = update.After;
         }, true);
 
