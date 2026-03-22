@@ -60,8 +60,6 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
         localUser.BindValueChanged(user =>
         {
-            fetchedRulesets.Clear();
-
             if (user.NewValue is null)
                 return;
 
@@ -114,23 +112,14 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
         });
     }
 
-    private void updateRulesetStatistics(RulesetInfo ruleset)
-    {
-        var stats = localUserStatisticsProvider?.GetStatisticsFor(ruleset) ?? new();
-
-        UserStatistics.Value = stats;
-    }
-
-    private readonly ConcurrentDictionary<RulesetInfo, bool> fetchedRulesets = new ConcurrentDictionary<RulesetInfo, bool>();
-
     private void updateStatisticsForRuleset(RulesetInfo ruleset)
     {
         if (!ruleset.IsLegacyRuleset())
             return;
 
-        if (fetchedRulesets.ContainsKey(ruleset))
+        if (localUserStatisticsProvider?.GetStatisticsFor(ruleset) is { } cachedStats)
         {
-            updateRulesetStatistics(ruleset);
+            UserStatistics.Value = cachedStats;
         }
         else
         {
@@ -139,9 +128,8 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
             {
                 if (v.Ruleset != ruleset)
                     return;
-
-                updateRulesetStatistics(ruleset);
-                fetchedRulesets[ruleset] = true;
+                
+                UserStatistics.Value = v.NewStatistics;
             });
         }
     }
