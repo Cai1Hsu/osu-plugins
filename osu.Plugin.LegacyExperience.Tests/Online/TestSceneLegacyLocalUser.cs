@@ -9,6 +9,7 @@ using osu.Game.Scoring;
 using osu.Game.Tests.Visual;
 using osu.Game.Users;
 using osu.Plugin.LegacyExperience.Online;
+using osu.Game.Rulesets;
 
 namespace osu.Plugin.LegacyExperience.Tests.Online;
 
@@ -26,6 +27,9 @@ public partial class TestSceneLegacyLocalUser : OsuTestScene
         latestUpdate.Value = null;
     }
 
+    [Resolved]
+    private IBindable<RulesetInfo> ruleset { get; set; } = null!;
+
     [BackgroundDependencyLoader]
     private void load()
     {
@@ -33,7 +37,10 @@ public partial class TestSceneLegacyLocalUser : OsuTestScene
         {
             if (stat.NewValue is { } newStat)
             {
-                var update = new ScoreBasedUserStatisticsUpdate(new ScoreInfo(), stat.OldValue, newStat);
+                var update = new ScoreBasedUserStatisticsUpdate(new ScoreInfo()
+                {
+                    Ruleset = ruleset.Value,
+                }, stat.OldValue, newStat);
                 updateStatistics(update);
             }
         });
