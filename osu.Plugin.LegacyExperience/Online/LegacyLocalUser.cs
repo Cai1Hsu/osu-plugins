@@ -130,7 +130,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
             {
                 if (v.Ruleset.OnlineID != ruleset.OnlineID)
                     return;
-                
+
                 UserStatistics.Value = v.NewStatistics;
             });
         }
@@ -155,8 +155,14 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
             var flowPosition = ToLocalSpace(playInfoText.ScreenSpaceDrawQuad.TopLeft);
 
-            var textPosition = flowPosition + new Vector2(playInfoText.DrawWidth / 2, 0);
-            var textMovement = new Vector2(playInfoText.DrawWidth / 2 + 2, 0);
+            // sometimes playInfoText.DrawWidth remains zero and causing the text to stack on top of each other, 
+            // so we use a constant width as a fallback.
+            const float text_width = 150; // slightly larger than the width of 5 digits pp, as far as i know, no human player has higher pp
+
+            var textWidth = playInfoText.DrawWidth > 0 ? playInfoText.DrawWidth : text_width;
+
+            var textPosition = flowPosition + new Vector2(textWidth / 2, 0);
+            var textMovement = new Vector2(textWidth / 2 + 2, 0);
 
             var scoreChanged = current.RankedScore - previous.RankedScore;
 
