@@ -2,6 +2,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Game.Extensions;
 using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
@@ -35,7 +36,8 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
     [Resolved]
     private IBindable<RulesetInfo> ruleset { get; set; } = null!;
 
-    private readonly Dictionary<string, UserStatistics> rulesetStatistics = new Dictionary<string, UserStatistics>();
+    [Resolved]
+    private LocalUserStatisticsProvider localUserStatisticsProvider { get; set; } = null!;
 
     internal readonly Bindable<UserStatistics> userStatistics = new Bindable<UserStatistics>();
 
@@ -57,8 +59,6 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
         localUser.BindValueChanged(user =>
         {
-            rulesetStatistics.Clear();
-
             if (user.NewValue is null)
                 return;
 
@@ -79,13 +79,20 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
                 // ensure the user panel is always at the back of the hierarchy so that it doesn't cover any other elements.
                 ChangeInternalChildDepth(newPanel, float.MaxValue);
 
-                if (user.RulesetsStatistics is not null)
+                if (newPanel.IsGuest)
                 {
-                    foreach (var ruleset in user.RulesetsStatistics)
-                        rulesetStatistics.TryAdd(ruleset.Key, ruleset.Value);
+                    userStatistics.Value = null!;
                 }
+                else
+                {
+                    var ruleset = this.ruleset.Value;
 
-                updateRulesetStatistics(ruleset.Value);
+                    // don't know why this value is still sometimes wrong, but this is the best we can do.
+                    localUserStatisticsProvider.RefetchStatistics(ruleset, v =>
+                    {
+                        updateRulesetStatistics(ruleset);
+                    });
+                }
 
                 UserUpdated?.Invoke();
             }, user.NewValue);
@@ -93,25 +100,19 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
         ruleset.BindValueChanged(r =>
         {
-            // wait a frame to ensure ruleset statistics are populated
-            if (r.NewValue is not null)
-                Scheduler.AddOnce(updateRulesetStatistics, r.NewValue);
-        });
+            if (!r.NewValue.IsLegacyRuleset())
+                return;
+
+            updateRulesetStatistics(r.NewValue);
+        }, true);
 
         LatestUpdate.BindValueChanged(u =>
         {
             if (u.NewValue is not { } update)
                 return;
 
-            var ruleset = update.Score.Ruleset.ShortName;
-
-            // APIUser's ruleset statistics are only updated via batch lookups and maybe out of date, 
-            // so we manage our own copy from ScoreBasedUserStatisticsUpdate which is guaranteed to be up to date.
-            rulesetStatistics[ruleset] = update.After;
             userStatistics.Value = update.After;
         }, true);
-
-        updateRulesetStatistics(ruleset.Value);
 
         userStatistics.BindValueChanged(v =>
         {
@@ -121,20 +122,9 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
 
     private void updateRulesetStatistics(RulesetInfo ruleset)
     {
-        if (rulesetStatistics.TryGetValue(ruleset.ShortName, out var stats))
-        {
-            userStatistics.Value = stats;
-        }
-        else
-        {
-            UserStatistics? stats2 = null;
+        var stats = localUserStatisticsProvider?.GetStatisticsFor(ruleset) ?? new();
 
-            localUser.Value.RulesetsStatistics?.TryGetValue(ruleset.ShortName, out stats2);
-
-            stats2 ??= new UserStatistics();
-
-            userStatistics.Value = rulesetStatistics[ruleset.ShortName] = stats2;
-        }
+        userStatistics.Value = stats;
     }
 
     private void playUpdateAnimation(UserStatistics previous, UserStatistics current)
@@ -143,7 +133,11 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
         {
             var userPanel = (LegacyUserPanel)d;
 
-            userPanel.UpdateStatistics(s);
+            userPanel.UpdateStatistics(s ?? new());
+
+            // if previous is null, it means this is the first time we set the statistics, so we shouldn't play any animation.
+            if (previous is null || current is null)
+                return;
 
             // note that PlayerInfoText has a constant size to truncate the text,
             // InnerFlow is the actual text container that moves when the text changes, 
