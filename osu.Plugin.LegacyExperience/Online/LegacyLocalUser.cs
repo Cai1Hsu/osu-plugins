@@ -111,7 +111,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
         UserStatistics.BindValueChanged(v =>
         {
             playUpdateAnimation(v.OldValue, v.NewValue);
-        });
+        }, true);
     }
 
     private void updateStatisticsForRuleset(RulesetInfo ruleset)
