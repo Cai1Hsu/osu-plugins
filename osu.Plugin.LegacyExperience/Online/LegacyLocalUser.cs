@@ -100,7 +100,9 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
             if (u.NewValue is not { } update)
                 return;
 
-            if (update.Score.Ruleset != ruleset.Value)
+            // somehow this the ruleset comparison failes, so compare online ID directly here
+            if (update.Score.Ruleset.OnlineID != ruleset.Value.OnlineID ||
+                !update.Score.Ruleset.IsLegacyRuleset())
                 return;
 
             UserStatistics.Value = update.After;
@@ -126,7 +128,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
             // don't know why this value is still sometimes wrong, but this is the best we can do.
             localUserStatisticsProvider?.RefetchStatistics(ruleset, v =>
             {
-                if (v.Ruleset != ruleset)
+                if (v.Ruleset.OnlineID != ruleset.OnlineID)
                     return;
                 
                 UserStatistics.Value = v.NewStatistics;
