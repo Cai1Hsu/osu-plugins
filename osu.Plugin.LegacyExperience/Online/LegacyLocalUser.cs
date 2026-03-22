@@ -37,7 +37,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
     private IBindable<RulesetInfo> ruleset { get; set; } = null!;
 
     [Resolved]
-    private LocalUserStatisticsProvider localUserStatisticsProvider { get; set; } = null!;
+    private LocalUserStatisticsProvider? localUserStatisticsProvider { get; set; } = null!;
 
     internal readonly Bindable<UserStatistics> userStatistics = new Bindable<UserStatistics>();
 
@@ -88,7 +88,7 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
                     var ruleset = this.ruleset.Value;
 
                     // don't know why this value is still sometimes wrong, but this is the best we can do.
-                    localUserStatisticsProvider.RefetchStatistics(ruleset, v =>
+                    localUserStatisticsProvider?.RefetchStatistics(ruleset, v =>
                     {
                         updateRulesetStatistics(ruleset);
                     });
