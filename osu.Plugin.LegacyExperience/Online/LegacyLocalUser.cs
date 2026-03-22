@@ -159,7 +159,8 @@ public partial class LegacyLocalUser : CompositeDrawable, ISerialisableDrawable
             // so we use a constant width as a fallback.
             const float text_width = 150; // slightly larger than the width of 5 digits pp, as far as i know, no human player has higher pp
 
-            var textWidth = playInfoText.DrawWidth > 0 ? playInfoText.DrawWidth : text_width;
+            // ugly but it works, playInfoText's size will only update at the second frame
+            var textWidth = playInfoText.InternalChildren.Max(c => (float?)c.DrawWidth) ?? text_width;
 
             var textPosition = flowPosition + new Vector2(textWidth / 2, 0);
             var textMovement = new Vector2(textWidth / 2 + 2, 0);

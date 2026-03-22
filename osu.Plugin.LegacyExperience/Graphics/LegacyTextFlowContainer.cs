@@ -11,7 +11,7 @@ public partial class LegacyTextFlowContainer : TextFlowContainer
     {
     }
 
-    public new Drawable InnerFlow => Flow;
+    public new CompositeDrawable InnerFlow => Flow;
 
     protected override SpriteText CreateSpriteText() => new FontText();
 }
