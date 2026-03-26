@@ -111,31 +111,43 @@ public partial class MainMenu : CompositeDrawable
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
-                    backgroundDim = new Box
+                    new Container
                     {
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
                         RelativeSizeAxes = Axes.Both,
-                        Colour = Colour4.Black,
-                        Alpha = 0,
-                    },
-                    new Box
-                    {
-                        Anchor = Anchor.TopCentre,
-                        Origin = Anchor.TopCentre,
-                        RelativeSizeAxes = Axes.X,
-                        Height = 54 * LegacyExperiencePlugin.StableRatio,
-                        Alpha = 0.4f,
-                        Colour = Colour4.Black,
-                    },
-                    new Box
-                    {
-                        Anchor = Anchor.BottomCentre,
-                        Origin = Anchor.BottomCentre,
-                        RelativeSizeAxes = Axes.X,
-                        Height = 54 * LegacyExperiencePlugin.StableRatio,
-                        Alpha = 0.4f,
-                        Colour = Colour4.Black,
+                        // settings and notification overlay pushes the screen stack off a bit horizontally,
+                        // add some extra width to the background container to prevent revealing the background on the sides when the screen stack is pushed off.
+                        Width = 2,
+                        Children = new Drawable[]
+                        {
+                            backgroundDim = new Box
+                            {
+                                Anchor = Anchor.Centre,
+                                Origin = Anchor.Centre,
+                                RelativeSizeAxes = Axes.Both,
+                                Colour = Colour4.Black,
+                                Alpha = 0,
+                            },
+                            new Box
+                            {
+                                Anchor = Anchor.TopCentre,
+                                Origin = Anchor.TopCentre,
+                                RelativeSizeAxes = Axes.X,
+                                Height = 54 * LegacyExperiencePlugin.StableRatio,
+                                Alpha = 0.4f,
+                                Colour = Colour4.Black,
+                            },
+                            new Box
+                            {
+                                Anchor = Anchor.BottomCentre,
+                                Origin = Anchor.BottomCentre,
+                                RelativeSizeAxes = Axes.X,
+                                Height = 54 * LegacyExperiencePlugin.StableRatio,
+                                Alpha = 0.4f,
+                                Colour = Colour4.Black,
+                            },
+                        }
                     },
                     localUserDrawable = new LegacyLocalUser(),
                     generalText = new LegacyTextFlowContainer(static t =>
