@@ -92,6 +92,8 @@ public partial class MainMenu : CompositeDrawable
 
     private LegacyLocalUser localUserDrawable = null!;
 
+    private Box backgroundDim = null!;
+
     [BackgroundDependencyLoader]
     private void load(OsuConfigManager config, TextureStore textures)
     {
@@ -109,6 +111,14 @@ public partial class MainMenu : CompositeDrawable
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
+                    backgroundDim = new Box
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = Colour4.Black,
+                        Alpha = 0,
+                    },
                     new Box
                     {
                         Anchor = Anchor.TopCentre,
@@ -291,6 +301,16 @@ public partial class MainMenu : CompositeDrawable
                 generalText.FadeOut(500);
                 break;
         }
+
+        // stable uses a much more complex way to handle background dim,
+        // see https://gist.github.com/Cai1Hsu/bb30f28524dc4d8c8ca8b882c1698c4e for reference source
+        // this should be enough for now
+        const float dim_duration = 1000;
+
+        if (buttonSystemState.Value is ButtonSystemState.Collapsed)
+            backgroundDim.FadeOut(dim_duration);
+        else
+            backgroundDim.FadeTo(0.6f, dim_duration);
     }
 
     private void apiStateChanged(ValueChangedEvent<APIState> @event)
