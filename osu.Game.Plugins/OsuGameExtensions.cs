@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using AccessItEasy;
-using osu.Game.Screens;
 using osu.Game.Screens.Footer;
 
 namespace osu.Game.Plugins;
@@ -11,20 +10,12 @@ public static class OsuGameExtensions
 {
     extension(OsuGame @this)
     {
-        public OsuScreenStack ScreenStack
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => GetScreenStack(@this);
-        }
-
         public ScreenFooter ScreenFooter
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => GetScreenFooter(@this);
         }
     }
-
-    public static OsuScreenStack GetScreenStack(OsuGame game) => OsuGameDerived.get_ScreenStack(game);
 
     public static ScreenFooter GetScreenFooter(OsuGame game) => OsuGameDerived.get_ScreenFooter(game);
 
@@ -38,9 +29,5 @@ public static class OsuGameExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [PrivateAccessor(PrivateAccessorKind.Method, Name = "get_ScreenFooter")]
         internal static extern ScreenFooter get_ScreenFooter(OsuGame game);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        [PrivateAccessor(PrivateAccessorKind.Field, Name = "ScreenStack")]
-        internal static extern OsuScreenStack get_ScreenStack(OsuGame game);
     }
 }
