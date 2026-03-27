@@ -244,7 +244,8 @@ public abstract partial class InputTrainer : CompositeDrawable
         {
             // avoid accessing arg's newItems and oldItems because they may change during enumeration due to poor design of BindableList's CollectionChanged event. 
             // Instead, we will just clear all handlers and re-add them according to the current state of gameplayTriggers.
-            var triggers = gameplayTriggers.OfType<OsuKeyTrigger>()
+            var triggers = gameplayTriggers.ToArray()
+                                           .OfType<OsuKeyTrigger>()
                                            .ToArray();
 
             foreach (var t in registeredTriggers.Where(triggerHandlers.ContainsKey))
