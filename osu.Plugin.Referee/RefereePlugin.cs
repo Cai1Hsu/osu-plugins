@@ -5,6 +5,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Threading;
 using osu.Game;
+using osu.Game.Online.API;
 using osu.Game.Online.Chat;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Chat;
@@ -32,9 +33,22 @@ public partial class RefereePlugin : OsuPlugin
             var refereeChannel = new RefereeChannel(rch);
             rch.SetChannel(refereeChannel);
 
+            var api = game.Dependencies.Get<IAPIProvider>();
+            var localUser = api.LocalUser.GetBoundCopy();
+
             var hook = new ChatOverlayHook(refereeChannel)
             {
-                RefereeTextCommitHandler = rch.HandleCommand,
+                RefereeTextCommitHandler = s =>
+                {
+                    refereeChannel.AddNewMessages(new Message()
+                    {
+                        Sender = localUser.Value,
+                        Content = s,
+                        DisplayContent = s,
+                        Timestamp = DateTimeOffset.Now,
+                    });
+                    rch.HandleCommand(s);
+                },
             };
 
             // without the hook rch still works, but we don't want to post unwanted message API calls
