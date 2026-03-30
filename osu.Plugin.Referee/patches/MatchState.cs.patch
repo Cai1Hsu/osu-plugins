@@ -1,0 +1,17 @@
+diff --git a/osu.Server.Spectator/Hubs/Referee/Models/Events/MatchState.cs b/osu.Server.Spectator/Hubs/Referee/Models/Events/MatchState.cs
+index 48f9110..45babab 100644
+--- a/osu.Server.Spectator/Hubs/Referee/Models/Events/MatchState.cs
++++ b/osu.Server.Spectator/Hubs/Referee/Models/Events/MatchState.cs
+@@ -22,6 +22,11 @@ namespace osu.Server.Spectator.Hubs.Referee.Models.Events
+         [JsonPropertyName("type")]
+         public MatchType Type { get; }
+
++        // Parameterless constructor for deserialization.
++        [JsonConstructor]
++        public MatchState()
++        {
++        }
++
+         protected MatchState(MatchType type)
+         {
+             Type = type;
