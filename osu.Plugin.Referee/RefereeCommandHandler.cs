@@ -212,9 +212,10 @@ public partial class RefereeCommandHandler : Component
                 {
                     ensureConnected();
 
-                    var roomToLeave = ensureInRoom();
-                    refereeClient.LeaveRoom(roomToLeave.RoomID).FireAndForget(
-                        onSuccess: () => reply($"Left room {roomToLeave.RoomID}."),
+                    var roomToLeave = int.Parse(args[0]);
+
+                    refereeClient.LeaveRoom(roomToLeave).FireAndForget(
+                        onSuccess: () => reply($"Left room {roomToLeave}."),
                         onError: ex => reply($"Failed to leave room: {ex.Message}"));
                 }
                 break;
@@ -223,9 +224,10 @@ public partial class RefereeCommandHandler : Component
                 {
                     ensureConnected();
 
-                    var roomToClose = ensureInRoom();
-                    refereeClient.CloseRoom(roomToClose.RoomID).FireAndForget(
-                        onSuccess: () => reply($"Closed room {roomToClose.RoomID}."),
+                    var roomToClose = int.Parse(args[0]);
+
+                    refereeClient.CloseRoom(roomToClose).FireAndForget(
+                        onSuccess: () => reply($"Closed room {roomToClose}."),
                         onError: ex => reply($"Failed to close room: {ex.Message}"));
                 }
                 break;
