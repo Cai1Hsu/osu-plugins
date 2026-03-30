@@ -88,6 +88,19 @@ public partial class RefereeCommandHandler : Component
         return multiplayerClient.Room;
     }
 
+    class NotConnectedException : Exception
+    {
+        public NotConnectedException() : base("Not connected to referee hub.")
+        {
+        }
+    }
+
+    private void ensureConnected()
+    {
+        if (!refereeClient.IsConnected.Value)
+            throw new NotConnectedException();
+    }
+
     public void HandleCommand(string command)
     {
         if (string.IsNullOrWhiteSpace(command))
@@ -139,6 +152,8 @@ public partial class RefereeCommandHandler : Component
         {
             case "ping":
                 {
+                    ensureConnected();
+
                     string content = args.ElementAtOrDefault(0) ?? string.Empty;
 
                     refereeClient.Ping(content).FireAndForget(
@@ -157,6 +172,8 @@ public partial class RefereeCommandHandler : Component
 
             case "make":
                 {
+                    ensureConnected();
+
                     int ruleset = int.Parse(args.ElementAtOrDefault(0) ?? "0");
                     int beatmap = int.Parse(args.ElementAtOrDefault(1) ?? "0");
                     string roomName = args.ElementAtOrDefault(2) ?? "Referee Room";
@@ -177,6 +194,8 @@ public partial class RefereeCommandHandler : Component
 
             case "join":
                 {
+                    ensureConnected();
+
                     if (args.Length != 1 || !long.TryParse(args[0], out long roomId))
                     {
                         reply("Usage: join <roomId>");
@@ -191,6 +210,8 @@ public partial class RefereeCommandHandler : Component
 
             case "leave":
                 {
+                    ensureConnected();
+
                     var roomToLeave = ensureInRoom();
                     refereeClient.LeaveRoom(roomToLeave.RoomID).FireAndForget(
                         onSuccess: () => reply($"Left room {roomToLeave.RoomID}."),
@@ -200,6 +221,8 @@ public partial class RefereeCommandHandler : Component
 
             case "close":
                 {
+                    ensureConnected();
+
                     var roomToClose = ensureInRoom();
                     refereeClient.CloseRoom(roomToClose.RoomID).FireAndForget(
                         onSuccess: () => reply($"Closed room {roomToClose.RoomID}."),
@@ -209,6 +232,8 @@ public partial class RefereeCommandHandler : Component
 
             case "invite":
                 {
+                    ensureConnected();
+
                     int roomId = int.Parse(args[0]);
                     int userId = parseUserId(args[1]);
 
@@ -219,6 +244,8 @@ public partial class RefereeCommandHandler : Component
                 break;
 
             case "roll":
+                ensureConnected();
+
                 var room = ensureInRoom();
 
                 if (args.Length != 1 || !uint.TryParse(args[0], out uint sides))
@@ -239,6 +266,8 @@ public partial class RefereeCommandHandler : Component
 
             case "addref":
                 {
+                    ensureConnected();
+
                     int roomId = int.Parse(args[0]);
                     int userId = parseUserId(args[1]);
 
@@ -250,6 +279,8 @@ public partial class RefereeCommandHandler : Component
 
             case "lock":
                 {
+                    ensureConnected();
+
                     int roomId = int.Parse(args[0]);
                     bool locked = bool.Parse(args[1]);
 
@@ -263,9 +294,11 @@ public partial class RefereeCommandHandler : Component
                         onError: ex => reply($"Failed to change lock state: {ex.Message}"));
                 }
                 break;
-            
+
             case "move":
                 {
+                    ensureConnected();
+
                     int roomId = int.Parse(args[0]);
                     int userId = parseUserId(args[1]);
                     var team = (MatchTeam)int.Parse(args[2]);
@@ -281,10 +314,12 @@ public partial class RefereeCommandHandler : Component
                         onError: ex => reply($"Failed to move user: {ex.Message}"));
                 }
                 break;
-            
+
 
             case "removeref":
                 {
+                    ensureConnected();
+
                     int roomId = int.Parse(args[0]);
                     int userId = parseUserId(args[1]);
 
