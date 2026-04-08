@@ -88,11 +88,23 @@ public partial class ShadowPlayPlugin : OsuPlugin
                 if (buttonsContainer is null)
                     return;
 
-                buttonsContainer.AddInternal(new ShadowPlayButton()
+                var shadowPlayButton = new ShadowPlayButton()
                 {
                     SelectedScore = { BindTarget = selectedScore },
-                    ReplayDownloadState = { BindTarget = (Bindable<DownloadState>)replayDownloadStateField?.GetValue(watchReplayButton) },
-                });
+                };
+
+                if (replayDownloadStateField != null)
+                {
+                    var replayStateObj = replayDownloadStateField.GetValue(watchReplayButton);
+                    var replayDownloadState = replayStateObj as Bindable<DownloadState>;
+
+                    if (replayDownloadState != null)
+                    {
+                        shadowPlayButton.ReplayDownloadState.BindTarget = replayDownloadState;
+                    }
+                }
+
+                buttonsContainer.AddInternal(shadowPlayButton);
             });
         }
     }
