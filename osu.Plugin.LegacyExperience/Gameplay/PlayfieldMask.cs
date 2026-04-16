@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -179,7 +180,7 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
         verticalBorderContainer.AddRange(new Drawable[]
         {
             // left border
-            new BufferedContainer
+            new Container
             {
                 RelativeSizeAxes = Axes.Y,
                 Anchor = Anchor.CentreLeft,
@@ -191,7 +192,7 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
                         Colour = Colour4.Black,
-                        RelativeSizeAxes = Axes.Both,
+                        RelativeSizeAxes = Axes.Y,
                     },
                     useLegacyMaskingBorder ? applyborderTexture(new Sprite
                     {
@@ -202,7 +203,7 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
                 }
             },
             // right border
-            new BufferedContainer
+            new Container
             {
                 RelativeSizeAxes = Axes.Y,
                 Anchor = Anchor.CentreRight,
@@ -214,7 +215,7 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
                         Anchor = Anchor.CentreRight,
                         Origin = Anchor.CentreRight,
                         Colour = Colour4.Black,
-                        RelativeSizeAxes = Axes.Both,
+                        RelativeSizeAxes = Axes.Y,
                     },
                     useLegacyMaskingBorder ? applyborderTexture(new Sprite
                     {
@@ -348,7 +349,18 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
     private void updateVerticalBorderWidth(float width)
     {
         foreach (var child in verticalBorderContainer.Children)
-            child.Width = width;
+        {
+            var container = (Container)child;
+
+            container.Width = width;
+
+            Debug.Assert(container.Children.Count is 2);
+
+            var box = (Box)container.Children[0];
+            var second = container.Children[1];
+
+            box.Width = width - second.DrawWidth;
+        }
     }
 
     private void updateHorizontalBorderHeight(float height)
