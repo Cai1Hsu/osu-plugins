@@ -359,7 +359,7 @@ public partial class PlayfieldMask : BreakTrackingContainer, ISerialisableDrawab
             var box = (Box)container.Children[0];
             var second = container.Children[1];
 
-            box.Width = width - second.DrawWidth;
+            box.Width = Math.Max(0, width - second.DrawWidth);
         }
     }
 
