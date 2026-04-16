@@ -17,7 +17,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
     private const float centre_line_width = 1.5f * stable_ratio;
     private const double arrow_move_duration = 800;
 
-    private BufferedContainer segmentsContainer = null!;
+    private Container segmentsContainer = null!;
     private LegacyJudgements judgements = null!;
     private ArrowAverageIndicator arrow = null!;
 
@@ -49,7 +49,7 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                         Colour = Colour4.Black.Opacity(0.6f),
                         RelativeSizeAxes = Axes.Both
                     },
-                    segmentsContainer = new BufferedContainer
+                    segmentsContainer = new Container
                     {
                         Name = "segments",
                         Anchor = Anchor.Centre,
@@ -110,17 +110,45 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
 
         segmentsContainer.Clear();
 
-        foreach (var window in availableWindows)
-        {
-            var width = (float)(Math.Clamp(window.length, 0, errorRange) / errorRange) * Width;
+        Span<double> widths = stackalloc double[availableWindows.Length];
 
+        for (int i = 0; i < widths.Length; i++)
+            widths[i] = Math.Clamp(availableWindows[i].length, 0, errorRange);
+
+        // remove overlapping parts
+        for (int i = 0; i < widths.Length - 1; i++)
+            widths[i] -= widths[i + 1];
+
+        for (int i = 0; i < widths.Length; i++)
+        {
+            var width = (float)(widths[i] / errorRange) * Width;
+            var range = (float)(Math.Clamp(availableWindows[i].length, 0, errorRange) / errorRange) * Width;
+
+            var colour = getColour(availableWindows[i].result);
+
+            var halfWidth = width / 2f;
+            var halfRange = range / 2f;
+
+            // left half
             segmentsContainer.Add(new Box
             {
                 Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
+                Origin = Anchor.CentreLeft,
                 RelativeSizeAxes = Axes.Y,
-                Width = width,
-                Colour = getColour(window.result)
+                Width = halfWidth,
+                X = -halfRange,
+                Colour = colour
+            });
+
+            // right half
+            segmentsContainer.Add(new Box
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.CentreRight,
+                RelativeSizeAxes = Axes.Y,
+                Width = halfWidth,
+                X = halfRange,
+                Colour = colour
             });
         }
 
