@@ -78,11 +78,15 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         c.Name = name;
                     }
 
-                    c.Joined.BindValueChanged(j =>
+                    // closure is referencing this object, so local should be fine.
+                    var joined = c.Joined.GetBoundCopy();
+
+                    joined.BindValueChanged(j =>
                     {
                         if (j.NewValue)
                             return;
 
+                        joined.UnbindAll();
                         removeChannel(c);
                     }, true);
                 }, c);
