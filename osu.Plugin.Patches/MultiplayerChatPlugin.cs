@@ -49,9 +49,6 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
             void registerNewChannel(Channel c)
             {
-                if (trackingChannels.ContainsKey(c.Id))
-                    return;
-
                 if (!trackingChannels.TryAdd(c.Id, c))
                     return;
 
