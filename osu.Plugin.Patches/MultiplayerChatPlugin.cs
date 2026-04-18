@@ -98,14 +98,24 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
                 trackingChannels.Remove(c.Id);
 
+                var originalType = c.Type;
+
                 scheduler.AddOnce(c =>
                 {
                     var channelList = ChatOverlayAccessor.get_channelList(chatOverlay);
 
-                    // ensure proper removal from the channel list, as the type is used as an identifier for which section it belongs to.
-                    c.Type = display_section;
+                    try
+                    {
+                        // ensure proper removal from the channel list, as the type is used as an identifier for which section it belongs to.
+                        c.Type = display_section;
 
-                    channelList.RemoveChannel(c);
+                        channelList.RemoveChannel(c);
+                    }
+                    finally
+                    {
+                        // restore the original type.
+                        c.Type = originalType;
+                    }
                 }, c);
             }
         });
