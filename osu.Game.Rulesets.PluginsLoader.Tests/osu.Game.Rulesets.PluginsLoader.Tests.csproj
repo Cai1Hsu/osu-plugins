@@ -17,6 +17,7 @@
     <ProjectReference Include="..\osu.Plugin.StableIntegration\osu.Plugin.StableIntegration.csproj" />
     <ProjectReference Include="..\osu.Plugin.LegacyExperience\osu.Plugin.LegacyExperience.csproj" />
     <ProjectReference Include="..\osu.Plugin.Trainer\osu.Plugin.Trainer.csproj" />
+    <ProjectReference Include="..\osu.Plugin.Patches\osu.Plugin.Patches.csproj" />
   </ItemGroup>
 
   <ItemGroup>
