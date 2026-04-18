@@ -99,14 +99,18 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
                 scheduler.AddOnce(c =>
                 {
-                    var channelList = ChatOverlayAccessor.get_channelList(chatOverlay);
-
                     try
                     {
+                        var channelList = ChatOverlayAccessor.get_channelList(chatOverlay);
+
                         // ensure proper removal from the channel list, as the type is used as an identifier for which section it belongs to.
                         c.Type = display_section;
 
                         channelList.RemoveChannel(c);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, $"Failed to remove channel {c.Name} from the channel list.");
                     }
                     finally
                     {
