@@ -113,14 +113,17 @@ public partial class LegacyJudgements : Drawable
             if (sparkLifetime <= 0)
                 return;
 
+            var averageColorLinear = DrawColourInfo.Colour.AverageColour.Linear;
+
+            if (averageColorLinear.A <= 0)
+                return;
+
             shader.Bind();
 
             Vector2 inflationAmount = DrawInfo.MatrixInverse.ExtractScale().Xy;
             Vector2 inflationPercentage = new Vector2(
                 sparkDrawSize.X == 0 ? 0 : inflationAmount.X / sparkDrawSize.X,
                 sparkDrawSize.Y == 0 ? 0 : inflationAmount.Y / sparkDrawSize.Y);
-
-            var averageColorLinear = DrawColourInfo.Colour.AverageColour.Linear;
 
             foreach (var spark in sparks)
             {
@@ -132,8 +135,12 @@ public partial class LegacyJudgements : Drawable
 
                 float alpha = Interpolation.ValueAt(time, initial_spark_alpha, 0, spark.Time, spark.Time + sparkLifetime);
 
+                // TODO: we should interpolate color for each vertex here,
+                // but since color tinting should never happen to legacy judgements in practice,
+                // and the reason we apply DrawColourInfo is that the whole judgement's alpha may changes during a fade animation, 
+                // we just sample the average color once for all vertices to make alpha correct.
                 var colour = (spark.Color * averageColorLinear).MultiplyAlpha(alpha);
-                
+
                 Quad quad = new RectangleF(
                     spark.Position - (sparkDrawSize / 2),
                     sparkDrawSize).Inflate(inflationAmount);
