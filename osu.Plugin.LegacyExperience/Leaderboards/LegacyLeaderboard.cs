@@ -80,6 +80,8 @@ public partial class LegacyLeaderboard : CompositeDrawable, ISerialisableDrawabl
             explosion1Pool = new DrawablePool<Explosion1>(1),
             content = new Container
             {
+                // hidden drawables skip updates, resulted in broken layout
+                AlwaysPresent = true,
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
