@@ -87,9 +87,6 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         if (j.NewValue)
                             return;
 
-                        if (trackingChannels.Remove(c.Id, out var joined))
-                            joined.UnbindAll();
-
                         removeChannel(c);
                     }, true);
                 }, c);
@@ -99,6 +96,9 @@ public partial class MultiplayerChatPlugin : OsuPlugin
             {
                 if (c.Joined.Value)
                     return;
+
+                if (trackingChannels.Remove(c.Id, out var joined))
+                    joined.UnbindAll();
 
                 var originalType = c.Type;
 
