@@ -56,7 +56,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         continue;
 
                     // osu-spectator-server removes players from the channel via interop with osu-web,
-                    // and this operation may fail and cause the player to remain in the channel without actually being able to receive messages.
+                    // and this operation may fail and cause the player to remain in the channel.
                     // in this case, those *ghost* channels are still joined,
                     // even though we can still receive and send messages to them, 
                     // we should not display them in the channel list as they are not functional and will just cause confusion.
