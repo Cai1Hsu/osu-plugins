@@ -51,6 +51,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
                 foreach (var c in newChannels)
                 {
+                    // ugly as it may be, this is the only way we can reliably detect room status for playlists(as well as DailyChallenge).
                     if (!long.TryParse(trimChannelName(c.Name), out long roomId))
                         continue;
 
