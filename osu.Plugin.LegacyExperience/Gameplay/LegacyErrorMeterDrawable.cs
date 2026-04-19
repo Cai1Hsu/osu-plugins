@@ -38,7 +38,6 @@ public partial class LegacyErrorMeterDrawable : CompositeDrawable
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
                 RelativeSizeAxes = Axes.Both,
-                Masking = true,
                 Children = new Drawable[]
                 {
                     new Box
