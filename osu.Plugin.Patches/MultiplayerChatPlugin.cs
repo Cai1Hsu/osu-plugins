@@ -1,6 +1,7 @@
 using System.Collections;
 using AccessItEasy;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Logging;
 using osu.Framework.Threading;
 using osu.Game;
@@ -29,7 +30,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
             var channelManager = game.Dependencies.Get<ChannelManager>();
             var chatOverlay = game.Dependencies.Get<ChatOverlay>();
 
-            var trackingChannels = new Dictionary<long, Channel>();
+            var trackingChannels = new Dictionary<long, Bindable<bool>>();
 
             var joinedChannels = channelManager.JoinedChannels;
 
@@ -49,8 +50,11 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
             void registerNewChannel(Channel c)
             {
-                if (!trackingChannels.TryAdd(c.Id, c))
+                if (trackingChannels.ContainsKey(c.Id))
                     return;
+
+                var joined = c.Joined.GetBoundCopy();
+                trackingChannels.Add(c.Id, joined);
 
                 scheduler.AddOnce(c =>
                 {
@@ -78,15 +82,14 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         c.Name = name;
                     }
 
-                    // closure is referencing this object, so local should be fine.
-                    var joined = c.Joined.GetBoundCopy();
-
                     joined.BindValueChanged(j =>
                     {
                         if (j.NewValue)
                             return;
 
-                        joined.UnbindAll();
+                        if (trackingChannels.Remove(c.Id, out var joined))
+                            joined.UnbindAll();
+
                         removeChannel(c);
                     }, true);
                 }, c);
@@ -96,8 +99,6 @@ public partial class MultiplayerChatPlugin : OsuPlugin
             {
                 if (c.Joined.Value)
                     return;
-
-                trackingChannels.Remove(c.Id);
 
                 var originalType = c.Type;
 
