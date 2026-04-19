@@ -5,7 +5,9 @@ using osu.Framework.Bindables;
 using osu.Framework.Logging;
 using osu.Framework.Threading;
 using osu.Game;
+using osu.Game.Online.API;
 using osu.Game.Online.Chat;
+using osu.Game.Online.Rooms;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Chat.ChannelList;
 using osu.Game.Plugins;
@@ -27,11 +29,14 @@ public partial class MultiplayerChatPlugin : OsuPlugin
         {
             var game = (OsuGame)d;
 
+            var api = game.Dependencies.Get<IAPIProvider>();
+
             var channelManager = game.Dependencies.Get<ChannelManager>();
             var chatOverlay = game.Dependencies.Get<ChatOverlay>();
 
             var trackingChannels = new Dictionary<long, Bindable<bool>>();
 
+            var currentChannel = channelManager.CurrentChannel;
             var joinedChannels = channelManager.JoinedChannels;
 
             joinedChannels.BindCollectionChanged((_, arg) =>
@@ -45,11 +50,43 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                     removeChannel(c);
 
                 foreach (var c in newChannels)
-                    registerNewChannel(c);
+                {
+                    // ugly as it may be, this is the only way we can reliably detect room status for playlists(as well as DailyChallenge).
+                    if (!long.TryParse(trimChannelName(c.Name), out long roomId))
+                        continue;
+
+                    // osu-spectator-server removes players from the channel via interop with osu-web,
+                    // and this operation may fail and cause the player to remain in the channel.
+                    // in this case, those *ghost* channels are still joined,
+                    // even though we can still receive and send messages to them, 
+                    // we should not display them in the channel list as they are not functional and will just cause confusion.
+
+                    var req = new GetRoomRequest(roomId);
+
+                    req.Failure += e =>
+                    {
+                        Logger.Error(e, $"Failed to get room info for channel {c.Name}, skipping channel registration.");
+                    };
+
+                    req.Success += r =>
+                    {
+                        if (!r.HasEnded)
+                            scheduler.AddOnce(c => registerNewChannel(c, r), c);
+                        else
+                            Logger.Log($"Room {r.RoomID} has already ended, skipping channel registration.", LoggingTarget.Runtime, LogLevel.Verbose);
+                    };
+
+                    api.Queue(req);
+                }
             }, true);
 
-            void registerNewChannel(Channel c)
+            void registerNewChannel(Channel c, Room r)
             {
+                // if the user left before request completes,
+                // we should not add the channel to the list as it will just cause confusion and potential issues with the chat overlay.
+                if (!c.Joined.Value)
+                    return;
+
                 if (trackingChannels.ContainsKey(c.Id))
                     return;
 
@@ -59,6 +96,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                 scheduler.AddOnce(c =>
                 {
                     string name = c.Name;
+                    var originalType = c.Type;
 
                     try
                     {
@@ -68,19 +106,30 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         c.Type = display_section;
 
                         // give it a more descriptive name in the channel list, as the original name is just the room id which isn't very helpful.
-                        c.Name = $"#Multiplayer ({name.TrimStart('#')})";
+                        c.Name = $"#Multiplayer ({r.RoomID}, {r.Name})"; // the topic is the room name
                         channelList?.AddChannel(c);
                     }
                     catch (Exception ex)
                     {
                         Logger.Error(ex, $"Failed to add channel {c.Name} to the channel list.");
+
+                        // ChatOverlay relies on ChannelType for sectioning
+                        c.Type = originalType;
+                        c.Name = name;
+
+                        removeChannel(c);
+                        return;
                     }
                     finally
                     {
                         // set it back to multiplayer so that roll command works.
-                        c.Type = ChannelType.Multiplayer;
+                        c.Type = originalType;
                         c.Name = name;
                     }
+
+                    // set the current channel to the newly joined multiplayer channel for smoother experience, 
+                    // as players are likely to want to see the multiplayer chat immediately after joining a room.
+                    currentChannel.Value = c;
 
                     joined.BindValueChanged(j =>
                     {
@@ -94,9 +143,6 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
             void removeChannel(Channel c)
             {
-                if (c.Joined.Value)
-                    return;
-
                 if (trackingChannels.Remove(c.Id, out var joined))
                     joined.UnbindAll();
 
@@ -125,6 +171,19 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                 }, c);
             }
         });
+    }
+
+    private string trimChannelName(string name)
+    {
+        const string prefix = "#lazermp_";
+
+        var index = name.IndexOf(prefix, StringComparison.Ordinal);
+
+        if (index < 0)
+            return name;
+
+        // extract room id from channel name, which is in the format of #lazermp_{roomId}
+        return name[(index + prefix.Length)..];
     }
 
     // WORKAROUND: 
