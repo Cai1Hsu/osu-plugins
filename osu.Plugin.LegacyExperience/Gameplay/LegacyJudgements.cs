@@ -1,14 +1,11 @@
-using System.Runtime.InteropServices;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Rendering;
-using osu.Framework.Graphics.Rendering.Vertices;
 using osu.Framework.Graphics.Shaders;
-using osu.Framework.Graphics.Shaders.Types;
-using osuTK.Graphics.ES30;
-using osuTK;
 using osu.Framework.Extensions.EnumExtensions;
+using osu.Framework.Utils;
+using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Gameplay;
 
@@ -33,7 +30,9 @@ public partial class LegacyJudgements : Drawable
     [BackgroundDependencyLoader]
     private void load(ShaderManager shaders)
     {
-        shader = shaders.Load(@"LegacyJudgements", "LegacyJudgements");
+        shader = shaders.Load(
+            VertexShaderDescriptor.TEXTURE_2,
+            FragmentShaderDescriptor.TEXTURE);
 
         Clear();
     }
@@ -106,10 +105,6 @@ public partial class LegacyJudgements : Drawable
 
             Source.sparks.CopyTo(sparks, 0);
         }
-
-        private IVertexBatch<JudgementSparkVertex> vertexBatch = null!;
-        private IUniformBuffer<JudgementsParameters> parametersBuffer = null!;
-
         protected override void Draw(IRenderer renderer)
         {
             base.Draw(renderer);
@@ -118,21 +113,12 @@ public partial class LegacyJudgements : Drawable
             if (sparkLifetime <= 0)
                 return;
 
-            vertexBatch ??= renderer.CreateQuadBatch<JudgementSparkVertex>(max_sparks, 1);
-            parametersBuffer ??= renderer.CreateUniformBuffer<JudgementsParameters>();
-            parametersBuffer.Data = parametersBuffer.Data with
-            {
-                Time = time,
-                SparkLifetime = sparkLifetime,
-            };
-
             shader.Bind();
-            shader.BindUniformBlock(@"m_JudgementsParameters", parametersBuffer);
 
-            renderer.SetBlend(BlendingParameters.Additive);
-            renderer.PushLocalMatrix(DrawInfo.Matrix);
-
-            Vector2 halfSparkSize = sparkDrawSize / 2;
+            Vector2 inflationAmount = DrawInfo.MatrixInverse.ExtractScale().Xy;
+            Vector2 inflationPercentage = new Vector2(
+                sparkDrawSize.X == 0 ? 0 : inflationAmount.X / sparkDrawSize.X,
+                sparkDrawSize.Y == 0 ? 0 : inflationAmount.Y / sparkDrawSize.Y);
 
             var averageColorLinear = DrawColourInfo.Colour.AverageColour.Linear;
 
@@ -144,85 +130,25 @@ public partial class LegacyJudgements : Drawable
                 if (spark.Time + sparkLifetime < time)
                     continue;
 
-                // TODO: we should interpolate color for each vertex here,
-                // but since color tinting should never happen to legacy judgements in practice,
-                // and the reason we apply DrawColourInfo is that the whole judgement's alpha may changes during a fade animation, 
-                // we just sample the average color once for all vertices to make alpha correct.
-                var color = (spark.Color * averageColorLinear).MultiplyAlpha(initial_spark_alpha);
+                float alpha = Interpolation.ValueAt(time, initial_spark_alpha, 0, spark.Time, spark.Time + sparkLifetime);
 
-                // bottom left
-                vertexBatch.Add(new JudgementSparkVertex
-                {
-                    Position = new Vector2(spark.Position.X - halfSparkSize.X, spark.Position.Y + halfSparkSize.Y),
-                    Color = color,
-                    Time = spark.Time
-                });
+                var colour = (spark.Color * averageColorLinear).MultiplyAlpha(alpha);
+                
+                Quad quad = new RectangleF(
+                    spark.Position - (sparkDrawSize / 2),
+                    sparkDrawSize).Inflate(inflationAmount);
 
-                // bottom right
-                vertexBatch.Add(new JudgementSparkVertex
-                {
-                    Position = new Vector2(spark.Position.X + halfSparkSize.X, spark.Position.Y + halfSparkSize.Y),
-                    Color = color,
-                    Time = spark.Time
-                });
-
-                // top right
-                vertexBatch.Add(new JudgementSparkVertex
-                {
-                    Position = new Vector2(spark.Position.X + halfSparkSize.X, spark.Position.Y - halfSparkSize.Y),
-                    Color = color,
-                    Time = spark.Time
-                });
-
-                // top left
-                vertexBatch.Add(new JudgementSparkVertex
-                {
-                    Position = new Vector2(spark.Position.X - halfSparkSize.X, spark.Position.Y - halfSparkSize.Y),
-                    Color = color,
-                    Time = spark.Time
-                });
+                renderer.DrawQuad(
+                    renderer.WhitePixel,
+                    quad * DrawInfo.Matrix,
+                    colour,
+                    null,
+                    null,
+                    inflationPercentage
+                );
             }
-
-            vertexBatch.Draw();
-            renderer.PopLocalMatrix();
 
             shader.Unbind();
-        }
-
-        protected override void Dispose(bool isDisposing)
-        {
-            base.Dispose(isDisposing);
-
-            vertexBatch?.Dispose();
-            parametersBuffer?.Dispose();
-        }
-
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        private record struct JudgementsParameters
-        {
-            public UniformFloat Time;
-            public UniformFloat SparkLifetime;
-            private readonly UniformPadding8 padding;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        struct JudgementSparkVertex : IVertex, IEquatable<JudgementSparkVertex>
-        {
-            [VertexMember(2, VertexAttribPointerType.Float)]
-            public Vector2 Position;
-
-            [VertexMember(4, VertexAttribPointerType.Float)]
-            public Colour4 Color;
-
-            [VertexMember(1, VertexAttribPointerType.Float)]
-            public float Time;
-
-            public bool Equals(JudgementSparkVertex other)
-            {
-                return Position.Equals(other.Position) &&
-                    Color.Equals(other.Color) &&
-                    Time.Equals(other.Time);
-            }
         }
     }
 }
