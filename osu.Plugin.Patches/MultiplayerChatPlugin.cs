@@ -135,10 +135,13 @@ public partial class MultiplayerChatPlugin : OsuPlugin
     {
         const string prefix = "#lazermp_";
 
-        var index = name.IndexOf(prefix, StringComparison.Ordinal) + 1;
+        var index = name.IndexOf(prefix, StringComparison.Ordinal);
+
+        if (index < 0)
+            return name;
 
         // extract room id from channel name, which is in the format of #lazermp_{roomId}
-        return index > 0 ? name[index..] : name;
+        return name[(index + prefix.Length)..];
     }
 
     // WORKAROUND: 
