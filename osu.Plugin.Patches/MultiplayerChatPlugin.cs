@@ -68,7 +68,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         c.Type = display_section;
 
                         // give it a more descriptive name in the channel list, as the original name is just the room id which isn't very helpful.
-                        c.Name = $"#Multiplayer ({name.TrimStart('#')})";
+                        c.Name = $"#Multiplayer ({trimChannelName(name)})";
                         channelList?.AddChannel(c);
                     }
                     catch (Exception ex)
@@ -125,6 +125,16 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                 }, c);
             }
         });
+    }
+
+    private string trimChannelName(string name)
+    {
+        const string prefix = "#lazermp_";
+
+        var index = name.IndexOf(prefix, StringComparison.Ordinal) + 1;
+
+        // extract room id from channel name, which is in the format of #lazermp_{roomId}
+        return index > 0 ? name[index..] : name;
     }
 
     // WORKAROUND: 
