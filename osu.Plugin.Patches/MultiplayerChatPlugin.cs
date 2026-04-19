@@ -5,8 +5,9 @@ using osu.Framework.Bindables;
 using osu.Framework.Logging;
 using osu.Framework.Threading;
 using osu.Game;
+using osu.Game.Online.API;
 using osu.Game.Online.Chat;
-using osu.Game.Online.Multiplayer;
+using osu.Game.Online.Rooms;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Chat.ChannelList;
 using osu.Game.Plugins;
@@ -28,30 +29,15 @@ public partial class MultiplayerChatPlugin : OsuPlugin
         {
             var game = (OsuGame)d;
 
-            var multiplayerClient = game.Dependencies.Get<MultiplayerClient>();
+            var api = game.Dependencies.Get<IAPIProvider>();
 
             var channelManager = game.Dependencies.Get<ChannelManager>();
             var chatOverlay = game.Dependencies.Get<ChatOverlay>();
 
             var trackingChannels = new Dictionary<long, Bindable<bool>>();
-            var pendingList = new HashSet<Channel>();
 
             var currentChannel = channelManager.CurrentChannel;
             var joinedChannels = channelManager.JoinedChannels;
-
-            multiplayerClient.RoomUpdated += () =>
-            {
-                var room = multiplayerClient.Room;
-
-                if (room is null)
-                {
-                    pendingList.Clear();
-                }
-                else if (pendingList.FirstOrDefault(c => c.Id == room?.ChannelID) is { } channel)
-                {
-                    registerNewChannel(channel);
-                }
-            };
 
             joinedChannels.BindCollectionChanged((_, arg) =>
             {
@@ -65,25 +51,36 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
                 foreach (var c in newChannels)
                 {
-                    pendingList.Add(c);
-                    registerNewChannel(c);
+                    if (!long.TryParse(trimChannelName(c.Name), out long roomId))
+                        continue;
+
+                    // osu-spectator-server removes players from the channel via interop with osu-web,
+                    // and this operation may fail and cause the player to remain in the channel without actually being able to receive messages.
+                    // in this case, those *ghost* channels are still joined,
+                    // even though we can still receive and send messages to them, 
+                    // we should not display them in the channel list as they are not functional and will just cause confusion.
+
+                    var req = new GetRoomRequest(roomId);
+
+                    req.Failure += e =>
+                    {
+                        Logger.Error(e, $"Failed to get room info for channel {c.Name}, skipping channel registration.");
+                    };
+
+                    req.Success += r =>
+                    {
+                        if (!r.HasEnded)
+                            scheduler.AddOnce(c => registerNewChannel(c, r), c);
+                        else
+                            Logger.Log($"Room {r.RoomID} has already ended, skipping channel registration.", LoggingTarget.Runtime, LogLevel.Verbose);
+                    };
+
+                    api.Queue(req);
                 }
             }, true);
 
-            void registerNewChannel(Channel c)
+            void registerNewChannel(Channel c, Room r)
             {
-                // FIXME:
-                // osu-spectator-server removes players from the channel via interop with osu-web,
-                // and this operation may fail and cause the player to remain in the channel without actually being able to receive messages.
-                // in this case, those *ghost* channels are still joined,
-                // even though we can still receive and send messages to them, 
-                // we should not display them in the channel list as they are not functional and will just cause confusion.
-
-                if (multiplayerClient.Room?.ChannelID != c.Id)
-                    return;
-
-                pendingList.RemoveWhere(t => t.Id == c.Id);
-
                 if (trackingChannels.ContainsKey(c.Id))
                     return;
 
@@ -93,6 +90,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                 scheduler.AddOnce(c =>
                 {
                     string name = c.Name;
+                    var originalType = c.Type;
 
                     try
                     {
@@ -102,7 +100,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         c.Type = display_section;
 
                         // give it a more descriptive name in the channel list, as the original name is just the room id which isn't very helpful.
-                        c.Name = $"#Multiplayer ({trimChannelName(name)}, {c.Topic})"; // the topic is the room name
+                        c.Name = $"#Multiplayer ({r.RoomID}, {r.Name})"; // the topic is the room name
                         channelList?.AddChannel(c);
 
                         // set the current channel to the newly joined multiplayer channel for smoother experience, 
@@ -116,7 +114,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                     finally
                     {
                         // set it back to multiplayer so that roll command works.
-                        c.Type = ChannelType.Multiplayer;
+                        c.Type = originalType;
                         c.Name = name;
                     }
 
@@ -132,8 +130,6 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
             void removeChannel(Channel c)
             {
-                pendingList.RemoveWhere(t => t.Id == c.Id);
-
                 if (trackingChannels.Remove(c.Id, out var joined))
                     joined.UnbindAll();
 
