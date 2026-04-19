@@ -82,6 +82,11 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
             void registerNewChannel(Channel c, Room r)
             {
+                // if the user left before request completes,
+                // we should not add the channel to the list as it will just cause confusion and potential issues with the chat overlay.
+                if (!c.Joined.Value)
+                    return;
+
                 if (trackingChannels.ContainsKey(c.Id))
                     return;
 
