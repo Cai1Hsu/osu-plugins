@@ -27,6 +27,11 @@ public partial class LegacyJudgements : Drawable
 
     private IShader shader = null!;
 
+    public LegacyJudgements()
+    {
+        Blending = BlendingParameters.Additive;
+    }
+
     [BackgroundDependencyLoader]
     private void load(ShaderManager shaders)
     {
