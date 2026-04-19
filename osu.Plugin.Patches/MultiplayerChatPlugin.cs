@@ -112,6 +112,11 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                     catch (Exception ex)
                     {
                         Logger.Error(ex, $"Failed to add channel {c.Name} to the channel list.");
+
+                        // ChatOverlay relies on ChannelType for sectioning
+                        c.Type = originalType;
+                        c.Name = name;
+
                         removeChannel(c);
                         return;
                     }
