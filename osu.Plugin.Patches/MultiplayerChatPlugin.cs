@@ -6,6 +6,7 @@ using osu.Framework.Logging;
 using osu.Framework.Threading;
 using osu.Game;
 using osu.Game.Online.Chat;
+using osu.Game.Online.Multiplayer;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Chat.ChannelList;
 using osu.Game.Plugins;
@@ -27,12 +28,30 @@ public partial class MultiplayerChatPlugin : OsuPlugin
         {
             var game = (OsuGame)d;
 
+            var multiplayerClient = game.Dependencies.Get<MultiplayerClient>();
+
             var channelManager = game.Dependencies.Get<ChannelManager>();
             var chatOverlay = game.Dependencies.Get<ChatOverlay>();
 
             var trackingChannels = new Dictionary<long, Bindable<bool>>();
+            var pendingList = new HashSet<Channel>();
 
+            var currentChannel = channelManager.CurrentChannel;
             var joinedChannels = channelManager.JoinedChannels;
+
+            multiplayerClient.RoomUpdated += () =>
+            {
+                var room = multiplayerClient.Room;
+
+                if (room is null)
+                {
+                    pendingList.Clear();
+                }
+                else if (pendingList.FirstOrDefault(c => c.Id == room?.ChannelID) is { } channel)
+                {
+                    registerNewChannel(channel);
+                }
+            };
 
             joinedChannels.BindCollectionChanged((_, arg) =>
             {
@@ -45,11 +64,26 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                     removeChannel(c);
 
                 foreach (var c in newChannels)
+                {
+                    pendingList.Add(c);
                     registerNewChannel(c);
+                }
             }, true);
 
             void registerNewChannel(Channel c)
             {
+                // FIXME:
+                // osu-spectator-server removes players from the channel via interop with osu-web,
+                // and this operation may fail and cause the player to remain in the channel without actually being able to receive messages.
+                // in this case, those *ghost* channels are still joined,
+                // even though we can still receive and send messages to them, 
+                // we should not display them in the channel list as they are not functional and will just cause confusion.
+
+                if (multiplayerClient.Room?.ChannelID != c.Id)
+                    return;
+
+                pendingList.RemoveWhere(t => t.Id == c.Id);
+
                 if (trackingChannels.ContainsKey(c.Id))
                     return;
 
@@ -98,8 +132,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
             void removeChannel(Channel c)
             {
-                if (c.Joined.Value)
-                    return;
+                pendingList.RemoveWhere(t => t.Id == c.Id);
 
                 if (trackingChannels.Remove(c.Id, out var joined))
                     joined.UnbindAll();
