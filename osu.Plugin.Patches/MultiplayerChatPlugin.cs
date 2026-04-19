@@ -112,6 +112,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                     catch (Exception ex)
                     {
                         Logger.Error(ex, $"Failed to add channel {c.Name} to the channel list.");
+                        removeChannel(c);
                         return;
                     }
                     finally
