@@ -68,7 +68,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         c.Type = display_section;
 
                         // give it a more descriptive name in the channel list, as the original name is just the room id which isn't very helpful.
-                        c.Name = $"#Multiplayer ({trimChannelName(name)})";
+                        c.Name = $"#Multiplayer ({trimChannelName(name)}, {c.Topic})"; // the topic is the room name
                         channelList?.AddChannel(c);
                     }
                     catch (Exception ex)
