@@ -70,6 +70,10 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         // give it a more descriptive name in the channel list, as the original name is just the room id which isn't very helpful.
                         c.Name = $"#Multiplayer ({trimChannelName(name)}, {c.Topic})"; // the topic is the room name
                         channelList?.AddChannel(c);
+
+                        // set the current channel to the newly joined multiplayer channel for smoother experience, 
+                        // as players are likely to want to see the multiplayer chat immediately after joining a room.
+                        currentChannel.Value = c;
                     }
                     catch (Exception ex)
                     {
