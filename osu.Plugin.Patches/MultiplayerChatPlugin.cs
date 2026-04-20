@@ -7,6 +7,7 @@ using osu.Framework.Threading;
 using osu.Game;
 using osu.Game.Online.API;
 using osu.Game.Online.Chat;
+using osu.Game.Online.Multiplayer;
 using osu.Game.Online.Rooms;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Chat.ChannelList;
@@ -30,6 +31,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
             var game = (OsuGame)d;
 
             var api = game.Dependencies.Get<IAPIProvider>();
+            var multiplayerClient = game.Dependencies.Get<MultiplayerClient>();
 
             var channelManager = game.Dependencies.Get<ChannelManager>();
             var chatOverlay = game.Dependencies.Get<ChatOverlay>();
@@ -51,6 +53,16 @@ public partial class MultiplayerChatPlugin : OsuPlugin
 
                 foreach (var c in newChannels)
                 {
+                    var room = multiplayerClient.Room;
+
+                    // For RankedPlay, the API throws for newly created rooms, and blocking us from registering the channel.
+                    // if the channel is the one for the current room, we can directly register it without checking the room status, as we are already in the room.
+                    if (room is { } && c.Id == room.ChannelID)
+                    {
+                        registerNewChannel(c, room.RoomID, c.Topic);
+                        continue;
+                    }
+
                     // ugly as it may be, this is the only way we can reliably detect room status for playlists(as well as DailyChallenge).
                     if (!long.TryParse(trimChannelName(c.Name), out long roomId))
                         continue;
@@ -71,7 +83,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                     req.Success += r =>
                     {
                         if (!r.HasEnded)
-                            scheduler.AddOnce(c => registerNewChannel(c, r), c);
+                            scheduler.AddOnce(c => registerNewChannel(c, r.RoomID ?? -1, r.Name), c);
                         else
                             Logger.Log($"Room {r.RoomID} has already ended, skipping channel registration.", LoggingTarget.Runtime, LogLevel.Verbose);
                     };
@@ -80,7 +92,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                 }
             }, true);
 
-            void registerNewChannel(Channel c, Room r)
+            void registerNewChannel(Channel c, long roomId, string roomName)
             {
                 // if the user left before request completes,
                 // we should not add the channel to the list as it will just cause confusion and potential issues with the chat overlay.
@@ -106,7 +118,7 @@ public partial class MultiplayerChatPlugin : OsuPlugin
                         c.Type = display_section;
 
                         // give it a more descriptive name in the channel list, as the original name is just the room id which isn't very helpful.
-                        c.Name = $"#Multiplayer ({r.RoomID}, {r.Name})"; // the topic is the room name
+                        c.Name = $"#Multiplayer ({roomId}, {roomName})"; // the topic is the room name
                         channelList?.AddChannel(c);
                     }
                     catch (Exception ex)
