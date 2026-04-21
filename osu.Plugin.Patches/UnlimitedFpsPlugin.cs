@@ -99,7 +99,8 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
                                 // bindables are weakly bound and get collected if not kept alive by a reference.
                                 new Box()
                                 {
-                                    Value = frameSync,
+                                    frameSync = frameSync,
+                                    unlimitedFps = unlimitedFps,
                                 }
                             }
                         }
@@ -197,6 +198,7 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
     private partial class Box : Drawable
     {
         // use explicit type so that Drawable dispose unsubscribes the event for us.
-        public Bindable<FrameSync> Value { get; set; } = default!;
+        public Bindable<FrameSync> frameSync { get; set; } = default!;
+        public Bindable<bool> unlimitedFps { get; set; } = default!;
     }
 }
