@@ -1,4 +1,5 @@
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -195,6 +196,7 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
     // used to keep a handle to a reference type object
     private partial class Box : Drawable
     {
-        public object Value { get; set; } = default!;
+        // use explicit type so that Drawable dispose unsubscribes the event for us.
+        public Bindable<FrameSync> Value { get; set; } = default!;
     }
 }
