@@ -43,6 +43,16 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
             var frameSync = frameworkConfig.GetBindable<FrameSync>(FrameworkSetting.FrameSync);
             var unlimitedFps = config.GetBindable<bool>(PatchesConfig.UnlimitedFps);
 
+            unlimitedFps.BindValueChanged(_ => updateFrameSync());
+
+            frameSync.BindValueChanged(v =>
+            {
+                bool isUnlimited = v.NewValue is FrameSync.Unlimited;
+
+                unlimitedFps.Disabled = !isUnlimited;
+                updateFrameSync();
+            }, true);
+
             settingsOverlay.InvokeWhenReady(d =>
             {
                 var settingsOverlay = (SettingsOverlay)d;
@@ -109,18 +119,11 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
                     // layout immediately
                     frameSync.BindValueChanged(v =>
                     {
-                        bool isUnlimited = v.NewValue is FrameSync.Unlimited;
-
-                        if (isUnlimited)
+                        if (v.NewValue is FrameSync.Unlimited)
                             settingsContent.BypassAutoSizeAxes &= ~Axes.Y;
                         else
                             settingsContent.BypassAutoSizeAxes |= Axes.Y;
-
-                        unlimitedFps.Disabled = !isUnlimited;
-                        updateFrameSync();
                     }, true);
-
-                    unlimitedFps.BindValueChanged(_ => updateFrameSync(), true);
                 });
             }
 
