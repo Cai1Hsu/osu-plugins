@@ -151,7 +151,7 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
                 // framework expects input and audio threads to always run at 1000 hz.
                 host.AudioThread.ActiveHz = target_fps;
 
-                // Must be done at last, the host schedules a task to reset the limiter on the InputThread (knwon as MainThread) whe mutating MaximumUpdateHz
+                // Must be done at last, the host schedules a task to reset the limiter on the InputThread (known as MainThread) when mutating MaximumUpdateHz
                 // By setting it after, we ensure our task runs after the host's reset task, so that the limiter is correctly set to the target fps.
                 host.InputThread.ActiveHz = target_fps;
             }
