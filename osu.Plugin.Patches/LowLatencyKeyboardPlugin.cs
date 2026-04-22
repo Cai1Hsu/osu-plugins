@@ -1,3 +1,4 @@
+using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
@@ -26,17 +27,17 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
             return;
         }
 
+        if (!FrameworkEnvironment.UseSDL3)
+        {
+            Logger.Log("Low latency keyboard hint is only supported on SDL3, considering set OSU_SDL3=1 to enable it.", LoggingTarget.Runtime, LogLevel.Important);
+            return;
+        }
+
         game.InvokeWhenReady(d =>
         {
             var game = (OsuGame)d;
 
             var host = game.Dependencies.Get<GameHost>();
-
-            if (!IsSDL3Window(host.Window))
-            {
-                Logger.Log("Low latency keyboard hint is only supported on SDL3, considering set OSU_SDL3=1 to enable it.", LoggingTarget.Runtime, LogLevel.Important);
-                return;
-            }
 
             SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD, "1"u8, SDL_HintPriority.SDL_HINT_OVERRIDE);
 
@@ -50,16 +51,6 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
             if (hintValue != "1")
                 Logger.Log($"Failed to set low latency keyboard hint, current value {hintValue}, error: {SDL3.SDL_GetError()}", LoggingTarget.Runtime, LogLevel.Error);
         });
-    }
-
-    private static bool IsSDL3Window(IWindow window)
-    {
-        var windowType = window.GetType();
-
-        if (windowType.IsAssignableTo(SDL3Window_Type))
-            return true;
-
-        return windowType.FullName?.Contains("SDL3") ?? false;
     }
 
     private static readonly Type SDL3Window_Type = typeof(GameHost).Assembly.GetType("osu.Framework.Platform.SDL3.SDL3Window")!;
