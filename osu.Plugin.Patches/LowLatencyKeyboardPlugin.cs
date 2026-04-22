@@ -40,6 +40,10 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
 
             SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD, "1"u8, SDL_HintPriority.SDL_HINT_OVERRIDE);
 
+            // This makes Win-key blocker work when raw input is enabled.
+            // after all low latency isn't meaningful for hotkeys
+            SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD_EXCLUDE_HOTKEYS, "1"u8, SDL_HintPriority.SDL_HINT_OVERRIDE);
+
             var hintValue = SDL3.SDL_GetHint(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD);
             Logger.Log($"Low latency keyboard hint value: {hintValue}", LoggingTarget.Runtime, LogLevel.Verbose);
 
