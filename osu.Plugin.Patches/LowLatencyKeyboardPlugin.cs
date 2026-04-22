@@ -52,6 +52,4 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
                 Logger.Log($"Failed to set low latency keyboard hint, current value {hintValue}, error: {SDL3.SDL_GetError()}", LoggingTarget.Runtime, LogLevel.Error);
         });
     }
-
-    private static readonly Type SDL3Window_Type = typeof(GameHost).Assembly.GetType("osu.Framework.Platform.SDL3.SDL3Window")!;
 }
