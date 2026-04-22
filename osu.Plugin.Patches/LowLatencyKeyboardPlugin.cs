@@ -18,9 +18,6 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
 {
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
-        if (gameBase is not OsuGame game)
-            return;
-
         if (!OperatingSystem.IsWindows())
         {
             Logger.Log("Low latency keyboard patch is only supported on Windows, skipping.");
