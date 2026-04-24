@@ -19,7 +19,7 @@ public abstract class OsuPlugin
     /// </summary>
     public virtual string? Description => null;
 
-    internal readonly BindableBool enabled = new BindableBool(false);
+    internal readonly BindableBool enabled = new BindableBool(true);
 
     /// <summary>
     /// Whether the plugin is enabled. This is set to <see langword="true"/> after the plugin is activated.
