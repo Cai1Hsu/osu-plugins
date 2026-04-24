@@ -13,11 +13,11 @@ namespace osu.Game.Rulesets.PluginsLoader.Tests;
 [TestFixture]
 public partial class TestPluginConfigManager
 {
-    private Storage storage = null!;
-
     [Test]
     public void TestConfigPersists()
     {
+        Storage storage;
+
         using (var host = new TestHost(bypassCleanup: true))
         {
             host.Run(new TestOsuGameBase(o =>
@@ -55,7 +55,7 @@ public partial class TestPluginConfigManager
     public void TestChangingSettingSaves()
     {
         var plugin = new TestPlugin();
-        var configManager = new TestConfigManager(storage, plugin.Yield().ToArray());
+        var configManager = new TestConfigManager(plugin.Yield().ToArray());
 
         int lastSaveCount = configManager.SaveCount;
 
@@ -117,8 +117,8 @@ public partial class TestPluginConfigManager
         public int SaveCount { get; private set; }
         public readonly AutoResetEvent SaveEvent = new AutoResetEvent(false);
 
-        public TestConfigManager(Storage storage, OsuPlugin[] plugins)
-            : base(storage, plugins)
+        public TestConfigManager(OsuPlugin[] plugins)
+            : base(null!, plugins)
         {
         }
 
