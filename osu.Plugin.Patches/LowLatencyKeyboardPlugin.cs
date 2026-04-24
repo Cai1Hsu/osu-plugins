@@ -1,10 +1,11 @@
 using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Logging;
-using osu.Framework.Platform;
+using osu.Framework.Platform.SDL3;
 using osu.Framework.Threading;
 using osu.Game;
 using osu.Game.Plugins;
+using osu.Game.Screens.Play;
 using SDL;
 
 namespace osu.Plugin.Patches;
@@ -18,38 +19,66 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
 {
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
+        if (gameBase is not OsuGame game)
+            return;
+
         if (!OperatingSystem.IsWindows())
         {
-            Logger.Log("Low latency keyboard patch is only supported on Windows, skipping.");
+            CancelActivation("Low latency keyboard patch is only supported on Windows, skipping.", false);
             return;
         }
 
         if (!FrameworkEnvironment.UseSDL3)
         {
-            Logger.Log("Low latency keyboard hint is only supported on SDL3, considering set OSU_SDL3=1 to enable it.", LoggingTarget.Runtime, LogLevel.Important);
+            CancelActivation("Low latency keyboard hint is only supported on SDL3, considering set OSU_SDL3=1 to enable it.", false);
             return;
         }
 
-        SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD, "1"u8, SDL_HintPriority.SDL_HINT_OVERRIDE);
-
-        int sdlVersion = SDL3.SDL_GetVersion();
-
         // see https://wiki.libsdl.org/SDL3/SDL_HINT_WINDOWS_RAW_KEYBOARD_EXCLUDE_HOTKEYS
-        if (sdlVersion >= SDL3.SDL_VERSIONNUM(3, 4, 0))
+        bool supportWinKeyExclusion = SDL3.SDL_GetVersion() >= SDL3.SDL_VERSIONNUM(3, 4, 0);
+        bool firstEnable = true;
+
+        game.InvokeWhenReady(d =>
         {
-            // This makes Win-key blocker work when raw input is enabled.
-            // after all low latency isn't meaningful for hotkeys
-            SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD_EXCLUDE_HOTKEYS, "1"u8, SDL_HintPriority.SDL_HINT_OVERRIDE);
-        }
-        else
+            var game = (OsuGame)d;
+
+            var localPlayInfo = game.Dependencies.Get<ILocalUserPlayInfo>();
+            var localPlayingState = localPlayInfo.PlayingState.GetBoundCopy();
+
+            Enabled.BindValueChanged(v => updateEnabledState(v.NewValue, localPlayingState.Value is LocalUserPlayingState.Playing));
+            localPlayingState.BindValueChanged(v => updateEnabledState(Enabled.Value, v.NewValue is LocalUserPlayingState.Playing), true);
+        });
+
+        void updateEnabledState(bool pluginEnabled, bool userPlaying)
         {
-            Logger.Log("SDL version does not support excluding hotkeys from raw keyboard input, Win-key blocker may not work properly when raw input is enabled.", LoggingTarget.Runtime, LogLevel.Important);
+            updateRawKeyboardState(pluginEnabled);
+            updateWinKeyExclusionState(pluginEnabled && userPlaying);
+
+            if (firstEnable && pluginEnabled)
+            {
+                if (!supportWinKeyExclusion)
+                {
+                    Logger.Log("SDL version does not support excluding hotkeys from raw keyboard input, Win-key blocker may not work properly when raw input is enabled.", LoggingTarget.Runtime, LogLevel.Important);
+                    return;
+                }
+
+                firstEnable = false;
+            }
         }
 
-        var hintValue = SDL3.SDL_GetHint(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD);
-        Logger.Log($"Low latency keyboard hint value: {hintValue}", LoggingTarget.Runtime, LogLevel.Verbose);
+        void updateRawKeyboardState(bool enable)
+        {
+            SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD, enable ? "1"u8 : "0"u8, SDL_HintPriority.SDL_HINT_OVERRIDE)
+                .LogErrorIfFailed();
+        }
 
-        if (hintValue != "1")
-            Logger.Log($"Failed to set low latency keyboard hint, current value {hintValue}, error: {SDL3.SDL_GetError()}", LoggingTarget.Runtime, LogLevel.Error);
+        void updateWinKeyExclusionState(bool enable)
+        {
+            if (!supportWinKeyExclusion)
+                return;
+
+            SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD_EXCLUDE_HOTKEYS, enable ? "1"u8 : "0"u8, SDL_HintPriority.SDL_HINT_OVERRIDE)
+                .LogErrorIfFailed();
+        }
     }
 }
