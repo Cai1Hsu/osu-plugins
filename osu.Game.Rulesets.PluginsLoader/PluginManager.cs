@@ -3,7 +3,6 @@ using System.Reflection;
 using Humanizer;
 using osu.Framework;
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Logging;
@@ -25,11 +24,13 @@ public partial class PluginManager : Drawable
 
     private readonly HashSet<Assembly> loadedAssemblies = new();
     private readonly List<OsuPlugin> loadedPlugins = new();
+    private readonly HashSet<string> scheduledPluginTypes = new(StringComparer.Ordinal);
+
+    private readonly List<Task<OsuPlugin?>> pluginInstantiationTasks = new();
 
     public IReadOnlyList<OsuPlugin> LoadedPlugins => loadedPlugins;
 
     private List<Task> loadingTasks = new();
-    private List<Action> earlyLoadActions = new();
 
     private Stopwatch loadStopwatch = new Stopwatch();
 
@@ -87,19 +88,22 @@ public partial class PluginManager : Drawable
 
         loadStopwatch.Start();
 
-        startEarlyLoadActionProcessing();
-
         loadPluginsFromStorage(storage, "plugins");
 
         performWhenMainMenuReady(game, notification, hasPluginsFromStartupDirectory);
 
-        // Sometimes the load action still blocks update thread,
-        // so we explicitly offload to thread pool here.
-        Task.Factory.StartNew(() =>
+        // Finish load pipeline on worker thread to avoid blocking the update thread.
+        var pipelineTask = Task.Factory.StartNew(() =>
         {
             try
             {
-                Task.WhenAll(loadingTasks).Wait();
+                var instantiatedPlugins = awaitAllInstantiationTasks();
+
+                var loadTasks = instantiatedPlugins
+                    .Select(plugin => Task.Run(() => performPluginLoad(plugin)))
+                    .ToArray();
+
+                Task.WhenAll(loadTasks).Wait();
 
                 loadStopwatch.Stop();
 
@@ -120,11 +124,13 @@ public partial class PluginManager : Drawable
             {
                 lock (loadingTasks)
                 {
-                    loadingTasks.Clear();
-                    // we have to keep the list reference around as some tasks may still be observing it.
+                    loadingTasks.RemoveAll(t => t.IsCompleted);
                 }
             }
         }, TaskCreationOptions.LongRunning);
+
+        lock (loadingTasks)
+            loadingTasks.Add(pipelineTask);
     }
 
     void performWhenMainMenuReady(OsuGame? game, INotificationOverlay? notification, bool hasPluginsFromStartupDirectory)
@@ -176,31 +182,6 @@ public partial class PluginManager : Drawable
 
             drawable.InvokeWhenReady(postNotifications);
         }, new[] { typeof(Loader), typeof(IntroScreen) });
-    }
-
-    private void startEarlyLoadActionProcessing()
-    {
-        Debug.Assert(LoadState is LoadState.Loading);
-
-        foreach (var action in earlyLoadActions)
-            scheduleBackground(action);
-
-        earlyLoadActions.Clear();
-    }
-
-    private void scheduleBackground(Action action)
-    {
-        if (LoadState < LoadState.Loading)
-            earlyLoadActions.Add(action);
-        else
-        {
-            Debug.Assert(LoadState is LoadState.Loading or LoadState.Ready);
-
-            lock (loadingTasks)
-            {
-                loadingTasks.Add(Task.Run(action));
-            }
-        }
     }
 
     private bool loadPluginsFromAppDomain()
@@ -320,7 +301,7 @@ public partial class PluginManager : Drawable
 
             foreach (var type in pluginTypes)
             {
-                scheduleBackground(() => instantiatePluginAndPerformLoad(type));
+                schedulePluginInstantiation(type);
                 loadedAny = true;
             }
         }
@@ -332,24 +313,65 @@ public partial class PluginManager : Drawable
         return loadedAny;
     }
 
-    private void instantiatePluginAndPerformLoad(Type pluginType)
+    private void schedulePluginInstantiation(Type pluginType)
+    {
+        var pluginTypeId = pluginType.AssemblyQualifiedName ?? pluginType.FullName;
+
+        if (string.IsNullOrEmpty(pluginTypeId))
+            return;
+
+        lock (pluginInstantiationTasks)
+        {
+            if (!scheduledPluginTypes.Add(pluginTypeId))
+                return;
+
+            pluginInstantiationTasks.Add(Task.Run(() => instantiatePlugin(pluginType)));
+        }
+    }
+
+    private OsuPlugin? instantiatePlugin(Type pluginType)
     {
         try
         {
             var pluginInstance = Activator.CreateInstance(pluginType) as OsuPlugin
                 ?? throw new InvalidOperationException($"Failed to create instance of plugin type: {pluginType.FullName}");
 
+            Logger.Log($"Instantiated plugin: {pluginType.FullName} from {pluginType.Assembly.Location}", LoggingTarget.Runtime, LogLevel.Verbose);
+            return pluginInstance;
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, $"Failed to instantiate plugin of type: {pluginType.FullName}, {e.Message}");
+        }
+
+        return null;
+    }
+
+    private OsuPlugin[] awaitAllInstantiationTasks()
+    {
+        Task<OsuPlugin?>[] tasks;
+
+        lock (pluginInstantiationTasks)
+            tasks = pluginInstantiationTasks.ToArray();
+
+        Task.WhenAll(tasks).Wait();
+
+        return tasks
+            .Where(t => t.Status == TaskStatus.RanToCompletion && t.Result is not null)
+            .Select(t => t.Result!)
+            .ToArray();
+    }
+
+    private void performPluginLoad(OsuPlugin pluginInstance)
+    {
+        var pluginType = pluginInstance.GetType();
+
+        try
+        {
             pluginInstance.OnLoad(game, Scheduler);
 
             lock (loadedPlugins)
-            {
                 loadedPlugins.Add(pluginInstance);
-            }
-
-            var enabled = plugin_enabled_field.GetValue(pluginInstance) as Bindable<bool>;
-
-            if (enabled is not null)
-                Scheduler.Add(() => enabled.Value = true);
 
             Logger.Log($"Successfully loaded plugin: {pluginType.FullName} from {pluginType.Assembly.Location}", LoggingTarget.Runtime, LogLevel.Verbose);
         }
@@ -363,11 +385,7 @@ public partial class PluginManager : Drawable
         }
         catch (Exception e)
         {
-            Logger.Error(e, $"Failed to instantiate plugin of type: {pluginType.FullName}, {e.Message}");
+            Logger.Error(e, $"Failed to load plugin of type: {pluginType.FullName}, {e.Message}");
         }
     }
-
-    // intentially not use InternalVisibleTo so that loader can be decoupled from the plugin library.
-    private static readonly FieldInfo plugin_enabled_field = typeof(OsuPlugin)
-        .GetField("enabled", BindingFlags.NonPublic | BindingFlags.Instance)!;
 }
