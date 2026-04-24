@@ -28,6 +28,8 @@ public partial class PluginManager : Drawable
 
     private readonly List<Task<OsuPlugin?>> pluginInstantiationTasks = new();
 
+    private PluginConfigManager pluginConfigManager = null!;
+
     public IReadOnlyList<OsuPlugin> LoadedPlugins => loadedPlugins;
 
     private List<Task> loadingTasks = new();
@@ -98,6 +100,8 @@ public partial class PluginManager : Drawable
             try
             {
                 var instantiatedPlugins = awaitAllInstantiationTasks();
+
+                loadPluginConfiguration(storage, instantiatedPlugins);
 
                 var loadTasks = instantiatedPlugins
                     .Select(plugin => Task.Run(() => performPluginLoad(plugin)))
@@ -362,6 +366,21 @@ public partial class PluginManager : Drawable
             .ToArray();
     }
 
+    private void loadPluginConfiguration(Storage storage, OsuPlugin[] plugins)
+    {
+        if (plugins.Length == 0)
+            return;
+
+        try
+        {
+            pluginConfigManager = new PluginConfigManager(storage, plugins);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to initialize plugin configuration manager.");
+        }
+    }
+
     private void performPluginLoad(OsuPlugin pluginInstance)
     {
         var pluginType = pluginInstance.GetType();
@@ -387,5 +406,12 @@ public partial class PluginManager : Drawable
         {
             Logger.Error(e, $"Failed to load plugin of type: {pluginType.FullName}, {e.Message}");
         }
+    }
+
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        pluginConfigManager.Dispose();
     }
 }
