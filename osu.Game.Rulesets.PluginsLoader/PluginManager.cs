@@ -107,7 +107,7 @@ public partial class PluginManager : Drawable
                 loadPluginConfiguration(storage, instantiatedPlugins);
 
                 var loadTasks = instantiatedPlugins
-                    .Select(plugin => Task.Run(() => performPluginLoad(plugin)))
+                    .Select(loadPlugin)
                     .ToArray();
 
                 Task.WhenAll(loadTasks).Wait();
@@ -138,6 +138,17 @@ public partial class PluginManager : Drawable
 
         lock (loadingTasks)
             loadingTasks.Add(pipelineTask);
+    }
+
+    private Task loadPlugin(OsuPlugin plugin)
+    {
+        var loadAction = () => performPluginLoad(plugin);
+
+        bool longRunningLoad = plugin.GetType().GetCustomAttribute<LongRunningLoadAttribute>() is not null;
+
+        return Task.Factory.StartNew(loadAction, longRunningLoad 
+            ? TaskCreationOptions.LongRunning 
+            : TaskCreationOptions.None);
     }
 
     void performWhenMainMenuReady(OsuGame? game, INotificationOverlay? notification, bool hasPluginsFromStartupDirectory)
