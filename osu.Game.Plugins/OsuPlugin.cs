@@ -1,4 +1,5 @@
 ﻿using osu.Framework.Bindables;
+using osu.Framework.Graphics;
 using osu.Framework.Threading;
 
 namespace osu.Game.Plugins;
@@ -25,6 +26,8 @@ public abstract class OsuPlugin
     /// Whether the plugin is enabled. This is set to <see langword="true"/> after the plugin is activated.
     /// </summary>
     public Bindable<bool> Enabled => enabled;
+
+    public virtual IEnumerable<Drawable>? CreateSettingsControls() => null;
 
     /// <summary>
     /// Interrupts the activation of this plugin, disabling it in the process.
