@@ -37,12 +37,14 @@ public abstract class OsuPlugin
     /// </summary>
     /// <param name="reason">The reason for the interruption.</param>
     /// <exception cref="PluginActivationInterruptedException">Thrown when the activation is interrupted.</exception>
-    protected void CancelActivation(string? reason)
+    protected void CancelActivation(string? reason, bool? canRetry = false)
     {
+        canRetry ??= true;
+
         bool disabled = enabled.Disabled;
         enabled.Disabled = false;
         enabled.Value = false;
-        enabled.Disabled = disabled;
+        enabled.Disabled = disabled || !canRetry.Value;
 
         throw new PluginActivationInterruptedException(reason);
     }

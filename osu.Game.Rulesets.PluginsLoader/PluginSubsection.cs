@@ -172,13 +172,15 @@ public partial class PluginSubsection : SettingsSubsection
         private readonly string? description;
 
         private readonly Bindable<bool> enabled;
-        public readonly bool Toggleable = true;
+        public readonly bool Toggleable;
 
         public ToggleHeader(LocalisableString title, string? description, Bindable<bool> enabled)
         {
             this.title = title;
             this.description = description;
             this.enabled = enabled;
+
+            Toggleable = !enabled.Disabled;
 
             Padding = SettingsPanel.CONTENT_PADDING;
 

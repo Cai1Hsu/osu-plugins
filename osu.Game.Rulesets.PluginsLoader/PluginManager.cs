@@ -412,7 +412,22 @@ public partial class PluginManager : Drawable
         }
         catch (OsuPlugin.PluginActivationInterruptedException pae)
         {
+            // when a plugin gives up activation for some reason, like unsupported platform,
+            // we still want to show it in the settings panel, but with a darkened appearance and a tooltip explaining why it is disabled.
+            // As missing items usually indicating other problems like fail to scan assemblies, we want to make sure the user is aware of it.
             Logger.Log($"{pluginType.FullName} cancelled load for {pae.Reason}", LoggingTarget.Runtime, LogLevel.Important);
+
+            Scheduler.Add(() =>
+            {
+                Debug.Assert(pluginInstance.Enabled.Disabled, "Plugin should have disabled itself when cancelling activation.");
+                Debug.Assert(!pluginInstance.Enabled.Value, "Plugin should have disabled itself when cancelling activation.");
+
+                settingsSection.Add(new PluginSubsection(pluginInstance)
+                {
+                    Alpha = 0.5f,
+                    // TODO: Add a tooltip?
+                });
+            });
         }
         catch (LoadException le)
         {
