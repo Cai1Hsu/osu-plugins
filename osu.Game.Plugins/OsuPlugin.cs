@@ -24,7 +24,7 @@ public abstract class OsuPlugin
     /// <summary>
     /// Whether the plugin is enabled. This is set to <see langword="true"/> after the plugin is activated.
     /// </summary>
-    public IBindable<bool> Enabled => enabled;
+    public Bindable<bool> Enabled => enabled;
 
     /// <summary>
     /// Interrupts the activation of this plugin, disabling it in the process.
