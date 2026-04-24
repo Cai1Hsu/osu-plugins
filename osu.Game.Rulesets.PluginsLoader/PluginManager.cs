@@ -95,10 +95,9 @@ public partial class PluginManager : Drawable
         loadPluginsFromStorage(storage, "plugins");
 
         createSettingsSection();
-        performWhenMainMenuReady(game, notification, hasPluginsFromStartupDirectory);
 
         // Finish load pipeline on worker thread to avoid blocking the update thread.
-        var pipelineTask = Task.Factory.StartNew(() =>
+        Task.Factory.StartNew(() =>
         {
             try
             {
@@ -109,6 +108,8 @@ public partial class PluginManager : Drawable
                 var loadTasks = instantiatedPlugins
                     .Select(loadPlugin)
                     .ToArray();
+
+                performWhenMainMenuReady(game, notification, hasPluginsFromStartupDirectory);
 
                 Task.WhenAll(loadTasks).Wait();
 
@@ -135,9 +136,6 @@ public partial class PluginManager : Drawable
                 }
             }
         }, TaskCreationOptions.LongRunning);
-
-        lock (loadingTasks)
-            loadingTasks.Add(pipelineTask);
     }
 
     private Task loadPlugin(OsuPlugin plugin)
@@ -146,8 +144,8 @@ public partial class PluginManager : Drawable
 
         bool longRunningLoad = plugin.GetType().GetCustomAttribute<LongRunningLoadAttribute>() is not null;
 
-        return Task.Factory.StartNew(loadAction, longRunningLoad 
-            ? TaskCreationOptions.LongRunning 
+        return Task.Factory.StartNew(loadAction, longRunningLoad
+            ? TaskCreationOptions.LongRunning
             : TaskCreationOptions.None);
     }
 
