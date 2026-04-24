@@ -1,9 +1,11 @@
 using osu.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Logging;
 using osu.Framework.Platform.SDL3;
 using osu.Framework.Threading;
 using osu.Game;
+using osu.Game.Configuration;
 using osu.Game.Plugins;
 using osu.Game.Screens.Play;
 using SDL;
@@ -17,6 +19,9 @@ namespace osu.Plugin.Patches;
 /// </summary>
 public partial class LowLatencyKeyboardPlugin : OsuPlugin
 {
+    [SettingSource("Try to fix Win-key", "When enabled, the plugin will also try to exclude hotkeys (like Win-key) from raw keyboard input when the user is playing, which may help with issues like the Start menu opening when pressing the Win-key. Requires SDL 3.4 or higher.")]
+    public Bindable<bool> FixWinKey { get; } = new BindableBool(true);
+
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
         if (gameBase is not OsuGame game)
@@ -35,8 +40,11 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
         }
 
         // see https://wiki.libsdl.org/SDL3/SDL_HINT_WINDOWS_RAW_KEYBOARD_EXCLUDE_HOTKEYS
-        bool supportWinKeyExclusion = SDL3.SDL_GetVersion() >= SDL3.SDL_VERSIONNUM(3, 4, 0);
-        bool firstEnable = true;
+        if (SDL3.SDL_GetVersion() < SDL3.SDL_VERSIONNUM(3, 4, 0))
+        {
+            FixWinKey.Value = false;
+            FixWinKey.Disabled = true;
+        }
 
         game.InvokeWhenReady(d =>
         {
@@ -45,37 +53,28 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
             var localPlayInfo = game.Dependencies.Get<ILocalUserPlayInfo>();
             var localPlayingState = localPlayInfo.PlayingState.GetBoundCopy();
 
-            Enabled.BindValueChanged(v => updateEnabledState(v.NewValue, localPlayingState.Value is LocalUserPlayingState.Playing));
-            localPlayingState.BindValueChanged(v => updateEnabledState(Enabled.Value, v.NewValue is LocalUserPlayingState.Playing), true);
+            Enabled.BindValueChanged(v => updateEnabledState(v.NewValue, FixWinKey.Value, localPlayingState.Value is LocalUserPlayingState.Playing));
+            FixWinKey.BindValueChanged(v => updateEnabledState(Enabled.Value, v.NewValue, localPlayingState.Value is LocalUserPlayingState.Playing));
+            localPlayingState.BindValueChanged(v => updateEnabledState(Enabled.Value, FixWinKey.Value, v.NewValue is LocalUserPlayingState.Playing), true);
         });
 
-        void updateEnabledState(bool pluginEnabled, bool userPlaying)
+        void updateEnabledState(bool pluginEnabled, bool fixWinKey, bool userPlaying)
         {
             updateRawKeyboardState(pluginEnabled);
-            updateWinKeyExclusionState(pluginEnabled && userPlaying);
-
-            if (firstEnable && pluginEnabled)
-            {
-                if (!supportWinKeyExclusion)
-                {
-                    Logger.Log("SDL version does not support excluding hotkeys from raw keyboard input, Win-key blocker may not work properly when raw input is enabled.", LoggingTarget.Runtime, LogLevel.Important);
-                    return;
-                }
-
-                firstEnable = false;
-            }
+            updateWinKeyExclusionState(pluginEnabled && userPlaying && fixWinKey);
         }
 
         void updateRawKeyboardState(bool enable)
         {
+            Logger.Log($"Setting Windows Raw Keyboard to {(enable ? "enabled" : "disabled")}.", level: LogLevel.Debug);
+
             SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD, enable ? "1"u8 : "0"u8, SDL_HintPriority.SDL_HINT_OVERRIDE)
                 .LogErrorIfFailed();
         }
 
         void updateWinKeyExclusionState(bool enable)
         {
-            if (!supportWinKeyExclusion)
-                return;
+            Logger.Log($"Setting Win-key exclusion to {(enable ? "enabled" : "disabled")}.", level: LogLevel.Debug);
 
             SDL3.SDL_SetHintWithPriority(SDL3.SDL_HINT_WINDOWS_RAW_KEYBOARD_EXCLUDE_HOTKEYS, enable ? "1"u8 : "0"u8, SDL_HintPriority.SDL_HINT_OVERRIDE)
                 .LogErrorIfFailed();
