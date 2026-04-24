@@ -95,7 +95,7 @@ public partial class PluginManager : Drawable
 
         // Sometimes the load action still blocks update thread,
         // so we explicitly offload to thread pool here.
-        Task.Run(() =>
+        Task.Factory.StartNew(() =>
         {
             try
             {
@@ -124,7 +124,7 @@ public partial class PluginManager : Drawable
                     // we have to keep the list reference around as some tasks may still be observing it.
                 }
             }
-        });
+        }, TaskCreationOptions.LongRunning);
     }
 
     void performWhenMainMenuReady(OsuGame? game, INotificationOverlay? notification, bool hasPluginsFromStartupDirectory)
