@@ -424,11 +424,11 @@ public partial class PluginManager : Drawable
 
     #region Settings integration
 
-    private PluginManageSection settingsSection = null!;
+    private PluginsSection settingsSection = null!;
 
     private void createSettingsSection()
     {
-        settingsSection = new PluginManageSection();
+        settingsSection = new PluginsSection();
 
         // note that SettingsOverlay is cached after our load call, so DI can't help us here,
         game.InvokeWhenReady(d =>

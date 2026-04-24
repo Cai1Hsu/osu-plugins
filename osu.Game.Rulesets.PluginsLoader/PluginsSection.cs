@@ -5,7 +5,7 @@ using osu.Game.Overlays.Settings;
 
 namespace osu.Game.Rulesets.PluginsLoader;
 
-public partial class PluginManageSection : SettingsSection
+public partial class PluginsSection : SettingsSection
 {
     public override LocalisableString Header => "Plugins";
 

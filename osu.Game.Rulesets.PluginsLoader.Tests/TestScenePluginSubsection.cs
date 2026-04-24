@@ -166,7 +166,7 @@ public partial class TestScenePluginSubsection : OsuTestScene
         {
         }
 
-        public readonly PluginManageSection PluginManagerSettings = new PluginManageSection();
+        public readonly PluginsSection PluginManagerSettings = new PluginsSection();
 
         protected override IEnumerable<SettingsSection> CreateSections() => PluginManagerSettings.Yield();
     }
