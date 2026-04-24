@@ -16,7 +16,7 @@ public partial class TestPluginConfigManager
     [Test]
     public void TestConfigPersists()
     {
-        Storage storage;
+        Storage storage = null!;
 
         using (var host = new TestHost(bypassCleanup: true))
         {

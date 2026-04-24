@@ -30,7 +30,7 @@ public partial class PluginManager : Drawable
 
     private readonly List<Task<OsuPlugin?>> pluginInstantiationTasks = new();
 
-    private PluginConfigManager pluginConfigManager = null!;
+    private PluginConfigManager? pluginConfigManager = null;
 
     public IReadOnlyList<OsuPlugin> LoadedPlugins => loadedPlugins;
 
@@ -430,7 +430,7 @@ public partial class PluginManager : Drawable
     {
         base.Dispose(isDisposing);
 
-        pluginConfigManager.Dispose();
+        Interlocked.Exchange(ref pluginConfigManager, null)?.Dispose();
     }
 
     #region Settings integration
