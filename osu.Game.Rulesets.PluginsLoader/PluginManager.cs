@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using AccessItEasy;
 using Humanizer;
 using osu.Framework;
 using osu.Framework.Allocation;
@@ -9,6 +10,7 @@ using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Settings;
 using osu.Game.Plugins;
 using osu.Game.Screens;
 using osu.Game.Screens.Menu;
@@ -84,7 +86,7 @@ public partial class PluginManager : Drawable
     }
 
     [BackgroundDependencyLoader]
-    private void load(OsuGame? game, INotificationOverlay? notification, Storage storage)
+    private void load(INotificationOverlay? notification, Storage storage)
     {
         Debug.Assert(!loadStopwatch.IsRunning);
 
@@ -92,6 +94,7 @@ public partial class PluginManager : Drawable
 
         loadPluginsFromStorage(storage, "plugins");
 
+        createSettingsSection();
         performWhenMainMenuReady(game, notification, hasPluginsFromStartupDirectory);
 
         // Finish load pipeline on worker thread to avoid blocking the update thread.
@@ -393,6 +396,10 @@ public partial class PluginManager : Drawable
                 loadedPlugins.Add(pluginInstance);
 
             Logger.Log($"Successfully loaded plugin: {pluginType.FullName} from {pluginType.Assembly.Location}", LoggingTarget.Runtime, LogLevel.Verbose);
+
+            // TODO: we may want better ordering
+            // TODO: PluginSubsection creation invoves reflection, consider asynchronously loading
+            Scheduler.Add(settingsSection.Add, new PluginSubsection(pluginInstance));
         }
         catch (OsuPlugin.PluginActivationInterruptedException pae)
         {
@@ -414,4 +421,83 @@ public partial class PluginManager : Drawable
 
         pluginConfigManager.Dispose();
     }
+
+    #region Settings integration
+
+    private PluginManageSection settingsSection = null!;
+
+    private void createSettingsSection()
+    {
+        settingsSection = new PluginManageSection();
+
+        // note that SettingsOverlay is cached after our load call, so DI can't help us here,
+        game.InvokeWhenReady(d =>
+        {
+            var settingsOverlay = ((OsuGameBase)d).Dependencies.Get<SettingsOverlay>();
+
+            settingsOverlay.InvokeWhenReady(d =>
+            {
+                settingsOverlay.Add(new SettingsOverlayObserver
+                {
+                    Predicate = () => settingsOverlay.SectionsContainer.Count > 0,
+                    Action = () =>
+                    {
+                        var section = settingsSection;
+
+                        settingsOverlay.SectionsContainer.Add(section);
+                        var sideBar = SettingsPanelAccessor.GetSidebar(settingsOverlay);
+
+                        sideBar.Add(new SettingsOverlayObserver
+                        {
+                            Predicate = () => sideBar.Children.Any(c => c is SidebarIconButton),
+                            Action = () => sideBar.Add(new SidebarIconButton()
+                            {
+                                Section = section,
+                                Action = () =>
+                                {
+                                    if (!settingsOverlay.SectionsContainer.IsLoaded)
+                                        return;
+
+                                    settingsOverlay.SectionsContainer.ScrollTo(section);
+                                },
+                            })
+                        });
+                    }
+                });
+            });
+        });
+    }
+
+    private abstract partial class SettingsPanelAccessor : SettingsPanel
+    {
+        protected SettingsPanelAccessor(bool showBackButton) : base(showBackButton) { }
+
+        [PrivateAccessor(PrivateAccessorKind.Field, Name = nameof(Sidebar))]
+        public static extern ref SettingsSidebar GetSidebar(SettingsPanel panel);
+    }
+
+    private partial class SettingsOverlayObserver : Drawable
+    {
+        public required Func<bool> Predicate { get; init; }
+        public required Action Action { get; init; }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (!Predicate())
+                return;
+
+            try
+            {
+                Action();
+            }
+            finally
+            {
+                Expire();
+            }
+        }
+    }
+
+    #endregion
 }
