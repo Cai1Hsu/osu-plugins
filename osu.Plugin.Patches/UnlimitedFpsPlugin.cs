@@ -20,9 +20,6 @@ namespace osu.Plugin.Patches;
 /// </summary>
 public partial class UnlimitedFpsPlugin : OsuPlugin
 {
-    [SettingSource("Unlimited FPS", "Removes the FPS cap. May cause increased power consumption and heat generation.")]
-    public Bindable<bool> RemoveFpsCap => Enabled;
-
     private Bindable<FrameSync> frameSync = null!;
 
     public override IEnumerable<Drawable>? CreateSettingsControls() => new Drawable[]
@@ -37,7 +34,7 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
                 {
                     Caption = "Unlimited FPS",
                     HintText = "Removes the FPS cap. May cause increased power consumption and heat generation.",
-                    Current = RemoveFpsCap
+                    Current = Enabled
                 })
                 {
                     Keywords = new[] { "unlimited", "fps", "frame", "rate", "cap", "vsync" },
@@ -61,13 +58,13 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
 
             frameSync = frameworkConfig.GetBindable<FrameSync>(FrameworkSetting.FrameSync);
 
-            RemoveFpsCap.BindValueChanged(_ => updateFrameSync());
+            Enabled.BindValueChanged(_ => updateFrameSync());
 
             frameSync.BindValueChanged(_ => updateFrameSync(), true);
 
             void updateFrameSync()
             {
-                bool unlimited = frameSync.Value is FrameSync.Unlimited && RemoveFpsCap.Value;
+                bool unlimited = frameSync.Value is FrameSync.Unlimited && Enabled.Value;
 
                 if (host.AllowBenchmarkUnlimitedFrames == unlimited)
                     return;
