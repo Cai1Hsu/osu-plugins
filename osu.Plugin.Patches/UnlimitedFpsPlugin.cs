@@ -16,8 +16,7 @@ using osu.Game.Plugins;
 namespace osu.Plugin.Patches;
 
 /// <summary>
-/// This plugin adds an "Unlimited FPS" option to the graphics settings, 
-/// allowing players to remove the FPS cap and achieve higher frame rates if their hardware allows it. 
+/// This plugin adds an "Unlimited FPS" option allowing players to remove the FPS cap and achieve higher frame rates if their hardware allows it. 
 /// </summary>
 public partial class UnlimitedFpsPlugin : OsuPlugin
 {
