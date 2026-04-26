@@ -109,6 +109,9 @@ public partial class PluginManager : Drawable
                     .Select(loadPlugin)
                     .ToArray();
 
+                lock (loadingTasks)
+                    loadingTasks.AddRange(loadTasks);
+
                 performWhenMainMenuReady(game, notification, hasPluginsFromStartupDirectory);
 
                 Task.WhenAll(loadTasks).Wait();
