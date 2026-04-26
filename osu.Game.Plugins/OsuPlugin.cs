@@ -1,4 +1,6 @@
-﻿using osu.Framework.Bindables;
+﻿using System.Diagnostics.CodeAnalysis;
+using osu.Framework.Bindables;
+using osu.Framework.Graphics;
 using osu.Framework.Threading;
 
 namespace osu.Game.Plugins;
@@ -19,12 +21,14 @@ public abstract class OsuPlugin
     /// </summary>
     public virtual string? Description => null;
 
-    internal readonly BindableBool enabled = new BindableBool(false);
+    internal readonly BindableBool enabled = new BindableBool(true);
 
     /// <summary>
     /// Whether the plugin is enabled. This is set to <see langword="true"/> after the plugin is activated.
     /// </summary>
-    public IBindable<bool> Enabled => enabled;
+    public Bindable<bool> Enabled => enabled;
+
+    public virtual IEnumerable<Drawable>? CreateSettingsControls() => null;
 
     /// <summary>
     /// Interrupts the activation of this plugin, disabling it in the process.
@@ -34,12 +38,13 @@ public abstract class OsuPlugin
     /// </summary>
     /// <param name="reason">The reason for the interruption.</param>
     /// <exception cref="PluginActivationInterruptedException">Thrown when the activation is interrupted.</exception>
-    protected void CancelActivation(string? reason)
+    [DoesNotReturn]
+    protected void CancelActivation(string? reason, bool canRetry = false)
     {
         bool disabled = enabled.Disabled;
         enabled.Disabled = false;
         enabled.Value = false;
-        enabled.Disabled = disabled;
+        enabled.Disabled = disabled || !canRetry;
 
         throw new PluginActivationInterruptedException(reason);
     }

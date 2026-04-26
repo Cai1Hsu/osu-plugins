@@ -1,15 +1,16 @@
 using System.Diagnostics;
 using System.Reflection;
+using AccessItEasy;
 using Humanizer;
 using osu.Framework;
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
 using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Settings;
 using osu.Game.Plugins;
 using osu.Game.Screens;
 using osu.Game.Screens.Menu;
@@ -25,11 +26,15 @@ public partial class PluginManager : Drawable
 
     private readonly HashSet<Assembly> loadedAssemblies = new();
     private readonly List<OsuPlugin> loadedPlugins = new();
+    private readonly HashSet<string> scheduledPluginTypes = new(StringComparer.Ordinal);
+
+    private readonly List<Task<OsuPlugin?>> pluginInstantiationTasks = new();
+
+    private PluginConfigManager? pluginConfigManager = null;
 
     public IReadOnlyList<OsuPlugin> LoadedPlugins => loadedPlugins;
 
     private List<Task> loadingTasks = new();
-    private List<Action> earlyLoadActions = new();
 
     private Stopwatch loadStopwatch = new Stopwatch();
 
@@ -81,25 +86,35 @@ public partial class PluginManager : Drawable
     }
 
     [BackgroundDependencyLoader]
-    private void load(OsuGame? game, INotificationOverlay? notification, Storage storage)
+    private void load(INotificationOverlay? notification, Storage storage)
     {
         Debug.Assert(!loadStopwatch.IsRunning);
 
         loadStopwatch.Start();
 
-        startEarlyLoadActionProcessing();
-
         loadPluginsFromStorage(storage, "plugins");
 
-        performWhenMainMenuReady(game, notification, hasPluginsFromStartupDirectory);
+        createSettingsSection();
 
-        // Sometimes the load action still blocks update thread,
-        // so we explicitly offload to thread pool here.
-        Task.Run(() =>
+        // Finish load pipeline on worker thread to avoid blocking the update thread.
+        Task.Factory.StartNew(() =>
         {
             try
             {
-                Task.WhenAll(loadingTasks).Wait();
+                var instantiatedPlugins = awaitAllInstantiationTasks();
+
+                loadPluginConfiguration(storage, instantiatedPlugins);
+
+                var loadTasks = instantiatedPlugins
+                    .Select(loadPlugin)
+                    .ToArray();
+
+                lock (loadingTasks)
+                    loadingTasks.AddRange(loadTasks);
+
+                performWhenMainMenuReady(game, notification, hasPluginsFromStartupDirectory);
+
+                Task.WhenAll(loadTasks).Wait();
 
                 loadStopwatch.Stop();
 
@@ -120,11 +135,21 @@ public partial class PluginManager : Drawable
             {
                 lock (loadingTasks)
                 {
-                    loadingTasks.Clear();
-                    // we have to keep the list reference around as some tasks may still be observing it.
+                    loadingTasks.RemoveAll(t => t.IsCompleted);
                 }
             }
-        });
+        }, TaskCreationOptions.LongRunning);
+    }
+
+    private Task loadPlugin(OsuPlugin plugin)
+    {
+        var loadAction = () => performPluginLoad(plugin);
+
+        bool longRunningLoad = plugin.GetType().GetCustomAttribute<LongRunningLoadAttribute>() is not null;
+
+        return Task.Factory.StartNew(loadAction, longRunningLoad
+            ? TaskCreationOptions.LongRunning
+            : TaskCreationOptions.None);
     }
 
     void performWhenMainMenuReady(OsuGame? game, INotificationOverlay? notification, bool hasPluginsFromStartupDirectory)
@@ -176,31 +201,6 @@ public partial class PluginManager : Drawable
 
             drawable.InvokeWhenReady(postNotifications);
         }, new[] { typeof(Loader), typeof(IntroScreen) });
-    }
-
-    private void startEarlyLoadActionProcessing()
-    {
-        Debug.Assert(LoadState is LoadState.Loading);
-
-        foreach (var action in earlyLoadActions)
-            scheduleBackground(action);
-
-        earlyLoadActions.Clear();
-    }
-
-    private void scheduleBackground(Action action)
-    {
-        if (LoadState < LoadState.Loading)
-            earlyLoadActions.Add(action);
-        else
-        {
-            Debug.Assert(LoadState is LoadState.Loading or LoadState.Ready);
-
-            lock (loadingTasks)
-            {
-                loadingTasks.Add(Task.Run(action));
-            }
-        }
     }
 
     private bool loadPluginsFromAppDomain()
@@ -320,7 +320,7 @@ public partial class PluginManager : Drawable
 
             foreach (var type in pluginTypes)
             {
-                scheduleBackground(() => instantiatePluginAndPerformLoad(type));
+                schedulePluginInstantiation(type);
                 loadedAny = true;
             }
         }
@@ -332,30 +332,104 @@ public partial class PluginManager : Drawable
         return loadedAny;
     }
 
-    private void instantiatePluginAndPerformLoad(Type pluginType)
+    private void schedulePluginInstantiation(Type pluginType)
+    {
+        var pluginTypeId = pluginType.AssemblyQualifiedName ?? pluginType.FullName;
+
+        if (string.IsNullOrEmpty(pluginTypeId))
+            return;
+
+        lock (pluginInstantiationTasks)
+        {
+            if (!scheduledPluginTypes.Add(pluginTypeId))
+                return;
+
+            pluginInstantiationTasks.Add(Task.Run(() => instantiatePlugin(pluginType)));
+        }
+    }
+
+    private OsuPlugin? instantiatePlugin(Type pluginType)
     {
         try
         {
             var pluginInstance = Activator.CreateInstance(pluginType) as OsuPlugin
                 ?? throw new InvalidOperationException($"Failed to create instance of plugin type: {pluginType.FullName}");
 
+            Logger.Log($"Instantiated plugin: {pluginType.FullName} from {pluginType.Assembly.Location}", LoggingTarget.Runtime, LogLevel.Verbose);
+            return pluginInstance;
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, $"Failed to instantiate plugin of type: {pluginType.FullName}, {e.Message}");
+        }
+
+        return null;
+    }
+
+    private OsuPlugin[] awaitAllInstantiationTasks()
+    {
+        Task<OsuPlugin?>[] tasks;
+
+        lock (pluginInstantiationTasks)
+            tasks = pluginInstantiationTasks.ToArray();
+
+        Task.WhenAll(tasks).Wait();
+
+        return tasks
+            .Where(t => t.Status == TaskStatus.RanToCompletion && t.Result is not null)
+            .Select(t => t.Result!)
+            .ToArray();
+    }
+
+    private void loadPluginConfiguration(Storage storage, OsuPlugin[] plugins)
+    {
+        if (plugins.Length == 0)
+            return;
+
+        try
+        {
+            pluginConfigManager = new PluginConfigManager(storage, plugins);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Failed to initialize plugin configuration manager.");
+        }
+    }
+
+    private void performPluginLoad(OsuPlugin pluginInstance)
+    {
+        var pluginType = pluginInstance.GetType();
+
+        try
+        {
             pluginInstance.OnLoad(game, Scheduler);
 
             lock (loadedPlugins)
-            {
                 loadedPlugins.Add(pluginInstance);
-            }
-
-            var enabled = plugin_enabled_field.GetValue(pluginInstance) as Bindable<bool>;
-
-            if (enabled is not null)
-                Scheduler.Add(() => enabled.Value = true);
 
             Logger.Log($"Successfully loaded plugin: {pluginType.FullName} from {pluginType.Assembly.Location}", LoggingTarget.Runtime, LogLevel.Verbose);
+
+            // TODO: we may want better ordering
+            // TODO: PluginSubsection creation invoves reflection, consider asynchronously loading
+            Scheduler.Add(settingsSection.Add, new PluginSubsection(pluginInstance));
         }
         catch (OsuPlugin.PluginActivationInterruptedException pae)
         {
+            // when a plugin gives up activation for some reason, like unsupported platform,
+            // we still want to show it in the settings panel, but with a darkened appearance and a tooltip explaining why it is disabled.
+            // As missing items usually indicating other problems like fail to scan assemblies, we want to make sure the user is aware of it.
             Logger.Log($"{pluginType.FullName} cancelled load for {pae.Reason}", LoggingTarget.Runtime, LogLevel.Important);
+
+            Scheduler.Add(() =>
+            {
+                Debug.Assert(!pluginInstance.Enabled.Value, "Plugin should have disabled itself when cancelling activation.");
+
+                settingsSection.Add(new PluginSubsection(pluginInstance)
+                {
+                    Alpha = 0.5f,
+                    // TODO: Add a tooltip?
+                });
+            });
         }
         catch (LoadException le)
         {
@@ -363,11 +437,93 @@ public partial class PluginManager : Drawable
         }
         catch (Exception e)
         {
-            Logger.Error(e, $"Failed to instantiate plugin of type: {pluginType.FullName}, {e.Message}");
+            Logger.Error(e, $"Failed to load plugin of type: {pluginType.FullName}, {e.Message}");
         }
     }
 
-    // intentially not use InternalVisibleTo so that loader can be decoupled from the plugin library.
-    private static readonly FieldInfo plugin_enabled_field = typeof(OsuPlugin)
-        .GetField("enabled", BindingFlags.NonPublic | BindingFlags.Instance)!;
+    protected override void Dispose(bool isDisposing)
+    {
+        base.Dispose(isDisposing);
+
+        Interlocked.Exchange(ref pluginConfigManager, null)?.Dispose();
+    }
+
+    #region Settings integration
+
+    private PluginsSection settingsSection = null!;
+
+    private void createSettingsSection()
+    {
+        settingsSection = new PluginsSection();
+
+        // note that SettingsOverlay is cached after our load call, so DI can't help us here,
+        game.InvokeWhenReady(d =>
+        {
+            var settingsOverlay = ((OsuGameBase)d).Dependencies.Get<SettingsOverlay>();
+
+            settingsOverlay.InvokeWhenReady(d =>
+            {
+                settingsOverlay.Add(new SettingsOverlayObserver
+                {
+                    Predicate = () => settingsOverlay.SectionsContainer.Count > 0,
+                    Action = () =>
+                    {
+                        var section = settingsSection;
+
+                        settingsOverlay.SectionsContainer.Add(section);
+                        var sideBar = SettingsPanelAccessor.GetSidebar(settingsOverlay);
+
+                        sideBar.Add(new SettingsOverlayObserver
+                        {
+                            Predicate = () => sideBar.Children.Any(c => c is SidebarIconButton),
+                            Action = () => sideBar.Add(new SidebarIconButton()
+                            {
+                                Section = section,
+                                Action = () =>
+                                {
+                                    if (!settingsOverlay.SectionsContainer.IsLoaded)
+                                        return;
+
+                                    settingsOverlay.SectionsContainer.ScrollTo(section);
+                                },
+                            })
+                        });
+                    }
+                });
+            });
+        });
+    }
+
+    private abstract partial class SettingsPanelAccessor : SettingsPanel
+    {
+        protected SettingsPanelAccessor(bool showBackButton) : base(showBackButton) { }
+
+        [PrivateAccessor(PrivateAccessorKind.Field, Name = nameof(Sidebar))]
+        public static extern ref SettingsSidebar GetSidebar(SettingsPanel panel);
+    }
+
+    private partial class SettingsOverlayObserver : Drawable
+    {
+        public required Func<bool> Predicate { get; init; }
+        public required Action Action { get; init; }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (!Predicate())
+                return;
+
+            try
+            {
+                Action();
+            }
+            finally
+            {
+                Expire();
+            }
+        }
+    }
+
+    #endregion
 }
