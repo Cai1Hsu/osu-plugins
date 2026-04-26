@@ -1,4 +1,5 @@
-﻿using osu.Framework.Bindables;
+﻿using System.Diagnostics.CodeAnalysis;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Threading;
 
@@ -37,6 +38,7 @@ public abstract class OsuPlugin
     /// </summary>
     /// <param name="reason">The reason for the interruption.</param>
     /// <exception cref="PluginActivationInterruptedException">Thrown when the activation is interrupted.</exception>
+    [DoesNotReturn]
     protected void CancelActivation(string? reason, bool? canRetry = false)
     {
         canRetry ??= true;
