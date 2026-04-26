@@ -55,7 +55,7 @@ public partial class TestPluginConfigManager
     public void TestChangingSettingSaves()
     {
         var plugin = new TestPlugin();
-        var configManager = new TestConfigManager(plugin.Yield().ToArray());
+        using var configManager = new TestConfigManager(plugin.Yield().ToArray());
 
         int lastSaveCount = configManager.SaveCount;
 
