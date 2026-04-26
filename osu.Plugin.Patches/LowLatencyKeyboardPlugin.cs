@@ -22,6 +22,8 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
     [SettingSource("Try to fix Win-key", "When enabled, the plugin will also try to exclude hotkeys (like Win-key) from raw keyboard input when the user is playing, which may help with issues like the Start menu opening when pressing the Win-key. Requires SDL 3.4 or higher.")]
     public Bindable<bool> FixWinKey { get; } = new BindableBool(true);
 
+    private Bindable<bool> blockWinkey = null!;
+
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
         if (gameBase is not OsuGame game)
@@ -50,18 +52,26 @@ public partial class LowLatencyKeyboardPlugin : OsuPlugin
         {
             var game = (OsuGame)d;
 
+            var config = game.Dependencies.Get<OsuConfigManager>();
+            blockWinkey = config.GetBindable<bool>(OsuSetting.GameplayDisableWinKey);
+
             var localPlayInfo = game.Dependencies.Get<ILocalUserPlayInfo>();
             var localPlayingState = localPlayInfo.PlayingState.GetBoundCopy();
 
-            Enabled.BindValueChanged(v => updateEnabledState(v.NewValue, FixWinKey.Value, localPlayingState.Value is LocalUserPlayingState.Playing));
-            FixWinKey.BindValueChanged(v => updateEnabledState(Enabled.Value, v.NewValue, localPlayingState.Value is LocalUserPlayingState.Playing));
-            localPlayingState.BindValueChanged(v => updateEnabledState(Enabled.Value, FixWinKey.Value, v.NewValue is LocalUserPlayingState.Playing), true);
+            void update() => updateEnabledState(localPlayingState.Value);
+
+            blockWinkey.BindValueChanged(_ => update());
+            Enabled.BindValueChanged(_ => update());
+            FixWinKey.BindValueChanged(_ => update());
+            localPlayingState.BindValueChanged(_ => update(), true);
         });
 
-        void updateEnabledState(bool pluginEnabled, bool fixWinKey, bool userPlaying)
+        void updateEnabledState(LocalUserPlayingState playingState)
         {
-            updateRawKeyboardState(pluginEnabled);
-            updateWinKeyExclusionState(pluginEnabled && userPlaying && fixWinKey);
+            bool userPlaying = playingState is LocalUserPlayingState.Playing;
+
+            updateRawKeyboardState(Enabled.Value);
+            updateWinKeyExclusionState(Enabled.Value && userPlaying && FixWinKey.Value && blockWinkey.Value);
         }
 
         void updateRawKeyboardState(bool enable)
