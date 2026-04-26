@@ -419,7 +419,6 @@ public partial class PluginManager : Drawable
 
             Scheduler.Add(() =>
             {
-                Debug.Assert(pluginInstance.Enabled.Disabled, "Plugin should have disabled itself when cancelling activation.");
                 Debug.Assert(!pluginInstance.Enabled.Value, "Plugin should have disabled itself when cancelling activation.");
 
                 settingsSection.Add(new PluginSubsection(pluginInstance)
