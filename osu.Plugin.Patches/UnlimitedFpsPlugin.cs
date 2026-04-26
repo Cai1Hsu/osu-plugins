@@ -22,7 +22,7 @@ namespace osu.Plugin.Patches;
 public partial class UnlimitedFpsPlugin : OsuPlugin
 {
     [SettingSource("Unlimited FPS", "Removes the FPS cap. May cause increased power consumption and heat generation.")]
-    public Bindable<bool> RemoveFpsCap { get; } = new BindableBool(true);
+    public Bindable<bool> RemoveFpsCap => Enabled;
 
     private Bindable<FrameSync> frameSync = null!;
 
@@ -52,8 +52,6 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
         if (gameBase is not OsuGame game)
             return;
 
-        LeasedBindable<bool>? lease = null;
-
         game.InvokeWhenReady(d =>
         {
             var game = (OsuGame)d;
@@ -66,33 +64,7 @@ public partial class UnlimitedFpsPlugin : OsuPlugin
 
             RemoveFpsCap.BindValueChanged(_ => updateFrameSync());
 
-            frameSync.BindValueChanged(v =>
-            {
-                bool isUnlimited = v.NewValue is FrameSync.Unlimited;
-
-                if (lease is null)
-                    RemoveFpsCap.Disabled = !isUnlimited;
-
-                updateFrameSync();
-            }, true);
-
-            Enabled.BindValueChanged(v =>
-            {
-                if (!v.NewValue)
-                {
-                    Debug.Assert(lease is null);
-
-                    lease = RemoveFpsCap.BeginLease(true);
-                    lease.Value = false;
-                }
-                else
-                {
-                    lease?.Return();
-                    lease = null;
-
-                    RemoveFpsCap.Disabled = frameSync.Value != FrameSync.Unlimited;
-                }
-            }, true);
+            frameSync.BindValueChanged(_ => updateFrameSync(), true);
 
             void updateFrameSync()
             {
