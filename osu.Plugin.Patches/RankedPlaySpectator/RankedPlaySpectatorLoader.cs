@@ -1,4 +1,5 @@
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -60,6 +61,8 @@ public partial class RankedPlaySpectatorLoader : SpectatorScreen, IPreviewTrackO
 
     private ScheduledDelegate? beatmapFetchCallback;
     private APIBeatmapSet? beatmapSet;
+
+    private readonly Bindable<bool> automaticStart = new Bindable<bool>(true);
 
     public RankedPlaySpectatorLoader(Room room, APIUser[] users)
         : base(users.Select(u => u.Id).ToArray())
@@ -153,6 +156,13 @@ public partial class RankedPlaySpectatorLoader : SpectatorScreen, IPreviewTrackO
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,
                         },
+                        new SettingsCheckbox
+                        {
+                            LabelText = "Automatically start spectating when ready",
+                            Current = automaticStart,
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                        },
                         watchButton = new PurpleRoundedButton
                         {
                             Text = "Start Watching",
@@ -216,6 +226,9 @@ public partial class RankedPlaySpectatorLoader : SpectatorScreen, IPreviewTrackO
                 Beatmap.Value = firstGameplayState.Beatmap;
                 Ruleset.Value = firstGameplayState.Ruleset.RulesetInfo;
                 watchButton.Enabled.Value = true;
+
+                if (automaticStart.Value)
+                    scheduleStart();
             }
             else
             {
