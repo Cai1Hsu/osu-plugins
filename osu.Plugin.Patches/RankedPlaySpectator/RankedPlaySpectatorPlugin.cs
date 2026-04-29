@@ -11,6 +11,7 @@ using osu.Game.Online.Rooms;
 using osu.Game.Overlays.Settings;
 using osu.Game.Plugins;
 using osu.Game.Screens;
+using MatchType = osu.Game.Online.Rooms.MatchType;
 
 namespace osu.Plugin.Patches.RankedPlaySpectator;
 
@@ -55,6 +56,12 @@ public partial class RankedPlaySpectatorPlugin : OsuPlugin
 
         getRoomReq.Success += r =>
         {
+            if (r.Type is not MatchType.RankedPlay and not MatchType.Matchmaking)
+            {
+                Logger.Log($"Room ID {parsedRoomId} is not a Ranked Play or Matchmaking room. Type: {r.Type}", level: LogLevel.Error);
+                return;
+            }
+
             scheduler.Add(() =>
             {
                 var spectatorScreen = new RankedPlaySpectatorLoader(r, r.RecentParticipants.ToArray());
