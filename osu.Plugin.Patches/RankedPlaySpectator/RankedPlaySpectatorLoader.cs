@@ -99,7 +99,7 @@ public partial class RankedPlaySpectatorLoader : SpectatorScreen, IPreviewTrackO
                     {
                         new OsuSpriteText
                         {
-                            Text = "Multiplayer Spectator Mode",
+                            Text = "Ranked Play Spectator Mode",
                             Font = OsuFont.Default.With(size: 30),
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,
