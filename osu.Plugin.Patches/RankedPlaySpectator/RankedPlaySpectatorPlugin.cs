@@ -24,6 +24,7 @@ public partial class RankedPlaySpectatorPlugin : OsuPlugin
         new SettingsItemV2(new FormNumberBox
         {
             Caption = "Room ID",
+            HintText = "Enter the Room ID of the Ranked Play room you want to spectate, you can find the ongoing rooms in the ranked play section of a user's profile page.",
             Current = roomId,
         }),
         new SettingsButtonV2
