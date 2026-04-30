@@ -51,9 +51,6 @@ public partial class RankedPlaySpectatorScreen : SpectatorScreen
     [Resolved]
     private OsuColour colours { get; set; } = null!;
 
-    [Resolved]
-    private MultiplayerClient multiplayerClient { get; set; } = null!;
-
     [Cached(typeof(IGameplayLeaderboardProvider))]
     private MultiSpectatorLeaderboardProvider leaderboardProvider { get; set; }
 
@@ -271,17 +268,4 @@ public partial class RankedPlaySpectatorScreen : SpectatorScreen
         instance.FadeColour(colours.Gray4, 400, Easing.OutQuint);
         syncManager.RemoveManagedClock(instance.SpectatorPlayerClock);
     });
-
-    public override bool OnBackButton()
-    {
-        if (multiplayerClient.Room == null)
-            return base.OnBackButton();
-
-        // On a manual exit, set the player back to idle unless gameplay has finished.
-        // Of note, this doesn't cover exiting using alt-f4 or menu home option.
-        if (multiplayerClient.Room.State != MultiplayerRoomState.Open)
-            multiplayerClient.ChangeState(MultiplayerUserState.Idle).FireAndForget();
-
-        return base.OnBackButton();
-    }
 }
