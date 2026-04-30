@@ -17,7 +17,7 @@ namespace osu.Plugin.Patches.RankedPlaySpectator;
 
 public partial class RankedPlaySpectatorPlugin : OsuPlugin
 {
-    private readonly Bindable<string> roomId = new Bindable<string>();
+    private readonly Bindable<string> roomId = new Bindable<string>(string.Empty);
 
     public override IEnumerable<Drawable>? CreateSettingsControls() => new Drawable[]
     {
