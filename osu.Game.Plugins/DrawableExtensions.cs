@@ -60,4 +60,12 @@ public static class DrawableExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [PrivateAccessor(PrivateAccessorKind.Field, Name = "OnDispose")]
     public static extern ref Action GetOnDispose(Drawable drawable);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PrivateAccessor(PrivateAccessorKind.Method, Name = "add_OnDispose")]
+    public static extern void add_OnDispose(this Drawable drawable, Action value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PrivateAccessor(PrivateAccessorKind.Method, Name = "remove_OnDispose")]
+    public static extern void remove_OnDispose(this Drawable drawable, Action value);
 }
