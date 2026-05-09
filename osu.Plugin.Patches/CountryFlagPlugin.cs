@@ -73,7 +73,7 @@ public partial class CountryFlagPlugin : OsuPlugin
 
         if (DependencyActivatorAccessor.activator_cache[typeof(DrawableFlag)] is not { } cachedActivator)
         {
-            var instance = new UpdateableFlag();
+            using var instance = new DrawableFlag(CountryCode.Unknown);
 
             // reflection path
             if (instance is not ISourceGeneratedDependencyActivator)
