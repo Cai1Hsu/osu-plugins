@@ -3,7 +3,12 @@ using System.Diagnostics;
 using AccessItEasy;
 using osu.Framework.Allocation;
 using osu.Framework.Development;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Lists;
+using osu.Framework.Logging;
+using osu.Framework.Testing;
 using osu.Framework.Threading;
 using osu.Game;
 using osu.Game.Plugins;
@@ -25,21 +30,62 @@ public partial class CountryFlagPlugin : OsuPlugin
         if (gameBase is not OsuGame)
             return;
 
-        gameBase.InvokeWhenReady(_ =>
+        gameBase.InvokeWhenReady(d =>
         {
-            ProxyDrawableFlagTypeActivator((obj, dependencies) =>
+            var game = (OsuGame)d;
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            // activator_cache is a ConcurrentDictionary, so that there maybe a tiny race window where multiple activators are created, and a latter one overrides our cached one.
+            // Wait for all async loading completes so that the activator is cached and won't be created again.
+            var loadLocks = game.ChildrenOfType<CompositeDrawable>()
+                                .Where(static d => d.LoadState >= LoadState.Ready)
+                                .Select(CompositeDrawableAccessor.Get_loadingComponents)
+                                .Where(static c => c != null)
+                                .SelectMany(static c => c)
+                                .Where(static d => d.LoadState < LoadState.Ready)
+                                .Select(DrawableAccessor.GetLoadLock)
+                                .ToArray();
+
+            Stopwatch lockAcquireSw = Stopwatch.StartNew();
+
+            try
             {
-                var instance = (DrawableFlag)obj;
-                var textures = dependencies.Get<TextureStore>();
+                // acquire all locks to ensure no components are loading, and thus no activator is being created.
+                foreach (var l in loadLocks)
+                    Monitor.Enter(l);
 
-                if (DrawableFlagAccessor.GetCountryCode(instance) is not CountryCode.TW)
-                    return;
+                lockAcquireSw.Stop();
 
-                var enabled = Enabled.GetBoundCopy();
+                ProxyDrawableFlagTypeActivator((obj, dependencies) =>
+                {
+                    var instance = (DrawableFlag)obj;
+                    var textures = dependencies.Get<TextureStore>();
 
-                instance.add_OnDispose(enabled.UnbindAll);
-                enabled.BindValueChanged(e => hookupTexture(instance, textures, e.NewValue), true);
-            });
+                    if (DrawableFlagAccessor.GetCountryCode(instance) is not CountryCode.TW)
+                        return;
+
+                    var enabled = Enabled.GetBoundCopy();
+
+                    instance.add_OnDispose(enabled.UnbindAll);
+                    enabled.BindValueChanged(e => hookupTexture(instance, textures, e.NewValue), true);
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to hook DrawableFlag activator, flags will not be replaced.");
+                return;
+            }
+            finally
+            {
+                lockAcquireSw.Stop();
+                sw.Stop();
+
+                foreach (var l in loadLocks)
+                    Monitor.Exit(l);
+            }
+
+            Logger.Log($"CountryFlagPlugin loaded in {sw.Elapsed.TotalMilliseconds:0.000}ms (lock acquire time: {lockAcquireSw.Elapsed.TotalMilliseconds:0.000}ms)", level: LogLevel.Verbose);
         });
     }
 
@@ -75,21 +121,41 @@ public partial class CountryFlagPlugin : OsuPlugin
         {
             using var instance = new DrawableFlag(CountryCode.Unknown);
 
-            // reflection path
-            if (instance is not ISourceGeneratedDependencyActivator)
-                cachedActivator = DependencyActivatorAccessor.getActivator(null!, typeof(DrawableFlag));
-            else
+            cachedActivator = null!;
+
+            if (instance is ISourceGeneratedDependencyActivator)
             {
                 DependencyActivatorAccessor.initialiseSourceGeneratedActivators(null!, instance);
-                cachedActivator = DependencyActivatorAccessor.getActivator(null!, typeof(DrawableFlag));
-            }
-        }
+                cachedActivator = DependencyActivatorAccessor.activator_cache[typeof(DrawableFlag)];
 
-        Debug.Assert(cachedActivator is not null);
+                // the target type may not be source generated but base type may be source generated,
+                // which still resulted null cachedActivator, create a reflection activator as fallback.
+            }
+
+            cachedActivator ??= DependencyActivatorAccessor.getActivator(null!, typeof(DrawableFlag));
+        }
 
         var injectionActivators = DependencyActivatorAccessor.get_injectionActivators(cachedActivator);
 
+        // in tests scene, we may proxy multiple times, ensure only one activator exists in the list to avoid multiple hooking.
+        injectionActivators.RemoveAll(d => d.Method == postInjectDelegate.Method);
         injectionActivators.Add(postInjectDelegate);
+    }
+
+    private abstract partial class DrawableAccessor : Drawable
+    {
+        [PrivateAccessor(PrivateAccessorKind.Field, Name = "LoadLock")]
+        internal static extern object GetLoadLock(Drawable instance);
+    }
+
+    private abstract partial class CompositeDrawableAccessor : CompositeDrawable
+    {
+        protected CompositeDrawableAccessor()
+        {
+        }
+
+        [PrivateAccessor(PrivateAccessorKind.Field, Name = "loadingComponents")]
+        internal static extern WeakList<Drawable> Get_loadingComponents(CompositeDrawable instance);
     }
 
     internal class DependencyActivatorAccessor
