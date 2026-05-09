@@ -85,7 +85,7 @@ public partial class CountryFlagPlugin : OsuPlugin
                     Monitor.Exit(l);
             }
 
-            Logger.Log($"CountryFlagPlugin loaded in {sw.Elapsed.TotalMilliseconds:0.000}ms (lock acquire time: {lockAcquireSw.Elapsed.TotalMilliseconds:0.000}ms)", level: LogLevel.Verbose);
+            Logger.Log($"CountryFlagPlugin loaded in {sw.Elapsed.TotalMilliseconds:0.000}ms (lock acquire time: {lockAcquireSw.Elapsed.TotalMilliseconds:0.000}ms, blocking {loadLocks.Length} locks)", level: LogLevel.Verbose);
         });
     }
 
@@ -132,7 +132,11 @@ public partial class CountryFlagPlugin : OsuPlugin
                 // which still resulted null cachedActivator, create a reflection activator as fallback.
             }
 
-            cachedActivator ??= DependencyActivatorAccessor.getActivator(null!, typeof(DrawableFlag));
+            if (cachedActivator is null)
+            {
+                cachedActivator = DependencyActivatorAccessor.getActivator(null!, typeof(DrawableFlag));
+                Logger.Log("Using reflection activator for DrawableFlag, performance may be affected.", level: LogLevel.Verbose);
+            }
         }
 
         var injectionActivators = DependencyActivatorAccessor.get_injectionActivators(cachedActivator);
