@@ -2,6 +2,8 @@ using osu.Framework.Graphics;
 using osu.Game.Skinning;
 using osu.Game.Beatmaps.Timing;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Extensions.EnumExtensions;
+using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Gameplay;
 
