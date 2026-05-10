@@ -33,7 +33,7 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
 
         // they are awared of the fact that health overlay usually takes up the full screen area
         // but they simply did a ugly hack to make it work
-        // see https://github.com/ppy/osu/blob/458a27c99a010310d75cce86ed5634250ff7bb15/osu.Game/Screens/Play/HUDOverlay.cs#L299
+        // see https://github.com/ppy/osu/blob/458a27c99a010310d75cce86ed5634250ff7bb15/osu.Game/Screens/Play/HUDOverlay.cs#L299-L303
         // use a custom and compute anchor position ourselves to avoid taking the full screen area
         // This fixes that chat display and other things being squeezed to the bottom of the screen when health overlay is enabled
         if (Anchor.HasFlagFast(Anchor.y0))
