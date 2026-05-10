@@ -2,6 +2,8 @@ using osu.Framework.Graphics;
 using osu.Game.Skinning;
 using osu.Game.Beatmaps.Timing;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Extensions.EnumExtensions;
+using osuTK;
 
 namespace osu.Plugin.LegacyExperience.Gameplay;
 
@@ -25,6 +27,24 @@ public partial class LegacyHealthOverlay : BreakTrackingContainer, ISerialisable
             AutoSizeAxes = Axes.Both,
             Child = new LegacyHealthDisplay(),
         };
+    }
+
+    protected override void LoadComplete()
+    {
+        base.LoadComplete();
+
+        // they are awared of the fact that health overlay usually takes up the full screen area
+        // but they simply did a ugly hack to make it work
+        // see https://github.com/ppy/osu/blob/458a27c99a010310d75cce86ed5634250ff7bb15/osu.Game/Screens/Play/HUDOverlay.cs#L299-L303
+        // use a custom and compute anchor position ourselves to avoid taking the full screen area
+        // This fixes that chat display and other things being squeezed to the bottom of the screen when health overlay is enabled
+        if (Anchor.HasFlagFast(Anchor.y0))
+        {
+            var relativeAnchorPosition = RelativeAnchorPosition;
+
+            Anchor = Anchor.Custom;
+            RelativeAnchorPosition = relativeAnchorPosition;
+        }
     }
 
     protected override void ScheduleBreakAnimations(IReadOnlyList<BreakPeriod> breaks)
