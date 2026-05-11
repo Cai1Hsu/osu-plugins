@@ -63,7 +63,7 @@ public partial class DisableStatefulReconnectPlugin : OsuPlugin
         }
         finally
         {
-            Enabled.Disabled = false; // not intended to be toggled
+            Enabled.Disabled = true; // not intended to be toggled
         }
     }
 
