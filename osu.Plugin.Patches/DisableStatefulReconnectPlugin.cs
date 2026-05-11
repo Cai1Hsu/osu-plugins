@@ -26,29 +26,45 @@ public partial class DisableStatefulReconnectPlugin : OsuPlugin
 {
     public override void OnLoad(OsuGameBase gameBase, Scheduler scheduler)
     {
-        if (gameBase is not OsuGame)
-            return;
-
-        if (serviceProviderField is null)
+        try
         {
-            Logger.Log("A required field of signalR connection was missing.", LoggingTarget.Network);
-            return;
+            Enabled.Value = false;
+
+            if (gameBase is not OsuGame)
+                return;
+
+            // version string is copied from ilspy
+            if (gameBase.AssemblyVersion != new Version("2026.509.0.0"))
+            {
+                Logger.Log("The issue is likely fixed or not existing in this version, skipping patch.", LoggingTarget.Network);
+                return;
+            }
+
+            if (serviceProviderField is null)
+            {
+                Logger.Log("A required field of signalR connection was missing.", LoggingTarget.Network);
+                return;
+            }
+
+            gameBase.InvokeWhenReady(d =>
+            {
+                var game = (OsuGame)d;
+
+                var metadataClient = game.Dependencies.Get<MetadataClient>();
+                var multiplayerClient = game.Dependencies.Get<MultiplayerClient>();
+                var spectatorClient = game.Dependencies.Get<SpectatorClient>();
+
+                processHubClient(metadataClient);
+                processHubClient(multiplayerClient);
+                processHubClient(spectatorClient);
+            });
+
+            Enabled.Value = true;
         }
-
-        Enabled.Disabled = false; // not intended to be toggled
-
-        gameBase.InvokeWhenReady(d =>
+        finally
         {
-            var game = (OsuGame)d;
-
-            var metadataClient = game.Dependencies.Get<MetadataClient>();
-            var multiplayerClient = game.Dependencies.Get<MultiplayerClient>();
-            var spectatorClient = game.Dependencies.Get<SpectatorClient>();
-
-            processHubClient(metadataClient);
-            processHubClient(multiplayerClient);
-            processHubClient(spectatorClient);
-        });
+            Enabled.Disabled = false; // not intended to be toggled
+        }
     }
 
     private void processHubClient(Drawable client)
