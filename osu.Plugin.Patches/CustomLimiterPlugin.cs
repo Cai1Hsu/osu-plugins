@@ -171,9 +171,9 @@ public partial class CustomLimiterPlugin : OsuPlugin
             bool applyCustomLimiter = frameSync.Value is FrameSync.Unlimited;
 
             foreach (var bindable in limiterBindables())
-                bindable.Disabled = applyCustomLimiter;
+                bindable.Disabled = !applyCustomLimiter;
 
-            if (applyCustomLimiter)
+            if (!applyCustomLimiter)
             {
                 note.Value = new SettingsNote.Data(
                     "Custom limiter is only active when Frame Sync is set to Unlimited.",
