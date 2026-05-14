@@ -18,7 +18,10 @@ public partial class PluginsSection : SettingsSection
 
     public void Add(PluginSubsection pluginSubsection)
     {
-        pluginSubsections.Add(pluginSubsection.DisplayName, pluginSubsection);
+        // avoid plugins with the same name
+        var key = $"{pluginSubsection.DisplayName}, {pluginSubsection.GetType().AssemblyQualifiedName}";
+
+        pluginSubsections.Add(key, pluginSubsection);
         FlowContent.Add(pluginSubsection);
 
         int position = 0;
