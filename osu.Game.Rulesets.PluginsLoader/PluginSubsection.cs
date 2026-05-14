@@ -23,8 +23,10 @@ namespace osu.Game.Rulesets.PluginsLoader;
 
 public partial class PluginSubsection : SettingsSubsection
 {
-    protected override LocalisableString Header => Plugin.DisplayName ?? Plugin.GetType().Name;
+    protected override LocalisableString Header => DisplayName;
     protected readonly OsuPlugin Plugin;
+
+    public string DisplayName => GetReadablePluginName(Plugin);
 
     public readonly BindableBool Enabled = new BindableBool();
 
@@ -284,5 +286,20 @@ public partial class PluginSubsection : SettingsSubsection
             headerText.FadeColour(col, 300, Easing.OutQuint);
             descriptionText?.FadeColour(col, 300, Easing.OutQuint);
         }
+    }
+
+    private static string GetReadablePluginName(OsuPlugin plugin)
+    {
+        if (plugin.DisplayName != null)
+            return plugin.DisplayName;
+
+        var typeName = plugin.GetType().ReadableName();
+
+        const string suffix = "Plugin";
+
+        if (typeName.EndsWith(suffix, StringComparison.Ordinal))
+            return typeName.Substring(0, typeName.Length - suffix.Length);
+
+        return typeName;
     }
 }
