@@ -13,4 +13,17 @@ public partial class PluginsSection : SettingsSection
     {
         Icon = FontAwesome.Solid.PuzzlePiece,
     };
+
+    private readonly SortedList<string, PluginSubsection> pluginSubsections = new SortedList<string, PluginSubsection>(StringComparer.OrdinalIgnoreCase);
+
+    public void Add(PluginSubsection pluginSubsection)
+    {
+        pluginSubsections.Add(pluginSubsection.DisplayName, pluginSubsection);
+        FlowContent.Add(pluginSubsection);
+
+        int position = 0;
+
+        foreach (var (k, v) in pluginSubsections)
+            FlowContent.SetLayoutPosition(v, position++);
+    }
 }
