@@ -1,3 +1,5 @@
+// Extended from osu.Game.Online.API.OAuth to allow for custom endpoints and client credentials, some code is copied from it.
+
 using System.Net.Sockets;
 using AccessItEasy;
 using Newtonsoft.Json;
