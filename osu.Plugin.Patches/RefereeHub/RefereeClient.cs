@@ -7,7 +7,7 @@ using osu.Server.Spectator.Hubs.Referee.Models.Responses;
 
 namespace osu.Plugin.Patches.Referee;
 
-public abstract partial class RefereeClient : Component, IRefereeHubClient, IStatefulUserHubClient, IRefereeHubServer
+public abstract partial class RefereeClient : Component, IRefereeHubClient, IRefereeHubServer
 {
     public abstract IBindable<bool> IsConnected { get; }
 
@@ -34,7 +34,6 @@ public abstract partial class RefereeClient : Component, IRefereeHubClient, ISta
     public event Action<MatchStartedEvent>? MatchStartedReceived;
     public event Action<MatchAbortedEvent>? MatchAbortedReceived;
     public event Action<MatchCompletedEvent>? MatchCompletedReceived;
-    public event Action? Disconnecting;
 
     #region IRefereeHubClient
 
@@ -173,22 +172,6 @@ public abstract partial class RefereeClient : Component, IRefereeHubClient, ISta
     Task IRefereeHubClient.UserTeamChanged(UserTeamChangedEvent info)
     {
         Schedule(() => UserTeamChangedReceived?.Invoke(info));
-        return Task.CompletedTask;
-    }
-
-    #endregion
-
-    #region IStatefulUserHubClient
-
-    Task IStatefulUserHubClient.DisconnectRequested()
-    {
-        Schedule(() => _ = DisconnectInternal());
-        return Task.CompletedTask;
-    }
-
-    protected virtual Task DisconnectInternal()
-    {
-        Disconnecting?.Invoke();
         return Task.CompletedTask;
     }
 

@@ -129,14 +129,6 @@ public partial class OnlineRefereeClient : RefereeClient
     public override Task<ListRoomsResponse> ListRooms()
         => invoke<ListRoomsResponse>(nameof(IRefereeHubServer.ListRooms));
 
-    protected override Task DisconnectInternal()
-    {
-        if (connector == null)
-            return base.DisconnectInternal();
-
-        return Task.WhenAll(base.DisconnectInternal(), connector.Disconnect());
-    }
-
     private Task invoke(string methodName, params object?[] args)
     {
         if (!IsConnected.Value)
