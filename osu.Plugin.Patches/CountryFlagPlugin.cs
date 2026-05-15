@@ -68,7 +68,7 @@ public partial class CountryFlagPlugin : OsuPlugin
                     var enabled = Enabled.GetBoundCopy();
 
                     instance.add_OnDispose(enabled.UnbindAll);
-                    enabled.BindValueChanged(e => hookupTexture(instance, textures, e.NewValue), true);
+                    enabled.BindValueChanged(e => hookupTexture(instance, textures, e.NewValue ? CountryCode.CN : null), true);
                 });
             }
             catch (Exception ex)
@@ -89,10 +89,9 @@ public partial class CountryFlagPlugin : OsuPlugin
         });
     }
 
-    private static void hookupTexture(DrawableFlag drawableFlag, TextureStore textures, bool enableReplacement)
+    private static void hookupTexture(DrawableFlag drawableFlag, TextureStore textures, CountryCode? replacement)
     {
-        var countryCode = enableReplacement ? 
-            CountryCode.CN : DrawableFlagAccessor.GetCountryCode(drawableFlag);
+        var countryCode = replacement ?? DrawableFlagAccessor.GetCountryCode(drawableFlag);
 
         // Copied from DrawableFlag.load
 
