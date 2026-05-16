@@ -117,7 +117,7 @@ public static partial class DependencyActivatorProxyFactory
             this.activator = activator;
         }
 
-        #region Equality members
+        #region Equivalence and accessors for original activator members
 
         public static IDictionary activator_cache => get_activator_cache(null!);
         public static IDependencyActivatorRegistry activator_proxy => get_activator_proxy(null!);
