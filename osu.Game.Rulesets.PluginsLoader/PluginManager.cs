@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using AccessItEasy;
 using Humanizer;
 using osu.Framework;
@@ -261,6 +262,9 @@ public partial class PluginManager : Drawable
         try
         {
             var assembly = Assembly.LoadFrom(path);
+
+            // run module initializers immediately
+            RuntimeHelpers.RunModuleConstructor(assembly.ManifestModule.ModuleHandle);
 
             return assembly;
         }
