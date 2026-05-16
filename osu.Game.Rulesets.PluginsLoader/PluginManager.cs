@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using AccessItEasy;
 using Humanizer;
 using osu.Framework;
@@ -40,7 +41,7 @@ public partial class PluginManager : Drawable
 
     private bool hasPluginsFromStartupDirectory = false;
 
-    public void LoadEarlyAssemblies(Storage? gameStorage)
+    public void LoadEarlyAssemblies(Storage gameStorage)
     {
         Debug.Assert(!loadStopwatch.IsRunning);
         loadStopwatch.Start();
@@ -49,11 +50,7 @@ public partial class PluginManager : Drawable
         {
             loadPluginsFromAppDomain();
 
-            if (gameStorage is not null)
-                loadPluginsFromStorage(gameStorage, "plugins");
-            else
-                // This serves as a fallback to load plugins from storage
-                tryLoadLocalEarlyAssemblies();
+            loadPluginsFromStorage(gameStorage, "plugins");
 
             // Place your plugins in the startup directory is a bad idea, they will be removed when the game updates.
             // This is generally for development purposes only.
@@ -67,32 +64,12 @@ public partial class PluginManager : Drawable
         }
     }
 
-    private void tryLoadLocalEarlyAssemblies()
-    {
-        var ourLocation = typeof(PluginManager).Assembly.Location;
-        var ourDirectory = Path.GetDirectoryName(ourLocation);
-
-        if (string.IsNullOrEmpty(ourDirectory))
-            return;
-
-        loadPluginsFromDirectory(ourDirectory, "plugins");
-
-        var parentDirectory = Path.GetDirectoryName(ourDirectory);
-
-        if (string.IsNullOrEmpty(parentDirectory))
-            return;
-
-        loadPluginsFromDirectory(parentDirectory, "plugins");
-    }
-
     [BackgroundDependencyLoader]
     private void load(INotificationOverlay? notification, Storage storage)
     {
         Debug.Assert(!loadStopwatch.IsRunning);
 
         loadStopwatch.Start();
-
-        loadPluginsFromStorage(storage, "plugins");
 
         createSettingsSection();
 
@@ -285,6 +262,9 @@ public partial class PluginManager : Drawable
         try
         {
             var assembly = Assembly.LoadFrom(path);
+
+            // run module initializers immediately
+            RuntimeHelpers.RunModuleConstructor(assembly.ManifestModule.ModuleHandle);
 
             return assembly;
         }
