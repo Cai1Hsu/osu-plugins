@@ -13,7 +13,8 @@ namespace osu.Game.Plugins;
 /// Provides a factory for creating AOP proxies for dependency activators, allowing plugins to hook into the dependency injection process of osu!framework and perform custom logic during activations.
 /// </summary>
 /// <remarks>
-/// This is a powerful tool allowing you listen on all activations of a specific type without enumerating hierarchy of drawables.
+/// This serves as a non-intrusive AOP alternative to method hooking approaches like Harmony.
+/// It's is a powerful tool allowing you listen on all activations of a specific type without enumerating hierarchy of drawables.
 /// Especially useful when you want to modify the behaviour of all instances of a specific type, but you don't have control over their creation or you want to avoid maintaining a large number of activator hooks for different types in the hierarchy.
 /// </remarks>
 public static partial class DependencyActivatorProxyFactory
@@ -231,7 +232,6 @@ public static partial class DependencyActivatorProxyFactory
 
 /// <summary>
 /// A proxy interface allowing you listen on all drawable activations, and perform loading and caching of dependencies in the same way as normal activators.
-/// This serves as a non-intrusive AOP alternative to method hooking.
 /// </summary>
 public partial interface IDependencyActivatorProxy
 {
