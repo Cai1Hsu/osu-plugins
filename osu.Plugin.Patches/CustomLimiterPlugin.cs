@@ -22,7 +22,7 @@ namespace osu.Plugin.Patches;
 /// This plugin adds custom FPS limiters for each thread, allowing players to set different FPS limits for input, audio, update and draw threads when frame sync is set to unlimited.
 /// It also has an option to sync all thread limiters with the input thread limiter for easier configuration.
 /// </summary>
-public partial class CustomLimiterPlugin : OsuPlugin
+public partial class CustomLimiterPlugin : OsuPlugin, IHasLimiterBindables
 {
     [SettingSource("Sync All Threads")]
     public BindableBool SyncThreadLimits { get; } = new BindableBool(false);
@@ -41,7 +41,7 @@ public partial class CustomLimiterPlugin : OsuPlugin
 
     public override IEnumerable<Drawable>? CreateSettingsControls()
     {
-        return new CustomLimiterSettings(this)
+        return new CustomLimiterSettings
         {
             AutoSizeAxes = Axes.Y,
             RelativeSizeAxes = Axes.X,
@@ -70,13 +70,17 @@ public partial class CustomLimiterPlugin : OsuPlugin
 
             dependencies.Get<FrameworkConfigManager>().BindWith(FrameworkSetting.FrameSync, frameSync);
 
+            foreach (var bindable in this.LimiterBindables())
+                bindable.BindValueChanged(_ => applyLimiters());
+
             // Ensure limiters are applied even if CustomLimiterSettings is not created.
             // CreateSettingsControls are only called the first time the settings overlay is opened, so if the user never opens it, the limiters will not be applied without this.
-            ApplyLimiters();
+            Enabled.BindValueChanged(_ => applyLimiters());
+            frameSync.BindValueChanged(_ => applyLimiters(), true);
         });
     }
 
-    private void ApplyLimiters()
+    private void applyLimiters()
     {
         if (frameSync.Value is not FrameSync.Unlimited || !Enabled.Value)
         {
@@ -94,37 +98,22 @@ public partial class CustomLimiterPlugin : OsuPlugin
         host.InputThread.ActiveHz = InputThreadLimit.Value;
     }
 
-    private partial class CustomLimiterSettings : Container
+    private partial class CustomLimiterSettings : Container, IHasLimiterBindables
     {
-        public readonly Bindable<bool> Enabled = new Bindable<bool>();
-
-        private readonly CustomLimiterPlugin plugin;
+        public Bindable<bool> Enabled { get; } = new Bindable<bool>();
 
         private FillFlowContainer otherThreadsContainer = null!;
 
-        public readonly BindableBool SyncThreadLimits = new BindableBool();
-        public readonly BindableDouble InputThreadLimit = createLimiterBindable();
-        public readonly BindableDouble AudioThreadLimit = createLimiterBindable();
-        public readonly BindableDouble UpdateThreadLimit = createLimiterBindable();
-        public readonly BindableDouble DrawThreadLimit = createLimiterBindable();
+        public BindableBool SyncThreadLimits { get; } = new BindableBool();
+        public BindableDouble InputThreadLimit { get; } = createLimiterBindable();
+        public BindableDouble AudioThreadLimit { get; } = createLimiterBindable();
+        public BindableDouble UpdateThreadLimit { get; } = createLimiterBindable();
+        public BindableDouble DrawThreadLimit { get; } = createLimiterBindable();
 
         private Bindable<FrameSync> frameSync = new Bindable<FrameSync>();
         private Bindable<ExecutionMode> executionMode = new Bindable<ExecutionMode>();
 
         private readonly Bindable<SettingsNote.Data?> note = new Bindable<SettingsNote.Data?>();
-
-        private IEnumerable<BindableDouble> limiterBindables()
-        {
-            yield return UpdateThreadLimit;
-            yield return DrawThreadLimit;
-            yield return AudioThreadLimit;
-            yield return InputThreadLimit;
-        }
-
-        public CustomLimiterSettings(CustomLimiterPlugin plugin)
-        {
-            this.plugin = plugin;
-        }
 
         [BackgroundDependencyLoader]
         private void load(FrameworkConfigManager frameworkConfig)
@@ -185,19 +174,10 @@ public partial class CustomLimiterPlugin : OsuPlugin
         {
             base.LoadComplete();
 
-            foreach (var bindable in limiterBindables())
-                bindable.BindValueChanged(_ => plugin.ApplyLimiters());
-
-            SyncThreadLimits.BindValueChanged(_ => updateAll());
-            frameSync.BindValueChanged(_ => updateAll());
-            executionMode.BindValueChanged(_ => updateAll());
-            Enabled.BindValueChanged(_ => updateAll(), true);
-
-            void updateAll()
-            {
-                updateUI();
-                plugin.ApplyLimiters();
-            }
+            SyncThreadLimits.BindValueChanged(_ => updateUI());
+            frameSync.BindValueChanged(_ => updateUI());
+            executionMode.BindValueChanged(_ => updateUI());
+            Enabled.BindValueChanged(_ => updateUI(), true);
         }
 
         private void updateUI()
@@ -216,7 +196,7 @@ public partial class CustomLimiterPlugin : OsuPlugin
 
             bool applyCustomLimiter = frameSync.Value is FrameSync.Unlimited;
 
-            foreach (var bindable in limiterBindables())
+            foreach (var bindable in this.LimiterBindables())
                 bindable.Disabled = !applyCustomLimiter;
 
             if (!applyCustomLimiter)
@@ -298,3 +278,23 @@ public partial class CustomLimiterPlugin : OsuPlugin
         };
     }
 }
+
+interface IHasLimiterBindables
+{
+    BindableDouble InputThreadLimit { get; }
+    BindableDouble AudioThreadLimit { get; }
+    BindableDouble UpdateThreadLimit { get; }
+    BindableDouble DrawThreadLimit { get; }
+}
+
+static class LimiterBindableExtensions
+{
+    public static IEnumerable<BindableDouble> LimiterBindables(this IHasLimiterBindables hasLimiters)
+    {
+        yield return hasLimiters.UpdateThreadLimit;
+        yield return hasLimiters.DrawThreadLimit;
+        yield return hasLimiters.AudioThreadLimit;
+        yield return hasLimiters.InputThreadLimit;
+    }
+}
+
