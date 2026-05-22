@@ -1,5 +1,8 @@
 # osu! plugins
 
+[!WARNING]
+DON'T USE THIS PROJECT WITH ONLINE BUILDS, SEE [#93](https://github.com/Cai1Hsu/osu-plugins/issues/93#issue-4502056290).
+
 This repository contains a custom plugin system for [osu!(lazer)](https://github.com/ppy/osu) and some example plugins. It's a rewrite version of my modifications to the osu! client. As more and more modifications are made, I find it hard to maintain them all in a single project and it's also hard to debug plugins when they are tightly coupled.
 
 _This repository doesn't provide any pre-built binaries currently. You will need to build the projects yourself to get the plugin loader and example plugins._
