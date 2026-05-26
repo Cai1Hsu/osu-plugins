@@ -1,6 +1,5 @@
 ﻿<Solution>
   <Project Path="osu.Game.Plugins/osu.Game.Plugins.csproj" />
-  <Project Path="osu.Game.Plugins.Skins/osu.Game.Plugins.Skins.csproj" />
   <Project Path="osu.Game.Rulesets.PluginsLoader/osu.Game.Rulesets.PluginsLoader.csproj" />
   <Project Path="osu.Game.Rulesets.PluginsLoader.Tests/osu.Game.Rulesets.PluginsLoader.Tests.csproj" />
   <Project Path="osu.Plugin.LegacyExperience/osu.Plugin.LegacyExperience.csproj" />

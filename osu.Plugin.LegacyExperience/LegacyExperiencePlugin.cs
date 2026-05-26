@@ -1,9 +1,6 @@
-using osu.Framework.Allocation;
 using osu.Framework.Threading;
 using osu.Game;
-using osu.Game.Overlays.SkinEditor;
 using osu.Game.Plugins;
-using osu.Game.Plugins.Skins;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;
 using osu.Plugin.LegacyExperience.Buttons;
@@ -24,10 +21,12 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
         if (gameBase is not OsuGame game)
             return;
 
-        SkinEditorOverlay? skinEditor = game.Dependencies.Get<SkinEditorOverlay?>();
-        if (skinEditor is null)
-            return;
+        hookMainMenu(game);
+        hookSongSelectScreen(game);
+    }
 
+    static LegacyExperiencePlugin()
+    {
         var osuRuleset = new RulesetInfo
         {
             ShortName = "osu",
@@ -35,13 +34,13 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
             Available = true,
         };
 
-        skinEditor.RegisterSkinComponents(new[]
+        SkinEditorExtensions.RegisterSkinComponents(new[]
         {
             typeof(LegacyBreakOverlay),
             // In stable, only osu!standard has the break overlay.
-        }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.MainHUDComponents, osuRuleset));
+        }, new SkinComponentContainerLookup(GlobalSkinnableContainers.MainHUDComponents, osuRuleset));
 
-        skinEditor.RegisterSkinComponents(new[]
+        SkinEditorExtensions.RegisterSkinComponents(new[]
         {
             typeof(LegacyHealthOverlay),
             typeof(LegacyComboCounter),
@@ -51,17 +50,14 @@ public sealed partial class LegacyExperiencePlugin : OsuPlugin
             typeof(PlayfieldMask),
             typeof(LegacyStoryboardExtend),
             typeof(LegacySkipOverlay),
-        }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.MainHUDComponents));
+        }, new SkinComponentContainerLookup(GlobalSkinnableContainers.MainHUDComponents));
 
-        skinEditor.RegisterSkinComponents(new[]
+        SkinEditorExtensions.RegisterSkinComponents(new[]
         {
             typeof(LegacyChatButton),
             typeof(LegacyDashboardButton),
             typeof(LegacyFpsDisplay),
             typeof(LegacyLocalUser),
-        }, new GlobalSkinnableContainerLookup(GlobalSkinnableContainers.SongSelect));
-
-        hookMainMenu(game);
-        hookSongSelectScreen(game);
+        }, new SkinComponentContainerLookup(GlobalSkinnableContainers.SongSelect));
     }
 }
